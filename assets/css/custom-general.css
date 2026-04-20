@@ -21,38 +21,44 @@ body {
 /* Design System - Tokens */
 [data-md-color-scheme="slate"] {
   /* Backgrounds */
-  --bg-page:                    #050508; /* Fundo pagina */
-  --bg-surface:                 #0a0a14; /* Superficie */
-  --bg-header:                  #0c051a; /* Header */
-  
-  /* Cores do Tema */
-  --md-primary-fg-color:        var(--bg-header);
-  --md-primary-fg-color--light: #160a2e;
-  --md-primary-fg-color--dark:  #05020a;
-  --md-default-bg-color:        var(--bg-page);
-  --md-code-bg-color:           var(--bg-surface);
-  --md-code-fg-color:           #d4d4e8;
+  --bg-page: #050508;
+  /* Fundo pagina */
+  --bg-surface: #0a0a14;
+  /* Superficie */
+  --bg-header: #0c051a;
+  /* Header */
 
-  --heading-color:              #ffffff;
-  --text-color:                 #cbd5e1;
-  --md-typeset-color:           #cbd5e1;
-  --md-typeset-muted-color:     #64748b;
-  
+  /* Cores do Tema */
+  --md-primary-fg-color: var(--bg-header);
+  --md-primary-fg-color--light: #160a2e;
+  --md-primary-fg-color--dark: #05020a;
+  --md-default-bg-color: var(--bg-page);
+  --md-code-bg-color: var(--bg-surface);
+  --md-code-fg-color: #d4d4e8;
+
+  --heading-color: #ffffff;
+  --text-color: #cbd5e1;
+  --md-typeset-color: #cbd5e1;
+  --md-typeset-muted-color: #64748b;
+
   /* Accents */
-  --purple-accent:              #9333ea;
-  --purple-light:               #a855f7;
-  --purple-glow:                #c084fc;
-  --green-racing:               #10b981;
+  --purple-accent: #9333ea;
+  --purple-light: #a855f7;
+  --purple-glow: #c084fc;
+  --green-racing: #10b981;
 
   /* Bordas e UI */
-  --ui-border-subtle:           rgba(255, 255, 255, 0.05); /* Borda sutil */
-  --ui-border-accent:           rgba(147, 51, 234, 0.4);   /* Borda destaque */
-  --ui-border-hover:            rgba(147, 51, 234, 0.5);   /* Borda hover */
+  --ui-border-subtle: rgba(255, 255, 255, 0.05);
+  /* Borda sutil */
+  --ui-border-accent: rgba(147, 51, 234, 0.4);
+  /* Borda destaque */
+  --ui-border-hover: rgba(147, 51, 234, 0.5);
+  /* Borda hover */
 
   /* Animacoes */
-  --base-font:                  'Roboto Mono', monospace;
-  --transition-speed:           0.3s;
-  --transition-bezier:          cubic-bezier(0.22, 1, 0.36, 1);
+  --base-font: 'Roboto Mono', monospace;
+  --transition-speed: 0.3s;
+  --transition-bezier: cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 /* Tipografia - Headings */
@@ -141,6 +147,7 @@ body {
   font-size: 0.625rem !important;
   letter-spacing: 0.08em !important;
   transition: all var(--transition-speed) var(--transition-bezier) !important;
+  color: var(--heading-color) !important;
   opacity: 0.7;
 }
 
@@ -150,12 +157,14 @@ body {
 }
 
 .md-tabs__item--active .md-tabs__link {
-  color: #ffffff !important;
+  color: var(--purple-accent) !important;
   font-weight: 950 !important;
   opacity: 1;
-  border-left: 3px solid var(--purple-accent);
-  padding-left: 8px !important;
-  transition: all var(--transition-speed) var(--transition-bezier);
+  border-left: 3px solid var(--purple-accent) !important;
+  padding-left: 1rem !important;
+  background: linear-gradient(to right, rgba(147, 51, 234, 0.1), transparent) !important;
+  text-shadow: 0 0 12px rgba(147, 51, 234, 0.4) !important;
+  transition: all var(--transition-speed) var(--transition-bezier) !important;
 }
 
 /* Marcador lateral */
@@ -193,6 +202,7 @@ body {
 
 /* Sidebar Navigation */
 @media screen and (min-width: 76.25em) {
+
   /* Hidden active item */
   /* Active item visibility restored */
   .md-nav__item.md-nav__item--active {
@@ -413,6 +423,7 @@ body {
 
 /* Page Navigation */
 @media screen and (min-width: 76.25em) {
+
   /* Hidden nav title */
   /* Nav title visibility restored */
   .md-nav__title {
@@ -440,13 +451,30 @@ body {
     border-left: 2px solid var(--purple-accent);
   }
 
-  .md-nav__item--active > .md-nav__link {
-    color: var(--purple-light) !important;
+  .md-nav__item--active>.md-nav__link {
     font-weight: 900 !important;
-    border-left: 2px solid var(--purple-accent);
-    padding-left: 1rem !important;
-    background: linear-gradient(to right, rgba(147, 51, 234, 0.05), transparent) !important;
+    color: var(--md-typeset-muted-color) !important;
+    border-left: 2px solid transparent !important;
+    background: transparent !important;
+  }
+
+  .md-nav__link.md-nav__link--active {
+    color: var(--purple-accent) !important;
+    font-weight: 950 !important;
+    border-left: 3px solid var(--purple-accent) !important;
+    padding-left: 1.25rem !important;
+    background: linear-gradient(to right, rgba(147, 51, 234, 0.12), transparent) !important;
     box-shadow: none !important;
+    text-shadow: 0 0 12px rgba(147, 51, 234, 0.4) !important;
+    transition: all var(--transition-speed) var(--transition-bezier) !important;
+  }
+
+  .md-nav__link.md-nav__link--active.md-nav__link--passed {
+    border-left: 2px solid transparent !important;
+    background: transparent !important;
+    text-shadow: none !important;
+    color: var(--md-typeset-muted-color) !important;
+    font-weight: 400 !important;
   }
 
   .md-sidebar--secondary {
