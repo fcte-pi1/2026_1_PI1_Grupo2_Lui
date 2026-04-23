@@ -645,6 +645,63 @@ const EMBED_STYLE_TEMPLATE = `
     }
   </style>`;
 
+class TableFullscreen {
+  initialize() {
+    if (!document.querySelector('link[href*="Material+Icons"]')) {
+      const link = document.createElement('link');
+      link.rel = 'stylesheet';
+      link.href = 'https://fonts.googleapis.com/icon?family=Material+Icons';
+      document.head.appendChild(link);
+    }
+
+    const tables = document.querySelectorAll(".md-typeset table:not(.md-table--processed)");
+    tables.forEach((table) => {
+      if (table.rows.length < 2 && table.rows[0].cells.length < 2) return;
+      this._wrapTable(table);
+    });
+  }
+
+  _wrapTable(table) {
+    table.classList.add("md-table--processed");
+    
+    const wrapper = document.createElement("div");
+    wrapper.className = "table-fullscreen-wrapper";
+    
+    table.parentNode.insertBefore(wrapper, table);
+    wrapper.appendChild(table);
+
+    const btn = document.createElement("button");
+    btn.className = "table-fullscreen-btn";
+    btn.title = "Tela cheia";
+    btn.innerHTML = '<span class="material-icons" style="font-size: 1.1rem;">fullscreen</span>';
+    
+    wrapper.appendChild(btn);
+
+    btn.onclick = () => {
+      if (document.fullscreenElement === wrapper) {
+        document.exitFullscreen();
+      } else {
+        wrapper.requestFullscreen().catch((err) =>
+          console.error(`Erro ao entrar em tela cheia: ${err.message}`)
+        );
+      }
+    };
+
+    const updateIcon = () => {
+      const icon = btn.querySelector(".material-icons");
+      if (document.fullscreenElement === wrapper) {
+        icon.textContent = "fullscreen_exit";
+        btn.title = "Sair da tela cheia";
+      } else {
+        icon.textContent = "fullscreen";
+        btn.title = "Tela cheia";
+      }
+    };
+
+    wrapper.addEventListener('fullscreenchange', updateIcon);
+  }
+}
+
 class EmbedUIBuilder {
     static buildHtml(uniqueId, title, typePrefix) {
         const styles = EMBED_STYLE_TEMPLATE
@@ -966,11 +1023,13 @@ class EmbedManager {
     constructor() {
         this.svgEmbed = new SvgEmbed();
         this.imageEmbed = new ImageEmbed();
+        this.tableFullscreen = new TableFullscreen();
     }
 
     initializeAll() {
         document.querySelectorAll(".svg-embed-container").forEach((el) => this.svgEmbed.create(el));
         document.querySelectorAll(".image-embed-container").forEach((el) => this.imageEmbed.create(el));
+        this.tableFullscreen.initialize();
     }
 }
 

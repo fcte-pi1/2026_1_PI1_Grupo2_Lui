@@ -1,4 +1,26 @@
-/* Hero Section */
+/* ============================================================
+   Typography Variables (Homepage Specific)
+   ============================================================ */
+:root {
+  --home-fs-display: 6rem;
+  --home-fs-h1:      2rem;
+  --home-fs-h2:      1.5rem;
+  --home-fs-h3:      1.3rem;
+  --home-fs-lead:    1.1rem;
+  --home-fs-base:    1rem;
+  --home-fs-sm:      0.65rem;
+  --home-fs-xs:      0.55rem;
+
+  /* Legacy Preservation (from global custom-general.css) */
+  --home-fs-global-h1:  3rem;
+  --home-fs-global-h2:  2rem;
+  --home-fs-global-p:   0.9rem;
+  --home-fs-global-h1-first: 4.5rem;
+}
+
+/* ============================================================
+   Hero Section
+   ============================================================ */
 .presentation {
   text-align: center;
   padding: 4rem 0 2rem;
@@ -20,7 +42,7 @@
 }
 
 .presentation-label {
-  font-size: 0.65rem;
+  font-size: var(--home-fs-sm);
   font-weight: 900;
   font-style: italic;
   color: var(--purple-accent);
@@ -30,13 +52,13 @@
 
 /* Header Impact & Fade */
 .presentation-title {
-  font-size: 6rem !important;
+  font-size: var(--home-fs-display) !important;
   font-weight: 900 !important;
   font-style: italic !important;
   text-transform: uppercase !important;
   line-height: 0.8 !important;
   letter-spacing: -0.06em !important;
-  color: #ffffff !important;
+  color: var(--heading-color) !important;
   margin: 0 !important;
 }
 
@@ -54,7 +76,9 @@
   margin-right: auto;
 }
 
-/* Stats Indicators */
+/* ============================================================
+   Stats Indicators
+   ============================================================ */
 .presentation-stats {
   display: flex;
   gap: 1rem;
@@ -69,22 +93,33 @@
   flex-direction: column;
 }
 
-.stat-label {
-  font-size: 0.6rem;
-  font-family: monospace;
-  color: #64748b;
+/* Propriedades compartilhadas entre labels de metadados:
+   .stat-label, .section-subtitle, .counter-label
+   — agrupadas para eliminar duplicação de 4 declarações */
+.stat-label,
+.section-subtitle,
+.counter-label {
+  font-family: var(--base-font);
+  color: var(--md-typeset-muted-color);
   text-transform: uppercase;
 }
 
-.stat-value {
-  font-size: 1.3rem;
-  font-weight: 900;
-  font-style: italic;
-  color: #fff;
-  font-family: monospace;
+.stat-label {
+  font-size: var(--home-fs-sm);
+  letter-spacing: 0.05em;
 }
 
-/* Custom Section Headers */
+.stat-value {
+  font-size: var(--home-fs-h3);
+  font-weight: 900;
+  font-style: italic;
+  color: var(--heading-color);
+  font-family: var(--base-font);
+}
+
+/* ============================================================
+   Custom Section Headers
+   ============================================================ */
 .section-header {
   display: flex;
   align-items: flex-end;
@@ -95,41 +130,41 @@
 }
 
 .section-title {
-  font-size: 2rem !important;
+  font-size: var(--home-fs-h1) !important;
   font-weight: 900 !important;
   font-style: italic !important;
   text-transform: uppercase !important;
   letter-spacing: -0.04em !important;
-  color: #fff !important;
+  color: var(--heading-color) !important;
   margin: 0 !important;
 }
 
 .section-subtitle {
-  font-size: 0.65rem;
-  font-family: monospace;
-  color: #64748b;
-  text-transform: uppercase;
+  font-size: var(--home-fs-sm);
   letter-spacing: 0.15em;
-  margin-top: 0.5rem !important;
+  margin-top: 0.5rem;
 }
 
-/* Grid Counter */
+/* ============================================================
+   Grid Counter
+   ============================================================ */
 .section-counter {
   text-align: right;
 }
 
 .counter-label {
   display: block;
-  font-size: 0.6rem;
-  font-family: monospace;
-  color: #475569;
-  text-transform: uppercase;
+  font-size: var(--home-fs-sm);
   font-weight: 700;
+  letter-spacing: 0.1em;
+  color: var(--text-muted-dark);
 }
 
 .counter-value {
-  font-size: 1.5rem;
+  font-size: var(--home-fs-h2);
   font-weight: 900;
   font-style: italic;
-  color: #fff;
+  color: var(--heading-color);
 }
+
+

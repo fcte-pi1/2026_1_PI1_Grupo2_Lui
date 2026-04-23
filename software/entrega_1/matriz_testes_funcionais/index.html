@@ -75,7 +75,7 @@
     
     
     
-    <body dir="ltr" data-md-color-scheme="slate" data-md-color-primary="deep-purple" data-md-color-accent="deep-orange">
+    <body dir="ltr" data-md-color-scheme="slate" data-md-color-primary="deep-purple" data-md-color-accent="deep-purple">
   
     
     <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
@@ -84,7 +84,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#matriz-de-testes-funcionais" class="md-skip">
+        <a href="#roteiro-de-testes-funcionais-micromouse" class="md-skip">
           Pular para conteúdo
         </a>
       
@@ -133,7 +133,7 @@
     
     
     
-    <input class="md-option" data-md-color-media="" data-md-color-scheme="slate" data-md-color-primary="deep-purple" data-md-color-accent="deep-orange"  aria-hidden="true"  type="radio" name="__palette" id="__palette_0">
+    <input class="md-option" data-md-color-media="" data-md-color-scheme="slate" data-md-color-primary="deep-purple" data-md-color-accent="deep-purple"  aria-hidden="true"  type="radio" name="__palette" id="__palette_0">
     
   
 </form>
@@ -980,6 +980,24 @@
         
       
       
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Matriz de Testes Funcionais
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
       <a href="./" class="md-nav__link md-nav__link--active">
         
   
@@ -996,6 +1014,69 @@
   
 
       </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Índice">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Índice
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#testes-unitarios" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Testes Unitários
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#testes-integrados" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Testes Integrados
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#testes-de-sistema" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Testes de Sistema
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#template-para-preenchimento" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Template para Preenchimento
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
       
     </li>
   
@@ -1064,6 +1145,58 @@
     
   
   
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Índice
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#testes-unitarios" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Testes Unitários
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#testes-integrados" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Testes Integrados
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#testes-de-sistema" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Testes de Sistema
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#template-para-preenchimento" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Template para Preenchimento
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
 </nav>
                   </div>
                 </div>
@@ -1082,7 +1215,302 @@
   
 
 
-<h1 id="matriz-de-testes-funcionais">Matriz de Testes Funcionais</h1>
+<h1 id="roteiro-de-testes-funcionais-micromouse">Roteiro de Testes Funcionais — Micromouse</h1>
+<!--
+  SOBRE ESTE ROTEIRO
+  ==================
+  Os testes estão divididos em três partes:
+
+  1. Unitários  — Testa cada peça sozinha (sensor, motor, encoder).
+  2. Integrados — Testa as peças funcionando juntas e a lógica do Flood Fill.
+  3. De Sistema — Testa o robô resolvendo o labirinto de verdade, em duas fases:
+       Fase 1 (Exploração): O robô anda devagar, descobre as paredes e monta um mapa.
+       Fase 2 (Corrida):    Com o mapa pronto, o robô refaz o caminho mais curto em velocidade máxima.
+
+  Seguir sempre a parede direita NÃO funciona em labirintos de competição
+  porque existem "ilhas" de paredes que fazem o robô andar em círculos.
+  Por isso usamos o Flood Fill.
+-->
+
+<hr />
+<h2 id="testes-unitarios">Testes Unitários</h2>
+<!--
+  Cada teste aqui verifica uma peça por vez, separada do resto.
+  Se o sensor ou o motor não funcionar sozinho, não adianta testar o robô inteiro.
+-->
+
+<table>
+<thead>
+<tr>
+<th style="text-align: center;">Código</th>
+<th style="text-align: left;">Caso de Teste</th>
+<th style="text-align: left;">Objetivo</th>
+<th style="text-align: left;">Pré-condições</th>
+<th style="text-align: left;">Procedimentos</th>
+<th style="text-align: left;">Resultado Esperado</th>
+<th style="text-align: left;">Reparo</th>
+<th style="text-align: left;">Pós-Reparo</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: center;"><strong>CT-01</strong></td>
+<td style="text-align: left;"><strong>Detecção Frontal</strong></td>
+<td style="text-align: left;">Diferenciar parede próxima (&lt; 5cm) de ausência.</td>
+<td style="text-align: left;">Robô ligado; Serial Monitor aberto.</td>
+<td style="text-align: left;">1. Aproximar mão (3cm).<br>2. Anotar Serial.<br>3. Afastar mão (10cm).</td>
+<td style="text-align: left;">Mudança clara de valor entre os cenários (Alto vs Baixo).</td>
+<td style="text-align: left;">Ajustar valor de referência de detecção no código.</td>
+<td style="text-align: left;">Confirmar diferença de valores nos dois cenários.</td>
+</tr>
+<tr>
+<td style="text-align: center;"><strong>CT-02</strong></td>
+<td style="text-align: left;"><strong>Detecção Lateral</strong></td>
+<td style="text-align: left;">Verificar sensores laterais sem interferência mútua.</td>
+<td style="text-align: left;">CT-01 aprovado; sensores laterais ativos.</td>
+<td style="text-align: left;">1. Aproximar mão lateral esq.<br>2. Verificar se dir. não muda.<br>3. Repetir para dir.</td>
+<td style="text-align: left;">Detecção independente por sensor, sem interferência.</td>
+<td style="text-align: left;">Verificar pinagem no código ou alinhar sensores físicos.</td>
+<td style="text-align: left;">Confirmar independência das leituras laterais.</td>
+</tr>
+<tr>
+<td style="text-align: center;"><strong>CT-03</strong></td>
+<td style="text-align: left;"><strong>Sentido dos Motores</strong></td>
+<td style="text-align: left;">Validar comandos de Frente e Ré isolados.</td>
+<td style="text-align: left;">Rodas suspensas; bateria carregada.</td>
+<td style="text-align: left;">1. Testar Frente (Esq/Dir).<br>2. Testar Ré (Esq/Dir).<br>3. Observar rotação.</td>
+<td style="text-align: left;">Rotação correta conforme comando, sem travamentos.</td>
+<td style="text-align: left;">Inverter lógica no código ou fiação do motor.</td>
+<td style="text-align: left;">Validar todos os sentidos de rotação novamente.</td>
+</tr>
+<tr>
+<td style="text-align: center;"><strong>CT-04</strong></td>
+<td style="text-align: left;"><strong>Níveis de Potência</strong></td>
+<td style="text-align: left;">Validar diferenciação (30%, 60%, 100%).</td>
+<td style="text-align: left;">CT-03 aprovado; rodas suspensas.</td>
+<td style="text-align: left;">1. Testar Potência Baixa.<br>2. Testar Média.<br>3. Testar Máxima.</td>
+<td style="text-align: left;">Velocidade aumenta visivelmente em cada nível.</td>
+<td style="text-align: left;">Verificar tensão da fonte ou PWM no código.</td>
+<td style="text-align: left;">Confirmar ganho de velocidade perceptível.</td>
+</tr>
+<tr>
+<td style="text-align: center;"><strong>CT-05</strong></td>
+<td style="text-align: left;"><strong>Leitura de Encoder</strong></td>
+<td style="text-align: left;">Validar contagem de pulsos (volta completa).</td>
+<td style="text-align: left;">Codigo ativo; Serial Monitor aberto.</td>
+<td style="text-align: left;">1. Zerar contador.<br>2. Girar roda manualmente (1 volta).<br>3. Ler Serial.</td>
+<td style="text-align: left;">Registro igual ao especificado (variação +/- 1 pulso).</td>
+<td style="text-align: left;">Validar pino de leitura ou lógica de interrupção.</td>
+<td style="text-align: left;">Garantir contagem consistente em 3 voltas.</td>
+</tr>
+<tr>
+<td style="text-align: center;"><strong>CT-06</strong></td>
+<td style="text-align: left;"><strong>Inicialização Geral</strong></td>
+<td style="text-align: left;">Garantir boot limpo de todos componentes.</td>
+<td style="text-align: left;">Robô montado; Serial Monitor aberto.</td>
+<td style="text-align: left;">1. Ligar robô.<br>2. Monitorar inicialização.<br>3. Aguardar ociosidade.</td>
+<td style="text-align: left;">Boot sem erros; robô imóvel e pronto para uso.</td>
+<td style="text-align: left;">Identificar erro no Serial; checar pinagem/conexões.</td>
+<td style="text-align: left;">Confirmar sequência de boot estável.</td>
+</tr>
+<tr>
+<td style="text-align: center;"><strong>CT-07</strong></td>
+<td style="text-align: left;"><strong>Parada de Segurança</strong></td>
+<td style="text-align: left;">Reação ao sensor frontal durante movimento.</td>
+<td style="text-align: left;">CT-01 e CT-03 aprovados; Parede a 30cm.</td>
+<td style="text-align: left;">1. Avançar rumo à parede.<br>2. Observar ponto de frenagem.</td>
+<td style="text-align: left;">Parada completa sem colisão física.</td>
+<td style="text-align: left;">Aumentar distância de segurança (threshold) no código.</td>
+<td style="text-align: left;">Validar parada segura em múltiplas distâncias.</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="testes-integrados">Testes Integrados</h2>
+<!--
+  Aqui as peças são testadas funcionando juntas.
+  CT-08 a CT-12: O robô anda, faz curvas e para — motores e sensores cooperando.
+  CT-13: O robô guarda no mapa onde tem parede e onde não tem.
+  CT-14: O Flood Fill funciona assim:
+    - O centro do labirinto recebe o valor 0 (é o destino).
+    - As células ao redor recebem 1, depois 2, 3... como uma enchente se espalhando.
+    - O robô sempre anda para o vizinho com o número menor.
+    - Se descobre uma parede nova, refaz a enchente e continua.
+    - Com isso, ele sempre encontra o caminho mais curto que conhece até ali.
+-->
+
+<table>
+<thead>
+<tr>
+<th style="text-align: center;">Código</th>
+<th style="text-align: left;">Caso de Teste</th>
+<th style="text-align: left;">Objetivo</th>
+<th style="text-align: left;">Pré-condições</th>
+<th style="text-align: left;">Procedimentos</th>
+<th style="text-align: left;">Resultado Esperado</th>
+<th style="text-align: left;">Reparo</th>
+<th style="text-align: left;">Pós-Reparo</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: center;"><strong>CT-08</strong></td>
+<td style="text-align: left;"><strong>Avanço de Célula</strong></td>
+<td style="text-align: left;">Validar deslocamento motor + encoder.</td>
+<td style="text-align: left;">CT-03, 05, 07 aprovados; Corredor reto.</td>
+<td style="text-align: left;">1. Marcar posição inicial.<br>2. Comandar avanço (1 célula).<br>3. Medir parada.</td>
+<td style="text-align: left;">Parada precisa dentro da célula seguinte.</td>
+<td style="text-align: left;">Ajustar conversão pulsos -&gt; cm no código.</td>
+<td style="text-align: left;">Validar 5 avanços consecutivos com precisão.</td>
+</tr>
+<tr>
+<td style="text-align: center;"><strong>CT-09</strong></td>
+<td style="text-align: left;"><strong>Trajetória Contínua</strong></td>
+<td style="text-align: left;">Validar linearidade em múltiplas células.</td>
+<td style="text-align: left;">CT-08 aprovado; Corredor reto (4 células).</td>
+<td style="text-align: left;">1. Avançar 3 células seguidas.<br>2. Observar centralização final.</td>
+<td style="text-align: left;">Robô centralizado na 3ª célula, sem colisões laterais.</td>
+<td style="text-align: left;">Calibrar velocidades dos motores (trimpot ou software).</td>
+<td style="text-align: left;">Confirmar trajetória reta em percurso longo.</td>
+</tr>
+<tr>
+<td style="text-align: center;"><strong>CT-10</strong></td>
+<td style="text-align: left;"><strong>Correção de Rumo</strong></td>
+<td style="text-align: left;">Validar alinhamento dinâmico via sensores.</td>
+<td style="text-align: left;">CT-02, 09 aprovados; Corredor padrão.</td>
+<td style="text-align: left;">1. Iniciar robô torto (10°).<br>2. Observar autocorreção.</td>
+<td style="text-align: left;">Robô se alinha e percorre o eixo central sem tocar paredes.</td>
+<td style="text-align: left;">Revisar lógica de controle Proporcional (PID) lateral.</td>
+<td style="text-align: left;">Confirmar alinhamento partindo de diversos ângulos.</td>
+</tr>
+<tr>
+<td style="text-align: center;"><strong>CT-11</strong></td>
+<td style="text-align: left;"><strong>Curvas de 90°</strong></td>
+<td style="text-align: left;">Validar rotação angular precisa.</td>
+<td style="text-align: left;">CT-08 aprovado; Trecho com curva.</td>
+<td style="text-align: left;">1. Executar curva Esq.<br>2. Executar curva Dir.<br>3. Checar alinhamento.</td>
+<td style="text-align: left;">Robô finaliza rotação alinhado ao novo corredor.</td>
+<td style="text-align: left;">Ajustar constantes de tempo/delay de rotação.</td>
+<td style="text-align: left;">Confirmar alinhamento consistente em 3 ciclos.</td>
+</tr>
+<tr>
+<td style="text-align: center;"><strong>CT-12</strong></td>
+<td style="text-align: left;"><strong>Meia-Volta (180°)</strong></td>
+<td style="text-align: left;">Validar detecção de Dead End e retorno.</td>
+<td style="text-align: left;">CT-07, 11 aprovados; Célula sem saída.</td>
+<td style="text-align: left;">1. Entrar no corredor cego.<br>2. Observar manobra de saída.</td>
+<td style="text-align: left;">Identificação do bloqueio + rotação 180° e saída limpa.</td>
+<td style="text-align: left;">Corrigir lógica condicional de sensores (F+L+R).</td>
+<td style="text-align: left;">Validar manobra sem colisões em beco sem saída.</td>
+</tr>
+<tr>
+<td style="text-align: center;"><strong>CT-13</strong></td>
+<td style="text-align: left;"><strong>Escrita de Mapa</strong></td>
+<td style="text-align: left;"></td>
+<td style="text-align: left;"></td>
+<td style="text-align: left;"></td>
+<td style="text-align: left;"></td>
+<td style="text-align: left;"></td>
+<td style="text-align: left;"></td>
+</tr>
+<tr>
+<td style="text-align: center;"><strong>CT-14</strong></td>
+<td style="text-align: left;"><strong>Lógica Flood Fill</strong></td>
+<td style="text-align: left;"></td>
+<td style="text-align: left;"></td>
+<td style="text-align: left;"></td>
+<td style="text-align: left;"></td>
+<td style="text-align: left;"></td>
+<td style="text-align: left;"></td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="testes-de-sistema">Testes de Sistema</h2>
+<!--
+  O robô resolve o labirinto em duas etapas:
+
+  Fase 1 — Exploração (CT-15)
+    O robô não sabe nada sobre o labirinto.
+    Ele anda devagar, célula por célula, anotando onde tem parede.
+    Usa o Flood Fill para escolher para onde ir.
+    Cada vez que encontra uma parede nova, refaz a "enchente" de números.
+    O importante aqui é chegar ao centro sem bater — pode ser lento.
+
+  Fase 2 — Corrida (CT-16)
+    Agora o robô já tem o mapa na memória.
+    Ele calcula o caminho mais curto e percorre em velocidade máxima.
+    É essa fase que vale na competição.
+
+  Para o nosso projeto (PI1), o objetivo é:
+    Fazer o Flood Fill básico funcionar, explorar o labirinto inteiro
+    e depois tentar a corrida. A primeira vez vai ser devagar, e tá tudo bem.
+-->
+
+<table>
+<thead>
+<tr>
+<th style="text-align: center;">Código</th>
+<th style="text-align: left;">Caso de Teste</th>
+<th style="text-align: left;">Objetivo</th>
+<th style="text-align: left;">Pré-condições</th>
+<th style="text-align: left;">Procedimentos</th>
+<th style="text-align: left;">Resultado Esperado</th>
+<th style="text-align: left;">Reparo</th>
+<th style="text-align: left;">Pós-Reparo</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: center;"><strong>CT-15</strong></td>
+<td style="text-align: left;"><strong>Fase 1 — Exploração</strong></td>
+<td style="text-align: left;"></td>
+<td style="text-align: left;"></td>
+<td style="text-align: left;"></td>
+<td style="text-align: left;"></td>
+<td style="text-align: left;"></td>
+<td style="text-align: left;"></td>
+</tr>
+<tr>
+<td style="text-align: center;"><strong>CT-16</strong></td>
+<td style="text-align: left;"><strong>Fase 2 — Corrida</strong></td>
+<td style="text-align: left;"></td>
+<td style="text-align: left;"></td>
+<td style="text-align: left;"></td>
+<td style="text-align: left;"></td>
+<td style="text-align: left;"></td>
+<td style="text-align: left;"></td>
+</tr>
+</tbody>
+</table>
+<h2 id="template-para-preenchimento">Template para Preenchimento</h2>
+<table>
+<thead>
+<tr>
+<th style="text-align: center;">Código</th>
+<th style="text-align: left;">Caso de Teste</th>
+<th style="text-align: left;">Objetivo</th>
+<th style="text-align: left;">Pré-condições</th>
+<th style="text-align: left;">Procedimentos</th>
+<th style="text-align: left;">Resultado Esperado</th>
+<th style="text-align: left;">Reparo</th>
+<th style="text-align: left;">Pós-Reparo</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: center;"><strong>CT-0X</strong></td>
+<td style="text-align: left;"><strong>Nome do Teste</strong></td>
+<td style="text-align: left;">Finalidade técnica...</td>
+<td style="text-align: left;">Estado do sistema...</td>
+<td style="text-align: left;">1. Passo A<br>2. Passo B</td>
+<td style="text-align: left;">Pós-condição final...</td>
+<td style="text-align: left;">Ação corretiva...</td>
+<td style="text-align: left;">Re-teste final...</td>
+</tr>
+</tbody>
+</table>
+<hr />
 
 
 
