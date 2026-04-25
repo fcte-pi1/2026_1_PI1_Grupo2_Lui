@@ -1063,17 +1063,6 @@
   
 </li>
       
-        <li class="md-nav__item">
-  <a href="#template-para-preenchimento" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Template para Preenchimento
-      
-    </span>
-  </a>
-  
-</li>
-      
     </ul>
   
 </nav>
@@ -1178,17 +1167,6 @@
     <span class="md-ellipsis">
       
         Testes de Sistema
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#template-para-preenchimento" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Template para Preenchimento
       
     </span>
   </a>
@@ -1406,22 +1384,22 @@
 <tr>
 <td style="text-align: center;"><strong>CT-13</strong></td>
 <td style="text-align: left;"><strong>Escrita de Mapa</strong></td>
-<td style="text-align: left;"></td>
-<td style="text-align: left;"></td>
-<td style="text-align: left;"></td>
-<td style="text-align: left;"></td>
-<td style="text-align: left;"></td>
-<td style="text-align: left;"></td>
+<td style="text-align: left;">Validar se o robô salva corretamente as paredes na matriz de memória.</td>
+<td style="text-align: left;">CT-01, CT-02 aprovados; robô em uma célula de teste; Serial aberto.</td>
+<td style="text-align: left;">1. Colocar o robô em célula com paredes conhecidas (ex: Esq e Frente).<br>2. Ler os sensores.<br>3. Imprimir matriz no Serial.</td>
+<td style="text-align: left;">A matriz reflete exatamente as paredes lidas na célula atual (ex: salva 1 onde tem parede e 0 onde não tem).</td>
+<td style="text-align: left;">Revisar uso de índices (X, Y) ou manipulação de bits na gravação do array.</td>
+<td style="text-align: left;">Validar o mapeamento movendo o robô para 3 células diferentes.</td>
 </tr>
 <tr>
 <td style="text-align: center;"><strong>CT-14</strong></td>
 <td style="text-align: left;"><strong>Lógica Flood Fill</strong></td>
-<td style="text-align: left;"></td>
-<td style="text-align: left;"></td>
-<td style="text-align: left;"></td>
-<td style="text-align: left;"></td>
-<td style="text-align: left;"></td>
-<td style="text-align: left;"></td>
+<td style="text-align: left;">Validar a atualização dos pesos numéricos para encontrar o centro.</td>
+<td style="text-align: left;">CT-13 aprovado; mapa inicializado com paredes (simulação via código).</td>
+<td style="text-align: left;">1. Injetar um labirinto simulado na memória.<br>2. Rodar a função Flood Fill.<br>3. Verificar no Serial o próximo movimento.</td>
+<td style="text-align: left;">O algoritmo atribui os "pesos" corretamente e escolhe mover para a célula vizinha com o menor valor numérico.</td>
+<td style="text-align: left;">Corrigir lógica da fila ou cálculo de células adjacentes no código.</td>
+<td style="text-align: left;">O algoritmo deve traçar o caminho perfeito em um mapa estático conhecido no Serial.</td>
 </tr>
 </tbody>
 </table>
@@ -1464,53 +1442,33 @@
 <tr>
 <td style="text-align: center;"><strong>CT-15</strong></td>
 <td style="text-align: left;"><strong>Fase 1 — Exploração</strong></td>
-<td style="text-align: left;"></td>
-<td style="text-align: left;"></td>
-<td style="text-align: left;"></td>
-<td style="text-align: left;"></td>
-<td style="text-align: left;"></td>
-<td style="text-align: left;"></td>
+<td style="text-align: left;">Validar a navegação autônoma do início ao centro construindo o mapa.</td>
+<td style="text-align: left;">CT-08 a CT-14 aprovados; labirinto físico montado; robô na largada.</td>
+<td style="text-align: left;">1. Ligar o robô no Modo Exploração.<br>2. Soltar o robô.<br>3. Acompanhar mapeamento e recalculos até o centro.</td>
+<td style="text-align: left;">O robô anda célula a célula, não bate nas paredes, refaz o Flood Fill ao achar becos e para na célula central.</td>
+<td style="text-align: left;">Ajustar máquina de estados principal ou recalibrar constantes do PID.</td>
+<td style="text-align: left;">O robô deve conseguir chegar ao centro sozinho pelo menos uma vez, mesmo que lento.</td>
 </tr>
 <tr>
 <td style="text-align: center;"><strong>CT-16</strong></td>
 <td style="text-align: left;"><strong>Fase 2 — Corrida</strong></td>
-<td style="text-align: left;"></td>
-<td style="text-align: left;"></td>
-<td style="text-align: left;"></td>
-<td style="text-align: left;"></td>
-<td style="text-align: left;"></td>
-<td style="text-align: left;"></td>
+<td style="text-align: left;">Validar a execução do trajeto ótimo (caminho mais curto) utilizando o mapa salvo.</td>
+<td style="text-align: left;">CT-15 concluído com sucesso (mapa completo na memória).</td>
+<td style="text-align: left;">1. Posicionar robô de volta na largada.<br>2. Acionar Modo Corrida.<br>3. Observar o trajeto escolhido pelo robô.</td>
+<td style="text-align: left;">O robô percorre o caminho mais curto de forma contínua e direta, ignorando os becos mapeados anteriormente.</td>
+<td style="text-align: left;">Ajustar leitura da matriz de caminhos na memória para evitar re-exploração ou loop.</td>
+<td style="text-align: left;">Completar o percurso de forma direta do início ao centro, sem entrar em becos já conhecidos.</td>
 </tr>
 </tbody>
 </table>
-<h2 id="template-para-preenchimento">Template para Preenchimento</h2>
-<table>
-<thead>
-<tr>
-<th style="text-align: center;">Código</th>
-<th style="text-align: left;">Caso de Teste</th>
-<th style="text-align: left;">Objetivo</th>
-<th style="text-align: left;">Pré-condições</th>
-<th style="text-align: left;">Procedimentos</th>
-<th style="text-align: left;">Resultado Esperado</th>
-<th style="text-align: left;">Reparo</th>
-<th style="text-align: left;">Pós-Reparo</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td style="text-align: center;"><strong>CT-0X</strong></td>
-<td style="text-align: left;"><strong>Nome do Teste</strong></td>
-<td style="text-align: left;">Finalidade técnica...</td>
-<td style="text-align: left;">Estado do sistema...</td>
-<td style="text-align: left;">1. Passo A<br>2. Passo B</td>
-<td style="text-align: left;">Pós-condição final...</td>
-<td style="text-align: left;">Ação corretiva...</td>
-<td style="text-align: left;">Re-teste final...</td>
-</tr>
-</tbody>
-</table>
-<hr />
+<!--
+## Template para Preenchimento
+
+| Código | Caso de Teste | Objetivo | Pré-condições | Procedimentos | Resultado Esperado | Reparo | Pós-Reparo |
+| :---: | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
+| **CT-0X** | **Nome do Teste** | Finalidade técnica... | Estado do sistema... | 1. Passo A<br>2. Passo B | Pós-condição final... | Ação corretiva... | Re-teste final... |
+
+-->
 
 
 
