@@ -1042,10 +1042,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#testes-integrados" class="md-nav__link">
+  <a href="#testes-de-integracao" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Testes Integrados
+        Testes de Integração
       
     </span>
   </a>
@@ -1057,6 +1057,28 @@
     <span class="md-ellipsis">
       
         Testes de Sistema
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#testes-de-servidor-backend" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Testes de Servidor (Backend)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#testes-de-dashboard-frontend" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Testes de Dashboard (Frontend)
       
     </span>
   </a>
@@ -1152,10 +1174,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#testes-integrados" class="md-nav__link">
+  <a href="#testes-de-integracao" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Testes Integrados
+        Testes de Integração
       
     </span>
   </a>
@@ -1167,6 +1189,28 @@
     <span class="md-ellipsis">
       
         Testes de Sistema
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#testes-de-servidor-backend" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Testes de Servidor (Backend)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#testes-de-dashboard-frontend" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Testes de Dashboard (Frontend)
       
     </span>
   </a>
@@ -1291,22 +1335,13 @@
 <td style="text-align: left;">Identificar erro no Serial; checar pinagem/conexões.</td>
 <td style="text-align: left;">Confirmar sequência de boot estável.</td>
 </tr>
-<tr>
-<td style="text-align: center;"><strong>CT-07</strong></td>
-<td style="text-align: left;"><strong>Parada de Segurança</strong></td>
-<td style="text-align: left;">Reação ao sensor frontal durante movimento.</td>
-<td style="text-align: left;">CT-01 e CT-03 aprovados; Parede a 30cm.</td>
-<td style="text-align: left;">1. Avançar rumo à parede.<br>2. Observar ponto de frenagem.</td>
-<td style="text-align: left;">Parada completa sem colisão física.</td>
-<td style="text-align: left;">Aumentar distância de segurança (threshold) no código.</td>
-<td style="text-align: left;">Validar parada segura em múltiplas distâncias.</td>
-</tr>
 </tbody>
 </table>
 <hr />
-<h2 id="testes-integrados">Testes Integrados</h2>
+<h2 id="testes-de-integracao">Testes de Integração</h2>
 <!--
   Aqui as peças são testadas funcionando juntas.
+  CT-07: Parada de Segurança — interação entre sensor frontal e motor.
   CT-08 a CT-12: O robô anda, faz curvas e para — motores e sensores cooperando.
   CT-13: O robô guarda no mapa onde tem parede e onde não tem.
   CT-14: O Flood Fill funciona assim:
@@ -1331,6 +1366,16 @@
 </tr>
 </thead>
 <tbody>
+<tr>
+<td style="text-align: center;"><strong>CT-07</strong></td>
+<td style="text-align: left;"><strong>Parada de Segurança</strong></td>
+<td style="text-align: left;">Reação ao sensor frontal durante movimento.</td>
+<td style="text-align: left;">CT-01 e CT-03 aprovados; Parede a 30cm.</td>
+<td style="text-align: left;">1. Avançar rumo à parede.<br>2. Observar ponto de frenagem.</td>
+<td style="text-align: left;">Parada completa sem colisão física.</td>
+<td style="text-align: left;">Aumentar distância de segurança (threshold) no código.</td>
+<td style="text-align: left;">Validar parada segura em múltiplas distâncias.</td>
+</tr>
 <tr>
 <td style="text-align: center;"><strong>CT-08</strong></td>
 <td style="text-align: left;"><strong>Avanço de Célula</strong></td>
@@ -1461,6 +1506,197 @@
 </tr>
 </tbody>
 </table>
+<hr />
+<h2 id="testes-de-servidor-backend">Testes de Servidor (Backend)</h2>
+<!--
+  Estes testes verificam o pool Servidor do BPMN: recepção de telemetria,
+  retransmissão via WebSocket ao Dashboard e persistência no banco de dados.
+  Nenhuma interação com o firmware real é necessária — os pacotes podem ser
+  simulados via script ou ferramenta como Postman / curl.
+-->
+
+<table>
+<thead>
+<tr>
+<th style="text-align: center;">Código</th>
+<th style="text-align: left;">Caso de Teste</th>
+<th style="text-align: left;">Objetivo</th>
+<th style="text-align: left;">Pré-condições</th>
+<th style="text-align: left;">Procedimentos</th>
+<th style="text-align: left;">Resultado Esperado</th>
+<th style="text-align: left;">Reparo</th>
+<th style="text-align: left;">Pós-Reparo</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: center;"><strong>CT-17</strong></td>
+<td style="text-align: left;"><strong>Recepção de Telemetria</strong></td>
+<td style="text-align: left;">Verificar se o servidor recebe corretamente um pacote de telemetria enviado pelo Micromouse.</td>
+<td style="text-align: left;">Servidor em execução; endpoint de recepção ativo.</td>
+<td style="text-align: left;">1. Enviar pacote de telemetria simulado (posição, paredes, bateria, velocidade, timestamp).<br>2. Verificar log do servidor.</td>
+<td style="text-align: left;">Servidor registra o recebimento sem erro; todos os campos do pacote são identificados.</td>
+<td style="text-align: left;">Revisar parsing do pacote ou configuração do endpoint.</td>
+<td style="text-align: left;">Reenviar pacote e confirmar recepção completa.</td>
+</tr>
+<tr>
+<td style="text-align: center;"><strong>CT-18</strong></td>
+<td style="text-align: left;"><strong>Rejeição de Pacote Malformado</strong></td>
+<td style="text-align: left;">Verificar se o servidor rejeita pacotes inválidos sem travar ou lançar exceção não tratada.</td>
+<td style="text-align: left;">Servidor em execução.</td>
+<td style="text-align: left;">1. Enviar pacote com campos ausentes.<br>2. Enviar pacote com tipo de dado errado.<br>3. Enviar payload vazio.</td>
+<td style="text-align: left;">Servidor retorna erro apropriado (ex.: 400 Bad Request) e continua operando normalmente.</td>
+<td style="text-align: left;">Adicionar validação de schema na camada de recepção.</td>
+<td style="text-align: left;">Reenviar pacote malformado e confirmar que o servidor permanece estável.</td>
+</tr>
+<tr>
+<td style="text-align: center;"><strong>CT-19</strong></td>
+<td style="text-align: left;"><strong>Ordem: Retransmitir antes de Persistir</strong></td>
+<td style="text-align: left;">Verificar se o servidor retransmite os dados ao Dashboard via WebSocket antes de gravá-los no banco.</td>
+<td style="text-align: left;">Servidor, Dashboard e banco de dados em execução; cliente WebSocket conectado.</td>
+<td style="text-align: left;">1. Enviar pacote de telemetria com flag de conclusão.<br>2. Registrar o timestamp de recebimento do dado no Dashboard.<br>3. Registrar o timestamp de inserção no banco.</td>
+<td style="text-align: left;">O Dashboard recebe o dado antes (ou ao mesmo tempo) que o banco registra a inserção — nunca depois.</td>
+<td style="text-align: left;">Revisar ordem de chamadas no handler do servidor (WebSocket primeiro, banco depois).</td>
+<td style="text-align: left;">Repetir o teste e comparar timestamps em 3 execuções.</td>
+</tr>
+<tr>
+<td style="text-align: center;"><strong>CT-20</strong></td>
+<td style="text-align: left;"><strong>Persistência ao Concluir Desafio</strong></td>
+<td style="text-align: left;">Verificar se os dados são gravados no banco somente após o recebimento da flag de conclusão.</td>
+<td style="text-align: left;">Servidor e banco em execução.</td>
+<td style="text-align: left;">1. Enviar sequência de pacotes de telemetria sem flag de conclusão.<br>2. Consultar banco após cada envio.<br>3. Enviar pacote final com flag de conclusão.<br>4. Consultar banco novamente.</td>
+<td style="text-align: left;">Nenhum registro no banco durante os passos 1–2; registro inserido somente após o passo 3.</td>
+<td style="text-align: left;">Verificar lógica do gateway "Desafio concluído?" no servidor.</td>
+<td style="text-align: left;">Repetir sequência e confirmar ausência de registro prematuro.</td>
+</tr>
+<tr>
+<td style="text-align: center;"><strong>CT-21</strong></td>
+<td style="text-align: left;"><strong>Corrida Interrompida Não Persiste</strong></td>
+<td style="text-align: left;">Verificar se uma corrida encerrada sem flag de conclusão não gera registro no banco.</td>
+<td style="text-align: left;">Servidor e banco em execução.</td>
+<td style="text-align: left;">1. Enviar pacotes de telemetria normalmente.<br>2. Encerrar conexão abruptamente (sem enviar flag de conclusão).<br>3. Consultar banco.</td>
+<td style="text-align: left;">Nenhum registro inserido para essa corrida.</td>
+<td style="text-align: left;">Adicionar tratamento de desconexão abrupta no servidor.</td>
+<td style="text-align: left;">Repetir interrupção e confirmar banco inalterado.</td>
+</tr>
+<tr>
+<td style="text-align: center;"><strong>CT-22</strong></td>
+<td style="text-align: left;"><strong>Consulta Filtrada por Labirinto</strong></td>
+<td style="text-align: left;">Verificar se a API retorna corretamente os registros de um labirinto específico.</td>
+<td style="text-align: left;">Banco com registros de corridas nos três tipos de labirinto (4×4, 8×8, 16×16).</td>
+<td style="text-align: left;">1. Chamar endpoint com filtro "4×4".<br>2. Chamar com filtro "8×8".<br>3. Chamar com filtro "16×16".<br>4. Verificar registros retornados em cada chamada.</td>
+<td style="text-align: left;">Cada chamada retorna apenas registros do tipo de labirinto solicitado, sem misturar outros tipos.</td>
+<td style="text-align: left;">Revisar cláusula WHERE da query de consulta.</td>
+<td style="text-align: left;">Repetir consultas e validar segregação dos dados.</td>
+</tr>
+<tr>
+<td style="text-align: center;"><strong>CT-23</strong></td>
+<td style="text-align: left;"><strong>Consulta com Filtro "Todos"</strong></td>
+<td style="text-align: left;">Verificar se a API retorna todos os registros quando o filtro selecionado é "todos os labirintos".</td>
+<td style="text-align: left;">Banco com registros de ao menos dois tipos de labirinto diferentes.</td>
+<td style="text-align: left;">1. Chamar endpoint sem filtro de tipo (ou com parâmetro "todos").<br>2. Comparar quantidade de registros retornados com total no banco.</td>
+<td style="text-align: left;">Todos os registros de todas as corridas são retornados, sem omissão.</td>
+<td style="text-align: left;">Verificar ausência de filtro indevido na query padrão.</td>
+<td style="text-align: left;">Inserir novo registro e confirmar que aparece na consulta geral.</td>
+</tr>
+<tr>
+<td style="text-align: center;"><strong>CT-24</strong></td>
+<td style="text-align: left;"><strong>Consulta com Banco Vazio</strong></td>
+<td style="text-align: left;">Verificar o comportamento da API quando não há corridas cadastradas.</td>
+<td style="text-align: left;">Banco vazio (sem nenhum registro de corrida).</td>
+<td style="text-align: left;">1. Chamar endpoint de consulta geral.<br>2. Chamar endpoint com filtro de labirinto específico.</td>
+<td style="text-align: left;">API retorna lista vazia (ex.: <code>[]</code>) com status 200, sem erro 500 ou exceção.</td>
+<td style="text-align: left;">Adicionar tratamento explícito para resultado vazio na camada de consulta.</td>
+<td style="text-align: left;">Repetir consultas e confirmar retorno vazio sem erro.</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="testes-de-dashboard-frontend">Testes de Dashboard (Frontend)</h2>
+<!--
+  Estes testes verificam o pool Dashboard do BPMN: conexão WebSocket,
+  exibição de telemetria em tempo real e consulta de histórico via API REST.
+  Podem ser executados com o servidor real ou com um servidor mock que simule
+  os eventos WebSocket e as respostas REST.
+-->
+
+<table>
+<thead>
+<tr>
+<th style="text-align: center;">Código</th>
+<th style="text-align: left;">Caso de Teste</th>
+<th style="text-align: left;">Objetivo</th>
+<th style="text-align: left;">Pré-condições</th>
+<th style="text-align: left;">Procedimentos</th>
+<th style="text-align: left;">Resultado Esperado</th>
+<th style="text-align: left;">Reparo</th>
+<th style="text-align: left;">Pós-Reparo</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: center;"><strong>CT-25</strong></td>
+<td style="text-align: left;"><strong>Conexão WebSocket</strong></td>
+<td style="text-align: left;">Verificar se o Dashboard estabelece conexão WebSocket automaticamente ao ser acessado.</td>
+<td style="text-align: left;">Servidor em execução com WebSocket ativo.</td>
+<td style="text-align: left;">1. Abrir o Dashboard no navegador.<br>2. Verificar log de conexão no servidor.<br>3. Verificar indicador de status no Dashboard (se existir).</td>
+<td style="text-align: left;">Conexão WebSocket estabelecida sem interação manual do usuário; servidor registra o cliente conectado.</td>
+<td style="text-align: left;">Verificar URL do WebSocket no frontend e configuração de CORS no servidor.</td>
+<td style="text-align: left;">Recarregar página e confirmar reconexão automática.</td>
+</tr>
+<tr>
+<td style="text-align: center;"><strong>CT-26</strong></td>
+<td style="text-align: left;"><strong>Exibição dos 6 Campos de Telemetria</strong></td>
+<td style="text-align: left;">Verificar se todos os campos obrigatórios são exibidos em tempo real no painel.</td>
+<td style="text-align: left;">Dashboard conectado ao WebSocket; servidor enviando stream de telemetria simulado.</td>
+<td style="text-align: left;">1. Iniciar stream de telemetria com todos os campos.<br>2. Verificar no Dashboard a presença e atualização de: Tipo do labirinto, Trajeto, Consumo de bateria, Velocidade média, Tempo decorrido, Status do desafio (S/N).</td>
+<td style="text-align: left;">Todos os 6 campos aparecem e são atualizados a cada pacote recebido.</td>
+<td style="text-align: left;">Identificar campo ausente e corrigir binding no frontend.</td>
+<td style="text-align: left;">Reenviar stream e confirmar atualização de todos os campos.</td>
+</tr>
+<tr>
+<td style="text-align: center;"><strong>CT-27</strong></td>
+<td style="text-align: left;"><strong>Exibição de Dados Consolidados ao Fim da Corrida</strong></td>
+<td style="text-align: left;">Verificar se o Dashboard detecta o encerramento do stream e exibe os dados finais consolidados.</td>
+<td style="text-align: left;">Dashboard conectado; servidor prestes a enviar pacote de conclusão.</td>
+<td style="text-align: left;">1. Enviar sequência de pacotes de telemetria.<br>2. Enviar pacote final com flag de conclusão.<br>3. Observar mudança na interface.</td>
+<td style="text-align: left;">Dashboard transita da exibição em tempo real para a tela de dados consolidados sem ação manual do usuário.</td>
+<td style="text-align: left;">Revisar lógica do gateway "Corrida finalizada?" no frontend.</td>
+<td style="text-align: left;">Repetir o ciclo completo e confirmar transição automática.</td>
+</tr>
+<tr>
+<td style="text-align: center;"><strong>CT-28</strong></td>
+<td style="text-align: left;"><strong>Filtro por Labirinto Específico</strong></td>
+<td style="text-align: left;">Verificar se o usuário consegue consultar o histórico de um labirinto específico.</td>
+<td style="text-align: left;">Banco com registros de corridas; API REST disponível.</td>
+<td style="text-align: left;">1. Selecionar filtro "4×4" no Dashboard.<br>2. Confirmar requisição enviada ao servidor.<br>3. Verificar dados exibidos.</td>
+<td style="text-align: left;">Apenas registros do labirinto 4×4 são exibidos; dados de outros tipos não aparecem.</td>
+<td style="text-align: left;">Verificar parâmetro de filtro enviado na requisição REST.</td>
+<td style="text-align: left;">Repetir para 8×8 e 16×16 e confirmar segregação correta.</td>
+</tr>
+<tr>
+<td style="text-align: center;"><strong>CT-29</strong></td>
+<td style="text-align: left;"><strong>Filtro "Todos os Labirintos"</strong></td>
+<td style="text-align: left;">Verificar se o usuário consegue visualizar o histórico completo de todas as corridas.</td>
+<td style="text-align: left;">Banco com registros de ao menos dois tipos de labirinto.</td>
+<td style="text-align: left;">1. Selecionar opção "Todos" no Dashboard.<br>2. Confirmar requisição enviada.<br>3. Verificar dados exibidos.</td>
+<td style="text-align: left;">Todos os registros de todas as corridas são exibidos, sem omissão de nenhum tipo de labirinto.</td>
+<td style="text-align: left;">Verificar se o frontend envia a requisição sem filtro de tipo.</td>
+<td style="text-align: left;">Inserir novo registro e confirmar que aparece na listagem.</td>
+</tr>
+<tr>
+<td style="text-align: center;"><strong>CT-30</strong></td>
+<td style="text-align: left;"><strong>Reconexão WebSocket</strong></td>
+<td style="text-align: left;">Verificar o comportamento do Dashboard após perda e restabelecimento da conexão WebSocket.</td>
+<td style="text-align: left;">Dashboard conectado; servidor em execução.</td>
+<td style="text-align: left;">1. Estabelecer conexão WebSocket.<br>2. Derrubar o servidor temporariamente (simular queda de rede).<br>3. Restaurar o servidor.<br>4. Observar comportamento do Dashboard.</td>
+<td style="text-align: left;">Dashboard exibe indicação de conexão perdida e reconecta automaticamente ao servidor sem necessidade de recarregar a página.</td>
+<td style="text-align: left;">Implementar lógica de reconexão automática (ex.: backoff exponencial) no cliente WebSocket.</td>
+<td style="text-align: left;">Repetir queda de conexão e confirmar reconexão em até 30 segundos.</td>
+</tr>
+</tbody>
+</table>
+<hr />
 <!--
 ## Template para Preenchimento
 
