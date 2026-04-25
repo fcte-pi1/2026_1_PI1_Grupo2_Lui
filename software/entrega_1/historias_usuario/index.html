@@ -656,6 +656,67 @@
   
 </li>
       
+        <li class="md-nav__item">
+  <a href="#backlog-funcional-de-software" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Backlog Funcional de Software
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Backlog Funcional de Software">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#1-firmware-navegacao" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1. Firmware Navegação
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#2-firmware-telemetria" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2. Firmware Telemetria
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#3-sistema-web-tempo-real" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3. Sistema Web Tempo Real
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#4-sistema-web-banco-de-dados" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4. Sistema Web Banco de Dados
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
     </ul>
   
 </nav>
@@ -1129,6 +1190,67 @@
   
 </li>
       
+        <li class="md-nav__item">
+  <a href="#backlog-funcional-de-software" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Backlog Funcional de Software
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Backlog Funcional de Software">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#1-firmware-navegacao" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1. Firmware Navegação
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#2-firmware-telemetria" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2. Firmware Telemetria
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#3-sistema-web-tempo-real" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3. Sistema Web Tempo Real
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#4-sistema-web-banco-de-dados" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4. Sistema Web Banco de Dados
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
     </ul>
   
 </nav>
@@ -1156,9 +1278,159 @@
 <li><strong>US: Definição da Arquitetura e Persistência</strong> (#31)</li>
 <li><strong>US: Planejamento de Testes Funcionais</strong> (#29)</li>
 <li><strong>US: Prototipagem e Comportamento do Software</strong> (#27)</li>
-<li><strong>US: Backlog Funcional (MoSCoW)</strong> (#25)</li>
+<li><strong>US: Backlog Funcional (MoSCoW)</strong> (#35, #42)</li>
 <li><strong>US: Mapeamento de Processos e Fluxos</strong> (#23)</li>
 </ul>
+<hr />
+<h2 id="backlog-funcional-de-software">Backlog Funcional de Software</h2>
+<p>Abaixo estão listadas as funcionalidades do sistema mapeadas em formato de Histórias de Usuário, priorizadas e justificadas através do método <strong>MoSCoW</strong>, detalhadas com Critérios de Aceite para garantir a testabilidade.</p>
+<h3 id="1-firmware-navegacao">1. Firmware Navegação</h3>
+<table>
+<thead>
+<tr>
+<th>ID</th>
+<th>História de Usuário</th>
+<th>Critérios de Aceitação</th>
+<th>MoSCoW</th>
+<th>Justificativa</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>US01</strong></td>
+<td>Como operador, quero que o robô monitore sua própria localização dentro do labirinto, para calcular a posição atual e auxiliar na tomada de decisões.</td>
+<td><ul><li>O robô deve manter um registro de coordenadas (X,Y) ou matriz atualizado.</li><li>A posição deve mudar dinamicamente.</li><li>Iniciar a lógica assumindo 3 paredes na casa inicial.</li></ul></td>
+<td><strong>Must Have</strong></td>
+<td>Fundamental para a consciência espacial do robô; sem isso, a navegação autônoma é inviável (core do MVP).</td>
+</tr>
+<tr>
+<td><strong>US02</strong></td>
+<td>Como operador, quero que o robô descubra paredes à medida que explora, para alimentar o algoritmo e evitar colisões.</td>
+<td><ul><li>Sensores devem detectar obstáculos.</li><li>O firmware deve barrar comandos de avanço na direção de paredes.</li></ul></td>
+<td><strong>Must Have</strong></td>
+<td>Essencial para o mapeamento e segurança física; o algoritmo de labirinto depende da identificação de barreiras.</td>
+</tr>
+<tr>
+<td><strong>US03</strong></td>
+<td>Como operador, quero que o robô mapeie o labirinto durante o percurso, para encontrar e salvar o caminho mais eficiente.</td>
+<td><ul><li>Gravar o mapa na memória (paredes e caminhos livres).</li><li>Mapa consultável após exploração.</li></ul></td>
+<td><strong>Must Have</strong></td>
+<td>Requisito primário da competição/projeto (resolver o labirinto e não apenas andar a esmo).</td>
+</tr>
+<tr>
+<td><strong>US04</strong></td>
+<td>Como operador, quero que o robô detecte quando chegou à sala central, para encerrar a busca e marcar o desafio como concluído.</td>
+<td><ul><li>O firmware deve identificar a configuração de destino (sala central).</li><li>Parar e sinalizar o fim.</li></ul></td>
+<td><strong>Must Have</strong></td>
+<td>Condição de vitória do sistema; o robô precisa saber quando o objetivo foi atingido.</td>
+</tr>
+<tr>
+<td><strong>US05</strong></td>
+<td>Como operador, quero que o robô resolva os três tamanhos de labirinto (4x4, 8x8 e 16x16), para garantir adaptação de escala.</td>
+<td><ul><li>Algoritmo com alocação dinâmica para 4x4, 8x8 e 16x16.</li></ul></td>
+<td><strong>Should Have</strong></td>
+<td>Importante para a entrega final, mas o MVP (Minimum Viable Product) pode rodar apenas no 4x4 inicialmente para validar a viabilidade da arquitetura.</td>
+</tr>
+<tr>
+<td><strong>US06</strong></td>
+<td>Como juiz da prova, quero que o firmware ignore comandos externos de direção após a largada, para validar a eficácia 100% autônoma do robô.</td>
+<td><ul><li>Percurso do início ao fim sem aceitar inputs de controle manual.</li></ul></td>
+<td><strong>Must Have</strong></td>
+<td>A intervenção manual desclassifica e descaracteriza a proposta inteligente do firmware.</td>
+</tr>
+<tr>
+<td><strong>US07</strong></td>
+<td>Como operador, quero que o robô corrigija trajetória continuamente (via controle PID), para navegar de forma centralizada e não bater.</td>
+<td><ul><li>Loop de controle deve corrigir o alinhamento com base na leitura lateral antes de tocar nas paredes.</li></ul></td>
+<td><strong>Must Have</strong></td>
+<td>Restrição física onde danificar as paredes pode causar penalidades.</td>
+</tr>
+</tbody>
+</table>
+<h3 id="2-firmware-telemetria">2. Firmware Telemetria</h3>
+<table>
+<thead>
+<tr>
+<th>ID</th>
+<th>História de Usuário</th>
+<th>Critérios de Aceitação</th>
+<th>MoSCoW</th>
+<th>Justificativa</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>US08</strong></td>
+<td>Como operador, quero que o firmware envie em tempo real dados primários (trajeto, tempo, status), para alimentar o sistema web.</td>
+<td><ul><li>Transmissão sem fio contínua.</li><li>Atraso mínimo de envio (delay).</li></ul></td>
+<td><strong>Must Have</strong></td>
+<td>Integração indispensável da arquitetura (ponte Firmware &lt;-&gt; Software). A web depende disso.</td>
+</tr>
+<tr>
+<td><strong>US09</strong></td>
+<td>Como operador, quero que o firmware envie o consumo de bateria e a velocidade média em tempo real, para monitorar a integridade.</td>
+<td><ul><li>Ler tensão e converter em %</li><li>Calcular velocidade média.</li></ul></td>
+<td><strong>Should Have</strong></td>
+<td>Agrega alto valor de monitoramento, mas o sistema base de resolução do labirinto funciona sem esses dados específicos.</td>
+</tr>
+</tbody>
+</table>
+<h3 id="3-sistema-web-tempo-real">3. Sistema Web Tempo Real</h3>
+<table>
+<thead>
+<tr>
+<th>ID</th>
+<th>História de Usuário</th>
+<th>Critérios de Aceitação</th>
+<th>MoSCoW</th>
+<th>Justificativa</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>US10</strong></td>
+<td>Como operador, quero visualizar na interface web o trajeto e o labirinto em tempo real, para acompanhar a evolução.</td>
+<td><ul><li>Renderizar grid/mapa que se preenche com a telemetria.</li></ul></td>
+<td><strong>Must Have</strong></td>
+<td>É o propósito central da interface web (Dashboard de operação).</td>
+</tr>
+<tr>
+<td><strong>US11</strong></td>
+<td>Como operador, quero ver no painel o tempo de conclusão e a notificação se o desafio foi cumprido, para ter o resultado imediato.</td>
+<td><ul><li>Painel com cronômetro e indicador de Sucesso.</li></ul></td>
+<td><strong>Must Have</strong></td>
+<td>Sem isso, não há como atestar digitalmente o sucesso e a performance da corrida.</td>
+</tr>
+<tr>
+<td><strong>US12</strong></td>
+<td>Como operador, quero monitorar indicadores de velocidade média e o nível de bateria na tela, para prever pausas para recarga.</td>
+<td><ul><li>Exibir gráficos ou barras atualizadas dinamicamente.</li></ul></td>
+<td><strong>Could Have</strong></td>
+<td>Interessa ter se o cronograma permitir, mas não trava o uso básico.</td>
+</tr>
+</tbody>
+</table>
+<h3 id="4-sistema-web-banco-de-dados">4. Sistema Web Banco de Dados</h3>
+<table>
+<thead>
+<tr>
+<th>ID</th>
+<th>História de Usuário</th>
+<th>Critérios de Aceitação</th>
+<th>MoSCoW</th>
+<th>Justificativa</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>US13</strong></td>
+<td>Como operador, quero que os dados finais de cada corrida sejam salvos automaticamente no banco ao término, para consulta do histórico.</td>
+<td><ul><li>Criar registro (Log) no banco.</li><li>Dados devem persistir após reinício.</li></ul></td>
+<td><strong>Must Have</strong></td>
+<td>Fundamental para a camada de persistência da arquitetura, validando o requisito de banco de dados.</td>
+</tr>
+</tbody>
+</table>
 
 
 
