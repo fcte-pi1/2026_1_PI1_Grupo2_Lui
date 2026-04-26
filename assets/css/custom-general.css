@@ -441,17 +441,28 @@ body {
 }
 
 /* ============================================================
-   Tables — No Scroll
+   Tables — Styling (Scroll on mobile, fixed on PC)
    ============================================================ */
-.md-typeset__table {
-  overflow: visible !important;
+@media screen and (min-width: 768px) {
+  .md-typeset__table {
+    overflow: visible !important;
+  }
+  
+  .md-typeset table {
+    display: table !important;
+    table-layout: fixed !important;
+    word-wrap: break-word;
+  }
+  
+  .md-typeset th, 
+  .md-typeset td {
+    word-break: break-word !important;
+    white-space: normal !important;
+  }
 }
 
 .md-typeset table {
   width: 100% !important;
-  display: table !important;
-  table-layout: fixed !important;
-  word-wrap: break-word;
   border-collapse: collapse !important;
   border: 1px solid var(--ui-border-subtle) !important;
   margin-bottom: 2rem;
@@ -460,8 +471,6 @@ body {
 
 .md-typeset th, 
 .md-typeset td {
-  word-break: break-word !important;
-  white-space: normal !important;
   padding: 12px 16px !important;
   border: 1px solid var(--ui-border-subtle) !important;
 }
