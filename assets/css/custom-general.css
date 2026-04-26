@@ -502,15 +502,16 @@ body {
   background-color: var(--bg-surface);
   border-radius: 8px;
   border: 1px solid var(--ui-border-subtle);
-  overflow: hidden;
+  overflow-x: auto;
+  overflow-y: hidden;
   padding-top: 52px;
 }
 
 .table-fullscreen-btn {
   position: absolute;
   top: 8px;
-  right: 8px;
-  z-index: 1;
+  left: 8px;
+  z-index: 10;
   width: 32px;
   height: 32px;
   display: flex;
@@ -522,11 +523,20 @@ body {
   color: #64748b;
   cursor: pointer;
   transition: all 0.2s ease;
-  opacity: 0.4;
+  opacity: 0.6;
+}
+
+@media screen and (max-width: 767px) {
+  .table-fullscreen-btn {
+    position: sticky;
+    left: 8px;
+    margin-top: -44px;
+    margin-bottom: 12px;
+  }
 }
 
 .table-fullscreen-wrapper:hover .table-fullscreen-btn {
-  opacity: 0.8;
+  opacity: 1;
 }
 
 .table-fullscreen-btn:hover {
@@ -542,17 +552,14 @@ body {
 .table-fullscreen-wrapper:fullscreen {
   width: 100vw;
   height: 100vh;
-  padding: 40px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: flex-start;
-  overflow-y: auto;
+  padding: 40px 10px;
+  display: block;
+  overflow: auto;
   background-color: var(--bg-page) !important;
 }
 
 .table-fullscreen-wrapper:fullscreen table {
-  width: 95% !important;
+  width: 100% !important;
   max-width: none !important;
   margin: 0 auto !important;
   background-color: var(--bg-surface);
