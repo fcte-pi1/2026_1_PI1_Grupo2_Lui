@@ -63,15 +63,17 @@ Ao final de uma corrida, o sistema precisa garantir que todos os dados sejam arm
 
 ## 3. Capacidade e Carga
 
-### RNF-06 — Volume de Registros por Corrida
+### RNF-06 — Tamanho do Resumo Final por Corrida
 
 | Atributo | Valor |
 |---|---|
-| **Descrição** | Quantidade mínima de registros de telemetria que o sistema deve ser capaz de armazenar por corrida |
-| **Limite mínimo** | ≥ 10.000 registros por corrida |
-| **Estimativa de tamanho** | ~1 MB por corrida completa |
+| **Descrição** | Tamanho máximo dos dados consolidados de uma corrida persistidos no banco |
+| **Limite máximo** | ≤ 10 KB por corrida |
+| **Conteúdo do resumo** | Tempo total, trajeto percorrido (matriz de paredes + sequência de células), velocidade média, consumo de bateria, status do desafio |
 
-O maior labirinto tem 16×16 = 256 células. O micromouse pode precisar visitar cada célula mais de uma vez durante a fase de exploração (algoritmos como flood fill revisitam células até mapear o labirinto completamente). Estimando uma média de 3 visitas por célula e leituras de sensores a 100 Hz, com duração média de corrida de 2 a 3 minutos, chegamos a aproximadamente 12.000 a 18.000 leituras por corrida. O limite de 10.000 registros é um mínimo conservador que cobre também corridas mais rápidas nos labirintos menores (4×4 e 8×8).
+Conforme o diagrama BPMN (Lane 3A — Backend) e a história US13, o backend grava no banco apenas o resumo final da corrida, ao receber a flag de conclusão emitida pelo firmware (comportamento verificado por CT-20 e CT-21). O stream contínuo de telemetria não é persistido: ele apenas trafega entre firmware, backend e frontend para alimentar a interface em tempo real.
+
+O dimensionamento do resumo considera o pior caso (labirinto 16×16): a matriz de paredes ocupa cerca de 128 bytes (1 bit por parede em 256 células), e a sequência de células percorridas — mesmo com revisitas durante a fase de exploração — fica abaixo de 4 KB quando serializada em formato compacto. Os demais campos (escalares e enum de status) somam menos de 100 bytes. O limite de 10 KB cobre esse cenário com folga, incluindo overhead de serialização em JSON.
 
 ### RNF-07 — Total de Corridas Armazenadas
 
@@ -81,7 +83,7 @@ O maior labirinto tem 16×16 = 256 células. O micromouse pode precisar visitar 
 | **Limite mínimo** | ≥ 100 corridas |
 | **Tempo de consulta** | Resultado de consulta por labirinto específico em ≤ 1 segundo |
 
-Estimando aproximadamente 10 sessões de teste distribuídas ao longo do semestre, com 3 labirintos por sessão e até 3 tentativas cada, chegamos a cerca de 90 corridas no total. O limite de 100 corridas cobre esse uso com uma pequena margem de segurança. Com ~1 MB por corrida, o banco precisaria suportar cerca de 100 MB de dados, volume sem qualquer impacto para bancos relacionais como PostgreSQL, SQLite ou MySQL.
+Estimando aproximadamente 10 sessões de teste distribuídas ao longo do semestre, com 3 labirintos por sessão e até 3 tentativas cada, chegamos a cerca de 90 corridas no total. O limite de 100 corridas cobre esse uso com uma pequena margem de segurança. Combinado com o limite do RNF-06 (≤ 10 KB por corrida), o banco precisaria suportar cerca de 1 MB de dados — volume sem qualquer impacto para PostgreSQL, SQLite ou MySQL. ou outros bancos relacionais.
 
 ### RNF-08 — Usuários Simultâneos no Sistema Web
 
