@@ -704,13 +704,10 @@ class TableFullscreen {
 
 class EmbedUIBuilder {
     static buildHtml(uniqueId, title, typePrefix) {
-        const styles = EMBED_STYLE_TEMPLATE
-            .replace(/__TYPE__/g, typePrefix)
-            .replace(/__ID__/g, uniqueId);
+        const styles = EMBED_STYLE_TEMPLATE;
 
         return `
       ${styles}
-      <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
       <div id="${typePrefix}-container-${uniqueId}" class="embed-container">
         <div class="toolbar-top">
           <span id="${typePrefix}-title-${uniqueId}" class="embed-title">${title}</span>
@@ -926,7 +923,7 @@ class SvgEmbed {
     }
 
     _generateId(prefix) {
-        return `${prefix}-${Math.random().toString(36).substr(2, 9)}`;
+        return `${prefix}-${Math.random().toString(36).slice(2, 11)}`;
     }
 
     _renderError(rootElement, message) {
@@ -952,7 +949,7 @@ class ImageEmbed {
             return;
         }
 
-        const id = `image-${Math.random().toString(36).substr(2, 9)}`;
+        const id = `image-${Math.random().toString(36).slice(2, 11)}`;
         rootElement.innerHTML = EmbedUIBuilder.buildHtml(id, title, "image");
 
         const img = this._createImageElement(id, imagePath);
@@ -981,16 +978,16 @@ class ImageEmbed {
     // ---------------------------------------------------------------------------
 
     _createImageElement(id, src) {
-        return Object.assign(document.createElement("img"), {
-            src,
-            id: `img-${id}`,
-            style: Object.assign(document.createElement("img").style, {
-                objectFit: "contain",
-                transformOrigin: "center",
-                willChange: "transform",
-                transition: "transform 0.05s ease-out",
-            }),
+        const img = document.createElement("img");
+        img.src = src;
+        img.id  = `img-${id}`;
+        Object.assign(img.style, {
+            objectFit:       "contain",
+            transformOrigin: "center",
+            willChange:      "transform",
+            transition:      "transform 0.05s ease-out",
         });
+        return img;
     }
 
     _waitForImageLoad(img) {
@@ -1037,5 +1034,425 @@ function bootstrap() {
     new EmbedManager().initializeAll();
 }
 
-document.addEventListener("DOMContentLoaded", bootstrap);
-new MutationObserver(bootstrap).observe(document.body, { childList: true, subtree: true });
+// Suporte ao navigation.instant do MkDocs Material (AJAX).
+// document$ é o observable RxJS exposto pelo tema em cada navegação.
+// Fallback para DOMContentLoaded em ambientes sem o tema Material.
+if (typeof document$ !== 'undefined') {
+    document$.subscribe(bootstrap);
+} else if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', bootstrap);
+} else {
+    bootstrap();
+}
+/**
+ * micro-interactions.js
+ * Caminho 2 — Micro-interações e Dinamismo
+ *
+ * Módulos:
+ *  1. ScrollReveal   — fade+translateY via IntersectionObserver
+ *  2. NavProgress    — barra de progresso lateral na sidebar
+ *  3. HeaderGlass    — aplica glass no header ao rolar
+ *  4. CopyFeedback   — estado "copied" visual no botão de copiar
+ */
+
+(function () {
+  'use strict';
+
+  /* ──────────────────────────────────────────────────────────
+     1. SCROLL REVEAL
+     Observa elementos com .reveal e adiciona .is-visible
+     quando entram no viewport.
+  ────────────────────────────────────────────────────────── */
+  function initScrollReveal() {
+    // Alvos: h2, h3, tabelas, admonitions, blocos de código,
+    // parágrafos depois de h2, e qualquer .reveal explícito.
+    var selectors = [
+      '.md-content h2',
+      '.md-content h3',
+      '.md-typeset .admonition',
+      '.md-typeset details',
+      '.md-typeset pre',
+      '.md-typeset table',
+      '.reveal',
+    ].join(', ');
+
+    var targets = document.querySelectorAll(selectors);
+    if (!targets.length) return;
+
+    // Adiciona a classe base apenas se ainda não tiver
+    targets.forEach(function (el) {
+      if (!el.classList.contains('reveal')) {
+        el.classList.add('reveal');
+      }
+    });
+
+    var observer = new IntersectionObserver(
+      function (entries) {
+        entries.forEach(function (entry) {
+          if (entry.isIntersecting) {
+            entry.target.classList.add('is-visible');
+            observer.unobserve(entry.target);
+          }
+        });
+      },
+      {
+        threshold: 0.08,
+        rootMargin: '0px 0px -40px 0px',
+      }
+    );
+
+    targets.forEach(function (el) { observer.observe(el); });
+  }
+
+  /* ──────────────────────────────────────────────────────────
+     2. NAV PROGRESS
+     Atualiza --nav-progress na sidebar conforme o scroll
+     avança pelo conteúdo da página.
+  ────────────────────────────────────────────────────────── */
+  function initNavProgress() {
+    var sidebar = document.querySelector('.md-sidebar--primary');
+    if (!sidebar) return;
+
+    function updateProgress() {
+      var docHeight  = document.documentElement.scrollHeight - window.innerHeight;
+      if (docHeight <= 0) return;
+      var scrolled   = window.scrollY;
+      var progress   = Math.min(100, Math.round((scrolled / docHeight) * 100));
+      sidebar.style.setProperty('--nav-progress', progress + '%');
+    }
+
+    window.addEventListener('scroll', updateProgress, { passive: true });
+    updateProgress();
+  }
+
+  /* ──────────────────────────────────────────────────────────
+     3. HEADER GLASS
+     Adiciona .is-scrolled ao header quando o scroll > 40px.
+  ────────────────────────────────────────────────────────── */
+  function initHeaderGlass() {
+    var header = document.querySelector('.md-header');
+    if (!header) return;
+
+    var threshold = 40;
+
+    function toggleGlass() {
+      if (window.scrollY > threshold) {
+        header.classList.add('is-scrolled');
+      } else {
+        header.classList.remove('is-scrolled');
+      }
+    }
+
+    window.addEventListener('scroll', toggleGlass, { passive: true });
+    toggleGlass();
+  }
+
+  /* ──────────────────────────────────────────────────────────
+     4. COPY FEEDBACK
+     Escuta cliques no botão .md-clipboard e aplica
+     .copied por 1.8s para feedback visual de sucesso.
+  ────────────────────────────────────────────────────────── */
+  function initCopyFeedback() {
+    document.addEventListener('click', function (e) {
+      var btn = e.target.closest('.md-clipboard');
+      if (!btn) return;
+
+      // Pequeno delay para o tema processar a cópia primeiro
+      setTimeout(function () {
+        btn.classList.add('copied');
+        setTimeout(function () {
+          btn.classList.remove('copied');
+        }, 1800);
+      }, 80);
+    });
+  }
+
+  /* ──────────────────────────────────────────────────────────
+     BOOTSTRAP
+     MkDocs Material usa navegação instantânea (AJAX).
+     O evento `page$` é emitido em cada carregamento de página.
+  ────────────────────────────────────────────────────────── */
+  function boot() {
+    initScrollReveal();
+    initNavProgress();
+    initHeaderGlass();
+    initCopyFeedback();
+  }
+
+  // Suporte ao navigation.instant do MkDocs Material
+  if (typeof document$ !== 'undefined') {
+    // RxJS observable exposto pelo tema
+    document$.subscribe(boot);
+  } else {
+    // Fallback para carregamento tradicional
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', boot);
+    } else {
+      boot();
+    }
+  }
+})();
+
+/**
+ * enhancements.js
+ * Melhorias adicionais de UI/UX
+ *
+ * Módulos:
+ *  1. BackButton       — seta de voltar flutuante (mobile)
+ *  2. ImageLightbox    — lightbox para imagens markdown
+ *  3. TypeBadges       — colorização semântica de colunas de tipo em tabelas
+ *  4. HeroBadges       — badges de versão/status no hero da home
+ *  5. NavCounter       — indicador "X / Y" de seção na sidebar
+ */
+
+(function () {
+  'use strict';
+
+  /* ──────────────────────────────────────────────────────────
+     ÍCONES SVG — inline, sem dependência de fonte externa
+  ────────────────────────────────────────────────────────── */
+  var ICON = {
+    arrowLeft: '<svg viewBox="0 0 24 24" aria-hidden="true"><polyline points="15 18 9 12 15 6"/></svg>',
+    close:     '<svg viewBox="0 0 24 24" aria-hidden="true"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>',
+  };
+
+  /* ──────────────────────────────────────────────────────────
+     1. BACK BUTTON
+     Aparece em mobile quando history.length > 1.
+     Chama history.back() no clique.
+  ────────────────────────────────────────────────────────── */
+  function initBackButton() {
+    // Evita duplicatas em navegação AJAX
+    var existing = document.getElementById('global-back-btn');
+    if (existing) {
+      updateBackButtonVisibility(existing);
+      return;
+    }
+
+    var btn = document.createElement('button');
+    btn.id            = 'global-back-btn';
+    btn.className     = 'back-btn';
+    btn.setAttribute('aria-label', 'Voltar à página anterior');
+    btn.setAttribute('title', 'Voltar');
+    btn.innerHTML     = ICON.arrowLeft;
+
+    document.body.appendChild(btn);
+
+    btn.addEventListener('click', function () {
+      history.back();
+    });
+
+    updateBackButtonVisibility(btn);
+
+    // Atualiza visibilidade a cada navegação
+    window.addEventListener('popstate', function () {
+      updateBackButtonVisibility(btn);
+    });
+  }
+
+  function updateBackButtonVisibility(btn) {
+    // Mostra o botão se há histórico ou se não é a página raiz
+    var hasHistory  = window.history.length > 1;
+    var isRootPage  = window.location.pathname.replace(/\/$/, '') ===
+                      (document.querySelector('base') || {}).href || false;
+
+    if (hasHistory && !isRootPage) {
+      btn.classList.add('is-visible');
+    } else {
+      btn.classList.remove('is-visible');
+    }
+  }
+
+  /* ──────────────────────────────────────────────────────────
+     2. IMAGE LIGHTBOX
+     Adiciona lightbox a todas as imagens dentro de .md-typeset
+     que não tenham o atributo data-no-lightbox.
+  ────────────────────────────────────────────────────────── */
+  function initImageLightbox() {
+    // Cria o overlay uma única vez no DOM
+    var overlay = document.getElementById('global-lightbox');
+    if (!overlay) {
+      overlay = _buildLightboxOverlay();
+      document.body.appendChild(overlay);
+    }
+
+    // Registra cliques em imagens markdown
+    var images = document.querySelectorAll(
+      '.md-typeset img:not([data-no-lightbox]):not([data-lightbox-bound])'
+    );
+
+    images.forEach(function (img) {
+      img.setAttribute('data-lightbox-bound', 'true');
+      img.addEventListener('click', function () {
+        _openLightbox(overlay, img.src, img.alt);
+      });
+    });
+  }
+
+  function _buildLightboxOverlay() {
+    var overlay = document.createElement('div');
+    overlay.id        = 'global-lightbox';
+    overlay.className = 'lightbox-overlay';
+    overlay.setAttribute('role', 'dialog');
+    overlay.setAttribute('aria-modal', 'true');
+    overlay.setAttribute('aria-label', 'Visualizar imagem');
+
+    var img = document.createElement('img');
+    img.id  = 'lightbox-img';
+    img.alt = '';
+
+    var closeBtn = document.createElement('button');
+    closeBtn.className       = 'lightbox-close';
+    closeBtn.setAttribute('aria-label', 'Fechar');
+    closeBtn.innerHTML       = ICON.close;
+
+    overlay.appendChild(img);
+    overlay.appendChild(closeBtn);
+
+    // Fecha ao clicar no overlay (fora da imagem)
+    overlay.addEventListener('click', function (e) {
+      if (e.target === overlay) _closeLightbox(overlay);
+    });
+
+    // Fecha ao clicar no botão X
+    closeBtn.addEventListener('click', function () {
+      _closeLightbox(overlay);
+    });
+
+    // Fecha com Escape
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape' && overlay.classList.contains('is-open')) {
+        _closeLightbox(overlay);
+      }
+    });
+
+    return overlay;
+  }
+
+  function _openLightbox(overlay, src, alt) {
+    var img = overlay.querySelector('#lightbox-img');
+    img.src = src;
+    img.alt = alt || '';
+    document.body.style.overflow = 'hidden';
+    overlay.classList.add('is-open');
+    overlay.querySelector('.lightbox-close').focus();
+  }
+
+  function _closeLightbox(overlay) {
+    overlay.classList.remove('is-open');
+    document.body.style.overflow = '';
+    // Limpa src após a transição para não manter a imagem em memória
+    setTimeout(function () {
+      var img = overlay.querySelector('#lightbox-img');
+      if (img) img.src = '';
+    }, 250);
+  }
+
+  /* ──────────────────────────────────────────────────────────
+     3. TYPE BADGES — Colorização semântica de tipos em tabelas
+     Identifica células que contêm apenas um tipo técnico
+     e injeta data-type na <td> para o CSS aplicar a cor.
+  ────────────────────────────────────────────────────────── */
+  var TYPE_MAP = {
+    // Strings
+    'string': 'string', 'str': 'string',
+    // Numbers
+    'int': 'int', 'integer': 'int', 'number': 'int',
+    'float': 'int', 'double': 'int', 'num': 'int',
+    'uint8': 'int', 'uint16': 'int', 'uint32': 'int',
+    'int8': 'int', 'int16': 'int', 'int32': 'int',
+    // Booleans
+    'bool': 'bool', 'boolean': 'bool',
+    // Collections
+    'list': 'list', 'array': 'list', '[]': 'list',
+    'dict': 'list', 'object': 'list', 'map': 'list',
+    // Null-ish
+    'void': 'void', 'none': 'void', 'null': 'void', 'undefined': 'void',
+  };
+
+  function initTypeBadges() {
+    // Tenta identificar a coluna de tipos procurando por <th> com texto "tipo" ou "type"
+    var tables = document.querySelectorAll('.md-typeset table');
+
+    tables.forEach(function (table) {
+      if (table.dataset.typeBound) return;
+      table.dataset.typeBound = 'true';
+
+      var headers  = table.querySelectorAll('th');
+      var typeColIndex = -1;
+
+      headers.forEach(function (th, i) {
+        var text = th.textContent.trim().toLowerCase();
+        if (text === 'tipo' || text === 'type' || text === 'dtype') {
+          typeColIndex = i;
+        }
+      });
+
+      if (typeColIndex === -1) return;
+
+      var rows = table.querySelectorAll('tbody tr');
+      rows.forEach(function (row) {
+        var cell = row.cells[typeColIndex];
+        if (!cell) return;
+
+        var raw       = cell.textContent.trim().toLowerCase();
+        var typeClass = TYPE_MAP[raw];
+
+        if (typeClass) {
+          cell.setAttribute('data-type', typeClass);
+          // Envolve o texto em <code> se ainda não estiver
+          if (!cell.querySelector('code')) {
+            cell.innerHTML = '<code>' + cell.textContent.trim() + '</code>';
+          }
+        }
+      });
+    });
+  }
+
+  /* ──────────────────────────────────────────────────────────
+     4. HERO BADGES — Versão e status no hero da homepage
+     Injeta .hero-badges logo após .presentation-content
+     apenas se a página tiver a classe .presentation.
+  ────────────────────────────────────────────────────────── */
+  function initHeroBadges() {
+    // Executa apenas na home (contém .presentation)
+    var hero = document.querySelector('.presentation');
+    if (!hero) return;
+    if (hero.querySelector('.hero-badges')) return;
+
+    var badges = document.createElement('div');
+    badges.className = 'hero-badges';
+    badges.innerHTML = [
+      _badge('version', '<span class="hero-badge__dot"></span> v0.3-alpha', 'hero-badge--version'),
+      _badge('status',  '<span class="hero-badge__dot"></span> software: em progresso', 'hero-badge--status'),
+      _badge('hw',      'hardware: protótipo físico', 'hero-badge--hw'),
+    ].join('');
+
+    // Insere após .presentation-content, ou ao fim de .presentation
+    var anchor = hero.querySelector('.presentation-content') || hero;
+    anchor.appendChild(badges);
+  }
+
+  function _badge(key, html, cls) {
+    return '<span class="hero-badge ' + cls + '" aria-label="' + key + '">' + html + '</span>';
+  }
+
+  /* ──────────────────────────────────────────────────────────
+     BOOTSTRAP
+  ────────────────────────────────────────────────────────── */
+  function boot() {
+    initBackButton();
+    initImageLightbox();
+    initTypeBadges();
+    initHeroBadges();
+  }
+
+  if (typeof document$ !== 'undefined') {
+    document$.subscribe(boot);
+  } else if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', boot);
+  } else {
+    boot();
+  }
+})();
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        

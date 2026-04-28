@@ -1133,12 +1133,14 @@
 <h2 id="3-calculo-de-autonomia">3. Cálculo de Autonomia</h2>
 <p>Considerando o tempo total de operação (<strong>t</strong>) de <strong>1800 segundos</strong> (<strong>30 minutos</strong>) e a tensão nominal da bateria de <strong>7.4V</strong>:</p>
 <ul>
-<li><strong>Energia Consumida (E):</strong>
-  $$E=V\times I\times t=7,4V\times 0,505A\times 1800s=6726,6~J$$</li>
-<li><strong>Conversão para Watt-hora:</strong> <strong>1,87 Wh</strong>.</li>
-<li><strong>Capacidade em mAh:</strong>
-  $$C = I \times t = 505\text{mA} \times 0,5\text{h} = 252,5\text{ mAh}$$</li>
+<li><strong>Energia Consumida (E):</strong></li>
 </ul>
+<p><span class="arithmatex">\(E=V\times I\times t=7,4V\times 0,505A\times 1800s=6726,6~J\)</span></p>
+<ul>
+<li><strong>Conversão para Watt-hora:</strong> <strong>1,87 Wh</strong>.</li>
+<li><strong>Capacidade em mAh:</strong></li>
+</ul>
+<p><span class="arithmatex">\(C = I \times t = 505\text{mA} \times 0,5\text{h} = 252,5\text{ mAh}\)</span></p>
 <h2 id="4-escolha-da-fonte-e-margem-de-seguranca">4. Escolha da Fonte e Margem de Segurança</h2>
 <p>Para compensar perdas térmicas e garantir que a tensão não caia abaixo do limite crítico do ESP32 durante picos de corrente, aplica-se uma margem de segurança de <strong>100%</strong>:</p>
 <ul>
@@ -1247,6 +1249,10 @@
         <script src="../../assets/js/maze-bg.js"></script>
       
         <script src="../../assets/js/perfect_embed.js"></script>
+      
+        <script src="../../assets/js/mathjax.js"></script>
+      
+        <script src="https://unpkg.com/mathjax@3/es5/tex-mml-chtml.js"></script>
       
     
   </body>
