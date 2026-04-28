@@ -101,6 +101,14 @@ body { font-family: var(--base-font) !important; }
   position: relative;
 }
 
+@media screen and (max-width: 76.1875em) {
+  .md-main__inner {
+    min-width: 100%;
+    width: 100%;
+  }
+}
+
+
 
 /* Tipografia e Headings */
 [data-md-color-scheme="slate"] h1,
@@ -871,6 +879,14 @@ body { font-family: var(--base-font) !important; }
   padding-bottom: 3rem;
 }
 
+@media screen and (max-width: 76.1875em) {
+  .md-content {
+    padding-top: 1.5rem;
+    padding-bottom: 2rem;
+  }
+}
+
+
 /* H1 da página — separador visual */
 .md-content h1:first-of-type {
   font-size: var(--fs-h1) !important;
@@ -1009,6 +1025,26 @@ body { font-family: var(--base-font) !important; }
     white-space: normal !important;
   }
 }
+
+@media screen and (max-width: 767px) {
+  .md-typeset__table {
+    display: block !important;
+    width: 100% !important;
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch;
+    margin-bottom: 1rem;
+    border-radius: 4px;
+    border: 1px solid var(--ui-border-subtle);
+  }
+
+  .md-typeset table {
+    display: table !important; /* Mantém como table para o scroll horizontal funcionar */
+    min-width: 600px; /* Garante que tabelas complexas não fiquem espremidas */
+    margin-bottom: 0 !important;
+    border: none !important;
+  }
+}
+
 
 .md-typeset table {
   width: 100% !important;
@@ -1642,6 +1678,19 @@ body { font-family: var(--base-font) !important; }
   --home-fs-global-h1-first: 4.5rem;
 }
 
+@media screen and (max-width: 76.1875em) {
+  :root {
+    --home-fs-display: 3.5rem;
+    --home-fs-h1:      1.8rem;
+    --home-fs-h2:      1.4rem;
+    --home-fs-h3:      1.2rem;
+    --home-fs-global-h1:  2.2rem;
+    --home-fs-global-h2:  1.6rem;
+    --home-fs-global-h1-first: 2.8rem;
+  }
+}
+
+
 .presentation {
   text-align: center;
   padding: 5rem 0 3rem;
@@ -1654,14 +1703,15 @@ body { font-family: var(--base-font) !important; }
   position: absolute;
   top: 38%;
   left: 50%;
-  width: 520px;
-  height: 380px;
+  width: min(520px, 90vw);
+  height: min(380px, 70vw);
   transform: translate(-50%, -50%);
   background: radial-gradient(ellipse at center, rgba(124, 58, 237, 0.18), rgba(124, 58, 237, 0.05) 40%, transparent 70%);
   filter: blur(40px);
   pointer-events: none;
   z-index: -1;
 }
+
 
 .presentation-tag {
   display: inline-flex;
@@ -1729,6 +1779,13 @@ body { font-family: var(--base-font) !important; }
   margin-right: auto;
 }
 
+@media screen and (max-width: 480px) {
+  .presentation-stats {
+    grid-template-columns: 1fr;
+  }
+}
+
+
 .stat-card {
   padding: 1.25rem 1rem;
   background: var(--bg-surface);
@@ -1775,6 +1832,15 @@ body { font-family: var(--base-font) !important; }
   border-bottom: none !important;
 }
 
+@media screen and (max-width: 76.1875em) {
+  .section-header {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+    align-items: flex-start;
+  }
+}
+
+
 .section-header::after {
   content: "";
   position: absolute;
@@ -1812,6 +1878,18 @@ body { font-family: var(--base-font) !important; }
   border-right: 1px solid var(--ui-border-dim);
   text-align: right;
 }
+
+@media screen and (max-width: 76.1875em) {
+  .section-counter {
+    align-items: flex-start;
+    padding: 0.5rem 0;
+    border-right: none;
+    border-left: 2px solid var(--ui-border-dim);
+    padding-left: 1rem;
+    text-align: left;
+  }
+}
+
 
 .counter-label {
   display: block;
@@ -1936,6 +2014,14 @@ body { font-family: var(--base-font) !important; }
   position: relative;
   z-index: 1;
 }
+
+@media screen and (max-width: 480px) {
+  .team-card__avatar-inner {
+    width: 160px;
+    height: 160px;
+  }
+}
+
 
 .team-card img {
   width: 100%;
