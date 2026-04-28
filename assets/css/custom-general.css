@@ -193,7 +193,7 @@ body { font-family: var(--base-font) !important; }
 .md-header {
   z-index: 100 !important;
   border-bottom: 1px solid var(--ui-border-dim) !important;
-  box-shadow: 0 1px 24px rgba(7, 5, 15, 0.6) !important;
+  box-shadow: none !important;
   transition:
     background-color var(--dur-base) ease,
     backdrop-filter  var(--dur-base) ease,
@@ -205,7 +205,7 @@ body { font-family: var(--base-font) !important; }
   background: var(--glass-bg) !important;
   backdrop-filter: blur(var(--glass-blur)) saturate(160%) !important;
   -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(160%) !important;
-  box-shadow: 0 1px 0 var(--glass-border) !important;
+  box-shadow: none !important;
 }
 
 /* Logo MicroMouse */
@@ -498,10 +498,10 @@ body { font-family: var(--base-font) !important; }
 
 /* Glass na sidebar primária */
 [data-md-color-scheme="slate"] .md-sidebar--primary {
-  background: var(--glass-bg) !important;
-  backdrop-filter: blur(var(--glass-blur)) saturate(140%) !important;
-  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(140%) !important;
-  border-right: 1px solid var(--glass-border) !important;
+  background: none !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  border-right: none !important;
   transition: border-color var(--dur-base) ease !important;
 }
 
@@ -517,17 +517,7 @@ body { font-family: var(--base-font) !important; }
 /* Sidebar progress bar */
 [data-md-color-scheme="slate"] .md-nav--primary { position: relative; }
 
-[data-md-color-scheme="slate"] .md-sidebar--primary::after {
-  content: "";
-  position: absolute;
-  right: 0;
-  top: 0;
-  width: 2px;
-  height: var(--nav-progress, 0%);
-  background: linear-gradient(to bottom, var(--purple-accent), var(--purple-glow));
-  transition: height var(--dur-slow) var(--ease-out-expo);
-  pointer-events: none;
-}
+
 
 /* Links de navegação */
 @media screen and (min-width: 76.25em) {
@@ -542,12 +532,12 @@ body { font-family: var(--base-font) !important; }
     text-transform: uppercase !important;
     font-style: normal !important;
     color: var(--heading-h4) !important;
-    background: transparent !important;
+    background: none !important;
     box-shadow: none !important;
     text-shadow: none !important;
     padding-bottom: 0.5rem !important;
-    border-bottom: 1px solid var(--ui-border-ghost) !important;
-    margin-bottom: 0.25rem !important;
+    border-bottom: none !important;
+    margin-bottom: 0.5rem !important;
   }
 
   .md-nav__link {
