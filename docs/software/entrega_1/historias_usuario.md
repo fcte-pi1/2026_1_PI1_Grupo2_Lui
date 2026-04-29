@@ -32,7 +32,7 @@ Abaixo estão listadas as funcionalidades do sistema mapeadas em formato de Hist
 | ID | História de Usuário | Critérios de Aceitação | MoSCoW | Justificativa |
 |---|---|---|---|---|
 | **US08** | Como operador, quero que o firmware envie em tempo real dados primários (trajeto, tempo, status), para alimentar o sistema web. | <ul><li>Transmissão sem fio contínua.</li><li>Atraso mínimo de envio (delay).</li></ul> | **Must Have** | Integração indispensável da arquitetura (ponte Firmware <-> Software). A web depende disso. |
-| **US09** | Como operador, quero que o firmware envie o consumo de bateria e a velocidade média em tempo real, para monitorar a integridade. | <ul><li>Ler tensão e converter em %</li><li>Calcular velocidade média.</li></ul> | **Should Have** | Agrega alto valor de monitoramento, mas o sistema base de resolução do labirinto funciona sem esses dados específicos. |
+| **US09** | Como operador, quero que o firmware envie o consumo de bateria e a velocidade média em tempo real, para monitorar a integridade. | <ul><li>Ler tensão e converter em %</li><li>Calcular velocidade média.</li></ul> | **Must Have** | Agrega alto valor de monitoramento, mas o sistema base de resolução do labirinto funciona sem esses dados específicos. |
 
 ### 3. Sistema Web Tempo Real
 
@@ -40,7 +40,7 @@ Abaixo estão listadas as funcionalidades do sistema mapeadas em formato de Hist
 |---|---|---|---|---|
 | **US10** | Como operador, quero visualizar na interface web o trajeto e o labirinto em tempo real, para acompanhar a evolução. | <ul><li>Renderizar grid/mapa que se preenche com a telemetria.</li></ul> | **Must Have** | É o propósito central da interface web (Dashboard de operação). |
 | **US11** | Como operador, quero ver no painel o tempo de conclusão e a notificação se o desafio foi cumprido, para ter o resultado imediato. | <ul><li>Painel com cronômetro e indicador de Sucesso.</li></ul> | **Must Have** | Sem isso, não há como atestar digitalmente o sucesso e a performance da corrida. |
-| **US12** | Como operador, quero monitorar indicadores de velocidade média e o nível de bateria na tela, para prever pausas para recarga. | <ul><li>Exibir gráficos ou barras atualizadas dinamicamente.</li></ul> | **Could Have** | Interessa ter se o cronograma permitir, mas não trava o uso básico. |
+| **US12** | Como operador, quero monitorar indicadores de velocidade média e o nível de bateria na tela, para prever pausas para recarga. | <ul><li>Exibir gráficos ou barras atualizadas dinamicamente.</li></ul> | **Must Have** | Interessa ter se o cronograma permitir, mas não trava o uso básico. |
 
 ### 4. Sistema Web Banco de Dados
 
