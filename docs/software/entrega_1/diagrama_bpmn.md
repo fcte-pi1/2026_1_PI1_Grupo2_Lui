@@ -1,157 +1,177 @@
 # Diagrama BPMN
 
-O diagrama modela o fluxo principal de uma corrida do Micromouse em notação BPMN 2.0, do acionamento do robô até a consulta de histórico. O nível adotado é **Descritivo**: foco nas responsabilidades e no fluxo geral.
+O diagrama BPMN representa o fluxo principal de uma corrida do Micromouse, desde o acionamento do robô pelo operador até o monitoramento em tempo real e a consulta ao histórico de corridas.
+
+O nível adotado é descritivo, com foco nas responsabilidades dos participantes, nas mensagens trocadas entre eles e nas principais decisões do processo.
 
 <!-- TODO: inserir o diagrama quando disponível -->
 <!-- ![Diagrama BPMN 2.0 do fluxo principal](./assets/diagrama_bpmn.svg) -->
 
-## Pools, Lanes e Data Objects
+---
 
-### Pools
+## Participantes do processo
 
-| Pool | Participante | Descrição |
+| Participante | Responsabilidade |
+|---|---|
+| **Operador** | Prepara o robô, inicia a corrida, acompanha a telemetria e consulta o histórico |
+| **Micromouse / Firmware** | Executa a navegação autônoma, lê sensores, controla motores, atualiza o mapa e envia telemetria |
+| **Sistema Web** | Recebe, valida, exibe e armazena os dados da corrida |
+
+O Sistema Web é dividido em duas partes:
+
+| Área | Responsabilidade |
+|---|---|
+| **Backend FastAPI** | Recebe os dados do robô, valida os pacotes, retransmite ao frontend e registra o resultado no banco |
+| **Frontend HTML/CSS/JS** | Exibe o painel de monitoramento, atualiza o mapa em tempo real e apresenta o histórico |
+
+---
+
+## Dados utilizados no processo
+
+| Dado | Origem | Uso |
 |---|---|---|
-| **Pool 1** | Operador | Inicia a corrida, monitora telemetria e consulta histórico |
-| **Pool 2** | Micromouse (Firmware) | Sistema embarcado no ESP32 que navega de forma autônoma e envia telemetria |
-| **Pool 3** | Sistema Web | Recebe, processa, exibe e persiste os dados da corrida |
+| Pacote de telemetria | Firmware | Enviado ao backend para atualização do dashboard |
+| Sinal de conclusão | Firmware | Indica o encerramento da corrida |
+| Dados em tempo real | Backend | Enviados ao frontend para exibição |
+| Resumo final da corrida | Backend | Exibido no frontend e salvo no banco |
+| Histórico de corridas | SQLite | Consultado pelo backend e exibido no frontend |
+| Mapa do labirinto | Firmware | Usado internamente para navegação |
+| Leituras dos sensores | Sensores físicos | Usadas pelo firmware para detectar paredes |
 
-### Lanes do Pool 3
+O SQLite não é representado como participante do processo, pois não executa ações próprias. Ele funciona como armazenamento persistente acessado pelo backend.
 
-| Lane | Área | Responsabilidade |
-|---|---|---|
-| **Lane 3A** | Backend (FastAPI) | Recebe telemetria, valida, retransmite ao frontend e persiste no SQLite |
-| **Lane 3B** | Frontend (HTML/CSS/JS) | Renderiza o painel e exibe os dados em tempo real |
+---
 
-### Data Objects
+## Fluxo principal da corrida
 
-| Data Object | Produzido por | Consumido por |
-|---|---|---|
-| Pacote de Telemetria | Firmware | Backend |
-| Sinal de Conclusão | Firmware | Backend |
-| Dados Processados em Tempo Real | Backend | Frontend |
-| Resumo Final da Corrida | Backend | Frontend, Banco SQLite |
-| Registros Históricos | Banco SQLite | Backend → Frontend |
-| Mapa do Labirinto (memória interna) | Firmware | Firmware (uso interno) |
-| Leituras dos Sensores IR | Sensores físicos | Firmware |
+O processo inicia quando o operador seleciona o tipo de labirinto, posiciona o robô na célula de partida e aciona o início da corrida.
 
-> O SQLite não é um Pool, e sim um Data Object persistente acessado apenas pelo Backend.
+Após receber o sinal de início, o firmware inicializa os sensores, os motores e a estrutura interna do mapa. A partir desse ponto, o robô passa a operar de forma autônoma, sem intervenção externa.
 
-## Atividades por Pool e Lane
+Durante a corrida, o firmware executa dois fluxos em paralelo:
 
-### Pool 1 — Operador
+```text
+1. Navegação:
+   leitura dos sensores → atualização do mapa → cálculo da rota → controle dos motores
 
-Ator humano. Atua no início e na consulta; durante a corrida apenas observa, pois o robô é autônomo.
+2. Telemetria:
+   montagem dos pacotes → envio dos dados ao backend → repetição contínua durante a corrida
+````
 
-1. Selecionar o labirinto (4×4, 8×8 ou 16×16).
-2. Posicionar o micromouse na célula de partida.
-3. Iniciar a corrida via botão físico. A partir daqui, qualquer intervenção é vedada.
-4. Monitorar a telemetria pela interface web.
-5. Consultar histórico *(opcional)*: filtra por labirinto ou exibe todas as corridas.
+Na fase de exploração, o robô percorre o labirinto célula por célula, identifica paredes e atualiza o mapa interno. Com base nessas informações, utiliza o algoritmo Flood Fill para escolher o próximo movimento em direção ao objetivo.
 
-**Mensagens enviadas:** Sinal de início → Firmware.
+Após encontrar o caminho, o robô realiza a corrida utilizando o mapa construído, buscando alcançar a sala central de forma mais eficiente. Ao concluir a corrida, o firmware envia um sinal de conclusão ao backend.
 
-### Pool 2 — Micromouse (Firmware)
+---
 
-Após o início, toda a inteligência opera no ESP32, sem comandos externos. O processo tem duas fases:
+## Processamento no Sistema Web
 
-- **Fase 1 — Exploração:** navega devagar célula a célula, construindo o mapa via Flood Fill.
-- **Fase 2 — Corrida:** com o mapa pronto, percorre o caminho mais curto em velocidade máxima.
+O backend recebe os pacotes de telemetria enviados pelo firmware por WebSocket. Cada pacote é validado antes de ser processado.
 
-**Atividades:**
+Se o pacote for válido, os dados são retransmitidos ao frontend para atualização do painel em tempo real. Se o pacote for inválido, ele é rejeitado sem interromper o funcionamento do servidor.
 
-1. Inicializar o sistema: ativa sensores (IR e encoders), define posição inicial e prepara a matriz do mapa.
-2. Ler os sensores a cada ciclo (≤ 10 ms) para detectar paredes adjacentes.
-3. Atualizar o mapa na memória interna.
-4. Executar Flood Fill para calcular a direção de menor custo até a sala central.
-5. Controlar os motores (PID) para velocidade, direção e centralização.
-6. Detectar o objetivo (sala central 2×2): encerra a fase e, se for a segunda passagem, emite o sinal de conclusão.
+Quando o backend recebe o sinal de conclusão, compila o resumo final da corrida, envia o resultado consolidado ao frontend e registra os dados no SQLite.
 
-> **Gateway Paralelo (divisão):** após a inicialização, o fluxo se divide entre o loop de navegação (2–6) e o envio contínuo de telemetria (7).
+O frontend mantém a conexão com o backend, atualiza o mapa e exibe os principais dados da corrida:
 
-7. Enviar pacotes de telemetria via Wi-Fi/WebSocket (≥ 1 pacote/s): posição (X, Y), velocidade média, bateria e status.
+* tipo do labirinto;
+* trajeto percorrido;
+* bateria;
+* velocidade média;
+* tempo;
+* status do desafio.
 
-> **Gateway Paralelo (reunião):** os dois caminhos convergem após a detecção do objetivo e o envio do sinal de conclusão.
+Ao detectar a conclusão da corrida, o frontend exibe a tela com o resultado final. Opcionalmente, o operador pode consultar o histórico de corridas filtrando por tipo de labirinto ou visualizando todos os registros.
 
-**Mensagens enviadas:** Pacotes de telemetria e Sinal de conclusão → Backend.
+---
 
-### Pool 3 — Sistema Web
+## Fluxo resumido
 
-#### Lane 3A — Backend (FastAPI)
+```text
+Operador
+  → seleciona labirinto
+  → posiciona o robô
+  → aciona início
 
-1. Receber pacotes de telemetria em endpoint WebSocket.
-2. Validar e processar os dados: pacotes inválidos são rejeitados (400) sem derrubar o servidor.
-3. Retransmitir ao Frontend via WebSocket (≤ 1 s), **antes** da persistência.
-4. Detectar encerramento: ao receber o sinal de conclusão, compila o resumo final. Desconexões abruptas sem flag não geram registro.
-5. Retransmitir o resumo final ao Frontend **antes** de gravar no banco.
-6. Persistir o resumo no SQLite.
-7. Responder a consultas históricas: filtra por labirinto ou retorna todas as corridas. Banco vazio retorna `[]` com status 200.
+Firmware
+  → inicializa sensores e motores
+  → lê sensores
+  → atualiza mapa
+  → calcula rota com Flood Fill
+  → controla motores
+  → envia telemetria
+  → detecta conclusão
+  → envia sinal final
 
-#### Lane 3B — Frontend (HTML/CSS/JS)
+Backend
+  → recebe telemetria
+  → valida pacotes
+  → retransmite ao frontend
+  → recebe sinal de conclusão
+  → gera resumo final
+  → salva no SQLite
 
-1. Estabelecer conexão WebSocket automaticamente ao abrir o Dashboard, com reconexão automática em caso de queda.
-2. Renderizar o painel com os 6 campos obrigatórios: tipo do labirinto, trajeto, bateria, velocidade média, tempo e status (S/N).
-3. Atualizar o mapa do labirinto conforme os dados chegam.
-4. Detectar conclusão e exibir resultado final: transita automaticamente para a tela consolidada.
-5. Exibir consultas históricas com filtro por labirinto ou todas as corridas.
+Frontend
+  → exibe dados em tempo real
+  → atualiza o mapa
+  → mostra resultado final
+  → permite consulta ao histórico
+```
 
-## Fluxo Geral
+---
 
-`→ [mensagem] →` = fluxo de mensagem entre Pools; `→` = fluxo de sequência interno.
+## Eventos principais
 
-1. **[Operador]** Seleciona labirinto → posiciona o robô → aciona início. `→ [Sinal de início] →` **[Firmware]**
-2. **[Firmware]** Inicializa → *Gateway Paralelo (divisão)*:
-   - **Caminho A — Exploração:** lê sensores → atualiza mapa → Flood Fill → controla motores → *Objetivo atingido?* Não: repete; Sim: salva mapa → inicia Corrida.
-   - **Caminho A — Corrida:** recalcula caminho mínimo → percorre em velocidade máxima → detecta objetivo → emite sinal de conclusão.
-   - **Caminho B — Telemetria:** monta pacote `→ [Pacote] →` **[Backend]** → próximo ciclo.
-   - *Gateway Paralelo (reunião)* `→ [Sinal de conclusão] →` **[Backend]**
-3. **[Backend]** Valida pacote → *Válido?* Sim: processa e retransmite ao **[Frontend]**; Não: rejeita.
-4. **[Backend]** Recebe sinal de conclusão → *Flag presente?* Sim: compila resumo → retransmite ao **[Frontend]** → persiste no SQLite; Não: descarta.
-5. **[Frontend]** Detecta flag → exibe tela consolidada → **[Operador]** visualiza o resultado.
-6. *(Opcional)* **[Operador]** solicita histórico → **[Backend]** consulta banco → **[Frontend]** exibe.
+| Evento                    | Participante | Descrição                                |
+| ------------------------- | ------------ | ---------------------------------------- |
+| Início da corrida         | Operador     | O operador aciona o início do desafio    |
+| Recebimento do início     | Firmware     | O robô inicia sua execução autônoma      |
+| Envio de telemetria       | Firmware     | O robô envia dados periódicos ao backend |
+| Recebimento de telemetria | Backend      | O servidor recebe e valida os dados      |
+| Atualização do painel     | Frontend     | A interface exibe os dados recebidos     |
+| Conclusão da corrida      | Firmware     | O robô detecta o fim do percurso         |
+| Persistência dos dados    | Backend      | O resultado final é salvo no SQLite      |
+| Consulta de histórico     | Operador     | O operador visualiza corridas anteriores |
 
-## Eventos Principais
+---
 
-| Tipo de Evento | Pool/Lane | Descrição |
-|---|---|---|
-| Início (Genérico) | Operador | Decisão de iniciar a corrida |
-| Início (Mensagem) | Firmware | Recebe sinal de início |
-| Início (Mensagem) | Backend | Aguarda conexão WebSocket |
-| Intermediário (Envio) | Firmware | Envia pacote de telemetria |
-| Intermediário (Recepção) | Backend | Recebe pacote de telemetria |
-| Intermediário (Envio) | Firmware | Envia sinal de conclusão |
-| Intermediário (Recepção) | Backend | Recebe sinal de conclusão |
-| Intermediário (Erro) | Backend | Desconexão abrupta — corrida descartada |
-| Fim (sucesso) | Firmware | Sala central detectada |
-| Fim (falha) | Firmware | Tentativas esgotadas |
-| Fim | Backend | Dados finais gravados |
-| Fim | Operador | Sessão encerrada |
+## Gateways do processo
 
-## Gateways
+| Gateway                      | Tipo      | Função                                                                 |
+| ---------------------------- | --------- | ---------------------------------------------------------------------- |
+| Navegação e telemetria       | Paralelo  | Permite que o robô navegue e envie dados simultaneamente               |
+| Objetivo atingido?           | Exclusivo | Decide se o robô continua navegando ou encerra a fase                  |
+| Pacote válido?               | Exclusivo | Decide se o backend processa ou rejeita os dados recebidos             |
+| Sinal de conclusão presente? | Exclusivo | Decide se a corrida será consolidada e salva                           |
+| Corrida finalizada?          | Exclusivo | Decide se o frontend mantém o monitoramento ou exibe o resultado final |
 
-| Gateway | Tipo | Pool/Lane | Condições |
-|---|---|---|---|
-| Divisão navegação + telemetria | Paralelo (+) | Firmware | Divide em loop de navegação e envio de telemetria |
-| Reunião navegação + telemetria | Paralelo (+) | Firmware | Sincroniza após objetivo + sinal de conclusão |
-| Objetivo atingido? | XOR | Firmware | Sim → encerra fase; Não → repete loop |
-| Pacote válido? | XOR | Backend | Sim → processa e retransmite; Não → rejeita com 400 |
-| Flag de conclusão presente? | XOR | Backend | Sim → resumo + retransmite + persiste; Não → descarta |
-| Corrida finalizada? | XOR | Frontend | Sim → tela consolidada; Não → mantém telemetria |
+---
 
-## Objetos de Conexão
+## Objetos de conexão
 
-| Tipo | Entre | Descrição |
-|---|---|---|
-| Fluxo de Sequência (contínua) | Atividades do mesmo Pool | Conecta atividades, eventos e gateways |
-| Fluxo de Mensagem (tracejada) | Operador → Firmware | Sinal de início |
-| Fluxo de Mensagem (tracejada) | Firmware → Backend | Pacotes de telemetria (Wi-Fi/WebSocket) |
-| Fluxo de Mensagem (tracejada) | Firmware → Backend | Sinal de conclusão |
-| Associação (pontilhada) | Atividades ↔ Data Objects | Liga atividades a seus insumos e resultados |
+| Objeto             | Uso                                                             |
+| ------------------ | --------------------------------------------------------------- |
+| Fluxo de sequência | Liga atividades dentro do mesmo participante                    |
+| Fluxo de mensagem  | Representa a comunicação entre operador, firmware e sistema web |
+| Associação         | Relaciona atividades aos dados produzidos ou consumidos         |
+
+As principais mensagens trocadas no processo são:
+
+```text
+Operador → Firmware: sinal de início
+Firmware → Backend: pacotes de telemetria
+Firmware → Backend: sinal de conclusão
+Backend → Frontend: dados processados em tempo real
+Backend → Frontend: resumo final da corrida
+```
 
 ---
 
 ## Histórico de versões
 
-| Versão | Data | Descrição | Autor(es) | Revisor(es) | Descrição da Revisão |
-| :----: | :--------: | :-------: | :-------: | :---------: | :--------------------: |
-| `1.0` | 27/04/2026 | Criação do documento de descrição textual do Diagrama BPMN | [Arthur Moreira](https://github.com/arthurrochamoreira) | Pendente | |
-| `1.1` | 29/04/2026 | Melhoria da estrutura do documento | [Arthur Moreira](https://github.com/arthurrochamoreira) | Pendente | |
+| Versão |    Data    |                          Descrição                         |                        Autor(es)                        | Revisor(es) | Descrição da Revisão |
+| :----: | :--------: | :--------------------------------------------------------: | :-----------------------------------------------------: | :---------: | :------------------: |
+|  `1.0` | 27/04/2026 | Criação do documento de descrição textual do Diagrama BPMN | [Arthur Moreira](https://github.com/arthurrochamoreira) |   Pendente  |                      |
+|  `1.1` | 29/04/2026 |             Melhoria da estrutura do documento             | [Arthur Moreira](https://github.com/arthurrochamoreira) |   Pendente  |                      |
+|  `1.2` | 29/04/2026 |  Reorganização da descrição textual do BPMN  | [Arthur Moreira](https://github.com/arthurrochamoreira) |   Pendente  |                      |
+
