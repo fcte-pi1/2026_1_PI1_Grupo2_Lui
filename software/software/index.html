@@ -80,7 +80,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#software" class="md-skip">
+        <a href="#visao-geral-do-software" class="md-skip">
           Pular para conteúdo
         </a>
       
@@ -503,24 +503,8 @@
       <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
       
       
+        
       
-        <label class="md-nav__link md-nav__link--active" for="__toc">
-          
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Visão Geral
-  
-
-    
-  </span>
-  
-  
-
-          <span class="md-nav__icon md-icon"></span>
-        </label>
       
       <a href="./" class="md-nav__link md-nav__link--active">
         
@@ -538,34 +522,6 @@
   
 
       </a>
-      
-        
-
-<nav class="md-nav md-nav--secondary" aria-label="Índice">
-  
-  
-  
-  
-    <label class="md-nav__title" for="__toc">
-      <span class="md-nav__icon md-icon"></span>
-      Índice
-    </label>
-    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
-      
-        <li class="md-nav__item">
-  <a href="#software" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Software
-      
-    </span>
-  </a>
-  
-</li>
-      
-    </ul>
-  
-</nav>
       
     </li>
   
@@ -1099,25 +1055,8 @@
   
   
   
+    
   
-    <label class="md-nav__title" for="__toc">
-      <span class="md-nav__icon md-icon"></span>
-      Índice
-    </label>
-    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
-      
-        <li class="md-nav__item">
-  <a href="#software" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Software
-      
-    </span>
-  </a>
-  
-</li>
-      
-    </ul>
   
 </nav>
                   </div>
@@ -1137,9 +1076,289 @@
   
 
 
-  <h1>Visão Geral</h1>
+<h1 id="visao-geral-do-software">Visão Geral do Software</h1>
+<p>O software do Micromouse tem como objetivo permitir que o robô navegue autonomamente em labirintos desconhecidos e envie dados de telemetria para uma interface web de acompanhamento em tempo real. O sistema também registra o histórico das corridas, permitindo consulta posterior dos resultados.</p>
+<p>A solução é composta por quatro partes principais:</p>
+<table>
+<thead>
+<tr>
+<th>Componente</th>
+<th>Tecnologia</th>
+<th>Responsabilidade</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Firmware</td>
+<td>ESP32, C/C++</td>
+<td>Leitura de sensores, controle dos motores, navegação, mapeamento e envio de telemetria</td>
+</tr>
+<tr>
+<td>Backend</td>
+<td>Python, FastAPI</td>
+<td>Recebimento, validação e retransmissão dos dados em tempo real</td>
+</tr>
+<tr>
+<td>Frontend</td>
+<td>HTML, CSS e JavaScript</td>
+<td>Exibição da corrida, indicadores e histórico</td>
+</tr>
+<tr>
+<td>Banco de dados</td>
+<td>SQLite</td>
+<td>Armazenamento local das corridas e registros de telemetria</td>
+</tr>
+</tbody>
+</table>
+<p>O fluxo principal do sistema é:</p>
+<pre><code class="language-text">ESP32 → FastAPI/WebSocket → Dashboard → SQLite
+</code></pre>
+<p>As escolhas tecnológicas seguem as restrições definidas no projeto: uso de tecnologias locais, ausência de dependência em nuvem, frontend sem frameworks de build e comunicação por rede local.</p>
+<hr />
+<h1 id="estrutura-do-projeto-de-software">Estrutura do Projeto de Software</h1>
+<h2 id="objetivo-da-eap">Objetivo da EAP</h2>
+<p>A EAP organiza o trabalho de software do projeto Micromouse em pacotes menores, facilitando o planejamento, a divisão de responsabilidades, o acompanhamento do progresso e a validação das entregas.</p>
+<h2 id="produto-servico-e-projeto">Produto, serviço e projeto</h2>
+<table>
+<thead>
+<tr>
+<th>Item</th>
+<th>Definição</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Produto</td>
+<td>Firmware, backend, frontend e banco de dados que apoiam o funcionamento e o monitoramento do Micromouse</td>
+</tr>
+<tr>
+<td>Serviço</td>
+<td>Monitoramento da corrida em tempo real e consulta ao histórico de resultados</td>
+</tr>
+<tr>
+<td>Projeto</td>
+<td>Esforço temporário do grupo para especificar, desenvolver, testar, integrar e documentar o software</td>
+</tr>
+</tbody>
+</table>
+<h2 id="abordagem-de-gerenciamento">Abordagem de gerenciamento</h2>
+<p>A abordagem adotada é híbrida. As atividades de requisitos, arquitetura, testes e documentação seguem uma lógica mais tradicional, pois exigem registro e rastreabilidade. Já o desenvolvimento de firmware, backend e frontend segue ciclos incrementais, permitindo ajustes conforme os testes com o robô e a integração entre os componentes evoluem.</p>
+<hr />
+<h2 id="eap-resumida">EAP resumida</h2>
+<pre><code class="language-text">1. Software do Micromouse
 
-<h2 id="software">Software</h2>
+   1.1 Gestão e documentação
+       - Definição de escopo
+       - Cronograma
+       - Responsabilidades
+       - Riscos
+       - Registro de decisões técnicas
+
+   1.2 Engenharia de requisitos
+       - Problema e objetivos
+       - Histórias de usuário
+       - Requisitos funcionais e não funcionais
+       - Critérios de aceite
+       - Backlog priorizado
+
+   1.3 Modelagem e arquitetura
+       - BPMN
+       - Casos de uso
+       - Diagrama de estados
+       - Arquitetura do sistema
+       - DER
+       - Interfaces entre firmware, backend e frontend
+
+   1.4 Firmware embarcado
+       - Leitura de sensores
+       - Controle dos motores
+       - Mapeamento do labirinto
+       - Navegação com Flood Fill
+       - Envio de telemetria
+
+   1.5 Backend e comunicação
+       - Servidor FastAPI
+       - Comunicação WebSocket
+       - Validação dos pacotes de telemetria
+       - Retransmissão dos dados ao dashboard
+       - API de consulta ao histórico
+
+   1.6 Banco de dados
+       - Modelo de dados
+       - Configuração do SQLite
+       - Persistência das corridas
+       - Consulta do histórico
+
+   1.7 Frontend e dashboard
+       - Interface de monitoramento
+       - Mapa em tempo real
+       - Indicadores de bateria, velocidade e tempo
+       - Status da corrida
+       - Histórico de resultados
+
+   1.8 Integração
+       - Integração firmware-backend
+       - Integração backend-frontend
+       - Integração backend-banco
+       - Validação do fluxo completo
+
+   1.9 Testes e validação
+       - Testes funcionais
+       - Testes de integração
+       - Testes de sistema
+       - Testes de latência e persistência
+       - Registro de evidências
+
+   1.10 Entrega
+       - Código revisado
+       - Documentação atualizada
+       - Relatório técnico
+       - Demonstração
+       - Lições aprendidas
+</code></pre>
+<hr />
+<h2 id="dicionario-resumido-da-eap">Dicionário resumido da EAP</h2>
+<table>
+<thead>
+<tr>
+<th>Pacote</th>
+<th>Entrega principal</th>
+<th>Critério de conclusão</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1.1 Gestão e documentação</td>
+<td>Projeto planejado</td>
+<td>Escopo, responsáveis, cronograma e riscos registrados</td>
+</tr>
+<tr>
+<td>1.2 Requisitos</td>
+<td>Backlog validado</td>
+<td>Histórias, critérios de aceite e RNFs documentados</td>
+</tr>
+<tr>
+<td>1.3 Modelagem e arquitetura</td>
+<td>Visão do sistema</td>
+<td>Diagramas e interfaces concluídos</td>
+</tr>
+<tr>
+<td>1.4 Firmware</td>
+<td>Controle do robô</td>
+<td>Sensores, motores, navegação e telemetria funcionando</td>
+</tr>
+<tr>
+<td>1.5 Backend</td>
+<td>Servidor de telemetria</td>
+<td>Dados recebidos, validados e retransmitidos</td>
+</tr>
+<tr>
+<td>1.6 Banco de dados</td>
+<td>Histórico de corridas</td>
+<td>Corridas e telemetrias persistidas corretamente</td>
+</tr>
+<tr>
+<td>1.7 Frontend</td>
+<td>Dashboard</td>
+<td>Corrida exibida em tempo real</td>
+</tr>
+<tr>
+<td>1.8 Integração</td>
+<td>Fluxo completo</td>
+<td>Componentes comunicando corretamente</td>
+</tr>
+<tr>
+<td>1.9 Testes</td>
+<td>Qualidade verificada</td>
+<td>Casos executados e evidências registradas</td>
+</tr>
+<tr>
+<td>1.10 Entrega</td>
+<td>Sistema pronto para avaliação</td>
+<td>Código, documentação e demonstração finalizados</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="riscos-principais">Riscos principais</h2>
+<table>
+<thead>
+<tr>
+<th>Risco</th>
+<th></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Dificuldade de integrar firmware e telemetria</td>
+<td>Prototipar o envio de dados desde o início</td>
+</tr>
+<tr>
+<td>Instabilidade na comunicação em tempo real</td>
+<td>Implementar reconexão e simulador de pacotes</td>
+</tr>
+<tr>
+<td>Dashboard depender do robô físico</td>
+<td>Usar dados simulados durante o desenvolvimento</td>
+</tr>
+<tr>
+<td>Dados inconsistentes no banco</td>
+<td>Validar pacotes no backend antes da persistência</td>
+</tr>
+<tr>
+<td>Backlog maior que o tempo disponível</td>
+<td>Priorizar navegação, telemetria básica e dashboard mínimo</td>
+</tr>
+<tr>
+<td>Diagramas ficarem desatualizados</td>
+<td>Revisar a documentação a cada mudança relevante</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="rastreabilidade">Rastreabilidade</h2>
+<table>
+<thead>
+<tr>
+<th>Item</th>
+<th>Pacote da EAP</th>
+<th>Testes relacionados</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Navegação</td>
+<td>1.4 Firmware</td>
+<td>CT-01 a CT-16</td>
+</tr>
+<tr>
+<td>Telemetria</td>
+<td>1.4, 1.5, 1.8</td>
+<td>CT-17 a CT-19</td>
+</tr>
+<tr>
+<td>Persistência</td>
+<td>1.6 Banco de dados</td>
+<td>CT-20 a CT-24</td>
+</tr>
+<tr>
+<td>Dashboard</td>
+<td>1.7 Frontend</td>
+<td>CT-25 a CT-30</td>
+</tr>
+<tr>
+<td>Latência e atualização</td>
+<td>1.5, 1.7, 1.9</td>
+<td>Testes de latência</td>
+</tr>
+<tr>
+<td>Integridade dos dados</td>
+<td>1.5, 1.6</td>
+<td>Testes de validação e persistência</td>
+</tr>
+</tbody>
+</table>
+<hr />
 
 
 
