@@ -38,7 +38,7 @@ Abaixo estão listadas as funcionalidades do sistema mapeadas em formato de Hist
 
 | ID | História de Usuário | Critérios de Aceitação | MoSCoW | Justificativa |
 |---|---|---|---|---|
-| **US10** | Como operador, quero visualizar na interface web o trajeto e o labirinto em tempo real, para acompanhar a evolução. | <ul><li>Renderizar grid/mapa que se preenche com a telemetria.</li></ul> | **Must Have** | É o propósito central da interface web (Dashboard de operação). |
+| **US10** | Como operador, quero visualizar na interface web o trajeto e o labirinto em tempo real, para acompanhar a evolução. | <ul><li>Renderizar grid/mapa que se preenche com a telemetria.</li><li>Incluir exibição do tipo de labirinto (4x4, 8x8 e 16x16)</li></ul> | **Must Have** | É o propósito central da interface web (Dashboard de operação). |
 | **US11** | Como operador, quero ver no painel o tempo de conclusão e a notificação se o desafio foi cumprido, para ter o resultado imediato. | <ul><li>Painel com cronômetro e indicador de Sucesso.</li></ul> | **Must Have** | Sem isso, não há como atestar digitalmente o sucesso e a performance da corrida. |
 | **US12** | Como operador, quero monitorar indicadores de velocidade média e o nível de bateria na tela, para prever pausas para recarga. | <ul><li>Exibir gráficos ou barras atualizadas dinamicamente.</li></ul> | **Must Have** | Interessa ter se o cronograma permitir, mas não trava o uso básico. |
 
