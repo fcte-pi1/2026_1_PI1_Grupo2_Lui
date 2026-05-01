@@ -32,7 +32,7 @@ Abaixo estão listadas as funcionalidades do sistema mapeadas em formato de Hist
 | ID | História de Usuário | Critérios de Aceitação | MoSCoW | Justificativa |
 |---|---|---|---|---|
 | **US08** | Como operador, quero que o firmware envie em tempo real dados primários (trajeto, tempo, status), para alimentar o sistema web. | <ul><li>Transmissão sem fio contínua.</li><li>Atraso mínimo de envio (delay).</li></ul> | **Must Have** | Integração indispensável da arquitetura (ponte Firmware <-> Software). A web depende disso. |
-| **US09** | Como operador, quero que o firmware envie o consumo de bateria e a velocidade média em tempo real, para monitorar a integridade. | <ul><li>Ler tensão e converter em %</li><li>Calcular velocidade média.</li></ul> | **Must Have** | Agrega alto valor de monitoramento, mas o sistema base de resolução do labirinto funciona sem esses dados específicos. |
+| **US09** | Como operador, quero que o firmware envie o consumo de bateria e a velocidade média em tempo real, para monitorar a integridade. | <ul><li>Ler tensão e converter em %</li><li>Calcular velocidade média.</li></ul> | **Must Have** | Agrega alto valor de monitoramento e auxilia a equipe na previsão de problemas |
 
 ### 3. Sistema Web Tempo Real
 
