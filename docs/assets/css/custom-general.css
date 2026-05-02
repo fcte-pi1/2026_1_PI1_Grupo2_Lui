@@ -589,8 +589,9 @@ a:hover { color: var(--purple-glow); }
    ============================================================ */
 .md-sidebar { z-index: 95 !important; }
 
-/* Oculta as labels/títulos dos toggles de nav (sidebar + drawer) */
-.md-sidebar label.md-nav__link[for^="__nav_"],
+/* Oculta apenas o label do grupo raiz ativo na sidebar, como "Software".
+   Mantém visíveis labels de subseções internas, como "Requisitos e Backlog". */
+.md-sidebar--primary .md-nav--primary > .md-nav__list > .md-nav__item > label.md-nav__link[for^="__nav_"],
 .md-sidebar label.md-nav__title[for^="__nav_"] {
   display: none !important;
 }
