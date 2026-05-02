@@ -262,9 +262,3 @@ Centralizar o acesso ao banco no backend garante que toda escrita e leitura de d
 | RE-08 | Frontend | Chrome / Firefox / Edge | versão 110 |
 | RE-09 | Frontend | Layout responsivo | largura ≥ 1024px |
 | RE-10 | Banco de dados | SQLite 3 | versão 3.35+ |
-
-
-
-
-
-
