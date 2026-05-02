@@ -70,7 +70,7 @@ nav:
   - Energia: energia/energia.md
   - Hardware: hardware/hardware.md
   - Software:
-      - software/index.md
+      - Visão Geral: software/software.md
       - Requisitos e Backlog:
           - Histórias de Usuário: software/entrega_1/historias_usuario.md
           - Requisitos Não-Funcionais: software/entrega_1/requisitos_nao_funcionais.md
