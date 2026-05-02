@@ -498,9 +498,7 @@ a:hover { color: var(--purple-glow); }
   margin-left: 0.15rem;
 }
 
-/* Comportamento ao rolar — colapsa as tabs */
-.md-header.is-scrolled ~ .md-container .md-tabs,
-.md-header.is-collapsed + .md-tabs,
+/* Comportamento ao rolar — colapsa as tabs via header-extras.js */
 .md-tabs.is-collapsed {
   max-height: 0 !important;
   overflow: hidden !important;
