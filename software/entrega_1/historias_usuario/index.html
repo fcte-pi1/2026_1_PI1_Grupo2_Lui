@@ -1324,8 +1324,8 @@
 <td><strong>US05</strong></td>
 <td>Como operador, quero que o robô resolva os três tamanhos de labirinto (4x4, 8x8 e 16x16), para garantir adaptação de escala.</td>
 <td><ul><li>Algoritmo com alocação dinâmica para 4x4, 8x8 e 16x16.</li></ul></td>
-<td><strong>Should Have</strong></td>
-<td>Importante para a entrega final, mas o MVP (Minimum Viable Product) pode rodar apenas no 4x4 inicialmente para validar a viabilidade da arquitetura.</td>
+<td><strong>Must Have</strong></td>
+<td>Importante para a entrega final onde o robô será posto em labirintos 4x4, 8x8 e 16x16</td>
 </tr>
 <tr>
 <td><strong>US06</strong></td>
@@ -1366,8 +1366,8 @@
 <td><strong>US09</strong></td>
 <td>Como operador, quero que o firmware envie o consumo de bateria e a velocidade média em tempo real, para monitorar a integridade.</td>
 <td><ul><li>Ler tensão e converter em %</li><li>Calcular velocidade média.</li></ul></td>
-<td><strong>Should Have</strong></td>
-<td>Agrega alto valor de monitoramento, mas o sistema base de resolução do labirinto funciona sem esses dados específicos.</td>
+<td><strong>Must Have</strong></td>
+<td>Agrega alto valor de monitoramento e auxilia a equipe na previsão de problemas</td>
 </tr>
 </tbody>
 </table>
@@ -1386,7 +1386,7 @@
 <tr>
 <td><strong>US10</strong></td>
 <td>Como operador, quero visualizar na interface web o trajeto e o labirinto em tempo real, para acompanhar a evolução.</td>
-<td><ul><li>Renderizar grid/mapa que se preenche com a telemetria.</li></ul></td>
+<td><ul><li>Renderizar grid/mapa que se preenche com a telemetria.</li><li>Incluir exibição do tipo de labirinto (4x4, 8x8 e 16x16)</li></ul></td>
 <td><strong>Must Have</strong></td>
 <td>É o propósito central da interface web (Dashboard de operação).</td>
 </tr>
@@ -1401,8 +1401,8 @@
 <td><strong>US12</strong></td>
 <td>Como operador, quero monitorar indicadores de velocidade média e o nível de bateria na tela, para prever pausas para recarga.</td>
 <td><ul><li>Exibir gráficos ou barras atualizadas dinamicamente.</li></ul></td>
-<td><strong>Could Have</strong></td>
-<td>Interessa ter se o cronograma permitir, mas não trava o uso básico.</td>
+<td><strong>Must Have</strong></td>
+<td>As medidas são necessária para monitorar dados do robô, verificando se os calculos realizados anteriormente estão condizentes</td>
 </tr>
 </tbody>
 </table>
@@ -1424,6 +1424,13 @@
 <td><ul><li>Criar registro (Log) no banco.</li><li>Dados devem persistir após reinício.</li></ul></td>
 <td><strong>Must Have</strong></td>
 <td>Fundamental para a camada de persistência da arquitetura, validando o requisito de banco de dados.</td>
+</tr>
+<tr>
+<td><strong>US14</strong></td>
+<td>Como operador, quero poder filtrar os dados consolidados do histórico por tipo de labirinto (4x4, 8x8, 16x16) ou visualizar todos, para analisar o desempenho em diferentes cenários.</td>
+<td><ul><li>Interface deve permitir a seleção de filtros por tamanho. A listagem deve atualizar conforme o filtro selecionado.</li></ul></td>
+<td><strong>Must Have</strong></td>
+<td>Essencial para a análise comparativa de desempenho. Como a complexidade varia entre os mapas, a filtragem impede a distorção das métricas agrupando dados de mesma escala.</td>
 </tr>
 </tbody>
 </table>
