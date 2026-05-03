@@ -1460,8 +1460,67 @@ td[data-type="null"] code {
 
 
 /* ============================================================
-   19. COMPONENTES — Back button, lightbox, hero badges
+   back button, back-to-top, lightbox, hero badges
    ============================================================ */
+
+/* Botão "Voltar para o topo" (Material — .md-top)
+   Pílula flutuante no topo, glass escuro com borda roxa. */
+.md-top {
+  background-color: var(--glass-bg) !important;
+  backdrop-filter: blur(var(--glass-blur)) saturate(160%) !important;
+  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(160%) !important;
+  border: 1px solid var(--ui-border-dim) !important;
+  border-radius: 999px !important;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4) !important;
+  color: var(--purple-glow) !important;
+  font-family: var(--base-font) !important;
+  font-weight: 700 !important;
+  font-style: italic !important;
+  text-transform: uppercase !important;
+  letter-spacing: var(--tracking-uppr) !important;
+  font-size: var(--fs-tiny) !important;
+  padding: 0.55rem 1.1rem !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 0.45rem !important;
+  transition:
+    background-color var(--dur-base) ease,
+    border-color     var(--dur-base) ease,
+    color            var(--dur-base) ease,
+    box-shadow       var(--dur-base) ease,
+    opacity          var(--dur-base) ease !important;
+}
+
+.md-top:hover,
+.md-top:focus {
+  background-color: var(--purple-bg-active) !important;
+  border-color: var(--ui-border-hover) !important;
+  color: var(--purple-glow) !important;
+  outline: none !important;
+  box-shadow:
+    0 12px 32px rgba(0, 0, 0, 0.5),
+    0 0 16px rgba(124, 58, 237, 0.25) !important;
+}
+
+.md-top:focus-visible {
+  border-color: var(--glass-border-hover) !important;
+  box-shadow:
+    0 12px 32px rgba(0, 0, 0, 0.5),
+    0 0 0 3px var(--purple-bg-active) !important;
+}
+
+.md-top svg {
+  width: 14px !important;
+  height: 14px !important;
+  fill: currentColor !important;
+  transition: transform var(--dur-base) var(--ease-out-expo) !important;
+}
+
+.md-top:hover svg,
+.md-top:focus svg {
+  transform: translateY(-3px) !important;
+}
+
 
 /* Botão voltar (mobile ≤ 959px) */
 .back-btn {
