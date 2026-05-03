@@ -55,6 +55,7 @@ theme:
     - navigation.sections       # Agrupamento lógico de seções
     - navigation.footer         # Navegação no rodapé
     - navigation.indexes        # Link direto para índices de seção
+    - navigation.top            # Botão de voltar ao topo
     
     - search.suggest            # Sugestão de pesquisa em tempo real
     - search.highlight          # Destaque de termos buscados
