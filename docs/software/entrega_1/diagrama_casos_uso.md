@@ -44,11 +44,12 @@ Para estruturação nas ferramentas de modelagem (Draw.io, Lucidchart, Astah), o
 - **UC07 (Filtrar Histórico por Dimensão)** `<<extend>>` **UC06 (Consultar Histórico de Corridas):** A aplicação do filtro é uma ação opcional executada a critério do operador durante a visualização do histórico.
 
 ## 5. Representação Textual do Diagrama 
+
 ```mermaid
 flowchart LR
-    A_Operador([Operador])
-    A_Juiz([Juiz da Prova])
-    A_Hardware([Sensores/Hardware])
+    A_Operador(Operador)
+    A_Juiz(Juiz da Prova)
+    A_Hardware(Sensores/Hardware)
 
     subgraph Fronteira [Fronteira do Sistema Integrado]
         UC01(Navegar Autonomamente)
@@ -70,8 +71,8 @@ flowchart LR
     
     A_Juiz --> UC08
 
-    UC01 -.->|"<<include>>"| UC02
-    UC01 -.->|"<<include>>"| UC05
-    UC04 -.->|"<<include>>"| UC03
-    UC07 -.->|"<<extend>>"| UC06
-    ```
+    UC01 -.->|include| UC02
+    UC01 -.->|include| UC05
+    UC04 -.->|include| UC03
+    UC07 -.->|extend| UC06
+```

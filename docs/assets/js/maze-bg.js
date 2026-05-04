@@ -329,9 +329,10 @@ function bootstrapMazeAnimation() {
     }
 }
 
-// Inicialização inicial
-window.addEventListener('DOMContentLoaded', bootstrapMazeAnimation);
+document$.subscribe(() => {
+    bootstrapMazeAnimation();
 
-// Observer para MkDocs
-const mazeObserver = new MutationObserver(bootstrapMazeAnimation);
-mazeObserver.observe(document.body, { childList: true, subtree: true });
+    if (window.mermaid && document.querySelector('.mermaid')) {
+        mermaid.init(undefined, document.querySelectorAll('.mermaid'));
+    }
+});
