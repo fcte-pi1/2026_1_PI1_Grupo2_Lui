@@ -69,7 +69,9 @@ theme:
 nav:
   - Home: index.md
   - Energia: energia/energia.md
-  - Hardware: hardware/hardware.md
+  - Hardware:
+      - Visão Geral: hardware/hardware.md
+      - EAP: hardware/hw_eap.md
   - Software:
       - Visão Geral: software/software.md
       - Requisitos e Backlog:
