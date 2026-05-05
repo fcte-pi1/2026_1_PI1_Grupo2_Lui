@@ -127,7 +127,7 @@
       <a class="team-card team-card--lead" data-area="hardware" href="#">
         <span class="team-card__badge">Gerente de Hardware</span>
         <div class="team-card__avatar-inner">
-          <img src="https://github.com/github.png" alt="João Vitor Pereira" />
+          <img src="https://github.com/github.png" alt="João Victor Pereira" />
         </div>
         <div class="team-card__body">
           <div class="team-card__name">João Vitor Pereira</div>
