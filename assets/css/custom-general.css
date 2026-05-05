@@ -146,7 +146,6 @@
   );
 
   /* Escala da homepage */
-  --home-fs-display:         7.5rem;
   --home-fs-h1:              2.4rem;
   --home-fs-h2:              1.6rem;
   --home-fs-h3:              1.6rem;
@@ -154,22 +153,14 @@
   --home-fs-base:            1rem;
   --home-fs-sm:              0.65rem;
   --home-fs-xs:              0.55rem;
-  --home-fs-global-h1:       3rem;
-  --home-fs-global-h2:       2rem;
-  --home-fs-global-p:        0.9rem;
-  --home-fs-global-h1-first: 4.5rem;
 }
 
 /* Tokens responsivos da homepage */
 @media screen and (max-width: 76.1875em) {
   [data-md-color-scheme="slate"] {
-    --home-fs-display:         3.5rem;
     --home-fs-h1:              1.8rem;
     --home-fs-h2:              1.4rem;
     --home-fs-h3:              1.2rem;
-    --home-fs-global-h1:       2.2rem;
-    --home-fs-global-h2:       1.6rem;
-    --home-fs-global-h1-first: 2.8rem;
   }
 }
 
@@ -180,6 +171,10 @@
 html { scroll-behavior: smooth; }
 
 body { font-family: var(--base-font) !important; }
+
+.md-skip {
+  display: none !important;
+}
 
 ::selection {
   background: rgba(124, 58, 237, 0.5);
@@ -270,12 +265,23 @@ a:hover { color: var(--purple-glow); }
   background-repeat: no-repeat;
   transition:
     color           var(--dur-base) ease,
-    background-size var(--dur-base) var(--ease-out-expo) !important;
+    background-size var(--dur-base) var(--ease-out-expo);
 }
 
 .md-typeset a:not(.md-button):hover {
   color: var(--purple-glow) !important;
   background-size: 100% 1px !important;
+}
+
+/* Cards de equipe: usam a cor da área no underline animado, não o roxo padrão */
+.md-typeset a.team-card:not(.md-button) {
+  background-image: linear-gradient(var(--area-color), var(--area-color)) !important;
+}
+
+.md-typeset a.team-card:not(.md-button):hover,
+.md-typeset a.team-card:not(.md-button):focus,
+.md-typeset a.team-card:not(.md-button):focus-visible {
+  color: inherit !important;
 }
 
 
@@ -289,7 +295,7 @@ a:hover { color: var(--purple-glow); }
   transition:
     background-color var(--dur-base) ease,
     backdrop-filter  var(--dur-base) ease,
-    box-shadow       var(--dur-base) ease !important;
+    box-shadow       var(--dur-base) ease;
 }
 
 /* Garante que o header nunca quebre linha no mobile */
@@ -313,23 +319,6 @@ a:hover { color: var(--purple-glow); }
   backdrop-filter: blur(var(--glass-blur)) saturate(160%) !important;
   -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(160%) !important;
   box-shadow: none !important;
-}
-
-/* Logo */
-.mm-logo {
-  display: inline-flex;
-  align-items: center;
-  width: 28px;
-  height: 28px;
-  margin-right: 0.6rem;
-  flex-shrink: 0;
-  color: var(--purple-glow);
-}
-
-.mm-logo svg {
-  width: 100%;
-  height: 100%;
-  display: block;
 }
 
 /* Título do header */
@@ -367,76 +356,7 @@ a:hover { color: var(--purple-glow); }
 
 
 /* ============================================================
-   6. STATUS BAR (HUD)
-   ============================================================ */
-.mm-statusbar {
-  position: sticky;
-  top: 2.4rem;
-  z-index: 99;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 1.5rem;
-  height: 22px;
-  padding: 0 1rem;
-  background: rgba(7, 5, 15, 0.85);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
-  border-bottom: 1px solid var(--ui-border-ghost);
-  font-family: var(--base-font);
-  font-size: var(--fs-counter);
-  font-weight: 700;
-  letter-spacing: var(--tracking-loose);
-  text-transform: uppercase;
-  color: var(--text-muted-dark);
-  overflow: hidden;
-  white-space: nowrap;
-}
-
-.mm-statusbar__group {
-  display: flex;
-  align-items: center;
-  gap: 1.25rem;
-  min-width: 0;
-}
-
-.mm-statusbar__item {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.4rem;
-}
-
-.mm-statusbar__label { color: var(--text-muted-dark); }
-
-.mm-statusbar__value {
-  color: var(--heading-h2);
-  font-feature-settings: "tnum";
-  letter-spacing: var(--tracking-tabs);
-}
-
-.mm-statusbar__dot {
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background: var(--green-racing);
-  box-shadow: 0 0 6px var(--green-racing);
-  animation: mm-pulse 2s ease-in-out infinite;
-}
-
-@keyframes mm-pulse {
-  0%, 100% { opacity: 1; }
-  50%      { opacity: 0.4; }
-}
-
-@media (max-width: 76.1875em) {
-  .mm-statusbar { display: none; }
-}
-
-.md-header.is-scrolled .mm-statusbar__item--subtitle { display: none; }
-
-
-/* ============================================================
-   7. TABS DE NAVEGAÇÃO
+   6. TABS DE NAVEGAÇÃO
    ============================================================ */
 .md-tabs {
   border-bottom: 1px solid var(--ui-border-ghost) !important;
@@ -460,7 +380,7 @@ a:hover { color: var(--purple-glow); }
   gap: 0.5rem;
   transition:
     color   var(--transition-speed) var(--transition-bezier),
-    opacity var(--transition-speed) ease !important;
+    opacity var(--transition-speed) ease;
 }
 
 .md-tabs__link:hover {
@@ -503,12 +423,12 @@ a:hover { color: var(--purple-glow); }
   max-height: 0 !important;
   overflow: hidden !important;
   border-bottom: none !important;
-  transition: max-height var(--dur-base) ease !important;
+  transition: max-height var(--dur-base) ease;
 }
 
 
 /* ============================================================
-   8. SEARCH
+   7. SEARCH
    ============================================================ */
 .md-search__form {
   border: 1px solid var(--ui-border-subtle) !important;
@@ -517,7 +437,7 @@ a:hover { color: var(--purple-glow); }
   transition:
     border-color     var(--dur-base) ease,
     background-color var(--dur-base) ease,
-    box-shadow       var(--dur-base) ease !important;
+    box-shadow       var(--dur-base) ease;
 }
 
 /* Substitui o ícone padrão de search por um chevron > roxo */
@@ -557,7 +477,7 @@ a:hover { color: var(--purple-glow); }
 
 
 /* ============================================================
-   9. SELETOR DE IDIOMA
+   8. SELETOR DE IDIOMA
    ============================================================ */
 #lang-select {
   font-family: var(--base-font);
@@ -583,7 +503,7 @@ a:hover { color: var(--purple-glow); }
 
 
 /* ============================================================
-   10. SIDEBAR — Container, visibilidade e progresso
+   9. SIDEBAR — Container, visibilidade e progresso
    ============================================================ */
 .md-sidebar { z-index: 95 !important; }
 
@@ -618,7 +538,7 @@ a:hover { color: var(--purple-glow); }
   backdrop-filter: none !important;
   -webkit-backdrop-filter: none !important;
   border-right: none !important;
-  transition: border-color var(--dur-base) ease !important;
+  transition: border-color var(--dur-base) ease;
 }
 
 .md-sidebar--primary:hover {
@@ -634,7 +554,7 @@ a:hover { color: var(--purple-glow); }
 
 
 /* ============================================================
-   11. NAV PRIMÁRIA — Links da sidebar (≥ desktop)
+   10. NAV PRIMÁRIA — Links da sidebar (≥ desktop)
    ============================================================ */
 @media screen and (min-width: 76.25em) {
   .md-nav__item.md-nav__item--active,
@@ -655,7 +575,7 @@ a:hover { color: var(--purple-glow); }
     padding: 0 0 0.4rem 0.75rem !important;
     border-bottom: none !important;
     margin-bottom: 0.5rem !important;
-    cursor: default !important;
+    cursor: default;
   }
 
   /* Link de página (interativo, navega) */
@@ -682,7 +602,7 @@ a:hover { color: var(--purple-glow); }
       color        var(--dur-base) var(--ease-out-expo),
       padding-left var(--dur-base) var(--ease-out-expo),
       border-color var(--dur-fast) ease,
-      background   var(--dur-base) ease !important;
+      background   var(--dur-base) ease;
   }
 
   .md-nav__link:hover {
@@ -735,7 +655,7 @@ a:hover { color: var(--purple-glow); }
     transition:
       color        var(--dur-base) var(--ease-out-expo),
       padding-left var(--dur-base) var(--ease-out-expo),
-      background   var(--dur-base) var(--ease-out-expo) !important;
+      background   var(--dur-base) var(--ease-out-expo);
   }
 
   /* Link já visitado — volta ao tom muted */
@@ -757,7 +677,7 @@ a:hover { color: var(--purple-glow); }
 
 
 /* ============================================================
-   12. NAV SECUNDÁRIA — Índice de seção
+   11. NAV SECUNDÁRIA — Índice de seção
    ============================================================ */
 .md-nav--secondary {
   position: relative;
@@ -877,7 +797,7 @@ a:hover { color: var(--purple-glow); }
     background   var(--dur-base) ease,
     border-color var(--dur-fast) ease,
     transform    var(--dur-base) var(--ease-out-expo),
-    padding-left var(--dur-base) var(--ease-out-expo) !important;
+    padding-left var(--dur-base) var(--ease-out-expo);
 }
 
 /* (A) Numeração técnica antes do label */
@@ -976,7 +896,7 @@ a:hover { color: var(--purple-glow); }
 
 
 /* ============================================================
-   13. CONTEÚDO — Layout, H1/H2/H3, HR, blockquote
+   12. CONTEÚDO — Layout, H1/H2/H3, HR, blockquote
    ============================================================ */
 .md-content {
   padding-top: 2.5rem;
@@ -1092,7 +1012,7 @@ a:hover { color: var(--purple-glow); }
 
 
 /* ============================================================
-   14. TABELAS
+   13. TABELAS
    ============================================================ */
 @media screen and (min-width: 768px) {
   .md-typeset__table { overflow: visible !important; }
@@ -1296,7 +1216,7 @@ td[data-type="null"] code {
 
 
 /* ============================================================
-   15. BLOCOS DE CÓDIGO
+   14. BLOCOS DE CÓDIGO
    ============================================================ */
 .md-typeset code {
   border-radius: 2px;
@@ -1364,7 +1284,7 @@ td[data-type="null"] code {
   transition:
     opacity   var(--dur-fast) ease,
     color     var(--dur-fast) ease,
-    transform var(--dur-fast) var(--ease-spring) !important;
+    transform var(--dur-fast) var(--ease-spring);
 }
 
 .md-clipboard:hover {
@@ -1381,7 +1301,7 @@ td[data-type="null"] code {
 
 
 /* ============================================================
-   16. ADMONITIONS, DETAILS & TABS DE CONTEÚDO
+   15. ADMONITIONS, DETAILS & TABS DE CONTEÚDO
    ============================================================ */
 .md-typeset .admonition,
 .md-typeset details {
@@ -1406,16 +1326,16 @@ td[data-type="null"] code {
 .md-typeset .tabbed-labels > label {
   transition:
     color        var(--dur-base) var(--ease-out-expo),
-    border-color var(--dur-base) var(--ease-out-expo) !important;
+    border-color var(--dur-base) var(--ease-out-expo);
 }
 
 .md-typeset .tabbed-content {
-  transition: opacity var(--dur-base) ease !important;
+  transition: opacity var(--dur-base) ease;
 }
 
 
 /* ============================================================
-   17. IMAGENS
+   16. IMAGENS
    ============================================================ */
 .md-typeset img:not([data-no-lightbox]) {
   cursor: zoom-in;
@@ -1432,7 +1352,7 @@ td[data-type="null"] code {
 
 
 /* ============================================================
-   18. SCROLL REVEAL
+   17. SCROLL REVEAL
    ============================================================ */
 .reveal {
   opacity: var(--reveal-opacity);
@@ -1460,7 +1380,7 @@ td[data-type="null"] code {
 
 
 /* ============================================================
-   back button, back-to-top, lightbox, hero badges
+   18. BOTÕES & LIGHTBOX — back-to-top, back-button, lightbox
    ============================================================ */
 
 /* Botão "Voltar para o topo" (Material — .md-top)
@@ -1488,7 +1408,7 @@ td[data-type="null"] code {
     border-color     var(--dur-base) ease,
     color            var(--dur-base) ease,
     box-shadow       var(--dur-base) ease,
-    opacity          var(--dur-base) ease !important;
+    opacity          var(--dur-base) ease;
 }
 
 .md-top:hover,
@@ -1513,7 +1433,7 @@ td[data-type="null"] code {
   width: 14px !important;
   height: 14px !important;
   fill: currentColor !important;
-  transition: transform var(--dur-base) var(--ease-out-expo) !important;
+  transition: transform var(--dur-base) var(--ease-out-expo);
 }
 
 .md-top:hover svg,
@@ -1642,65 +1562,8 @@ td[data-type="null"] code {
   stroke-linecap: round;
 }
 
-/* Hero badges (injetados pelo JS na homepage) */
-.hero-badges {
-  display: flex;
-  gap: 0.5rem;
-  justify-content: center;
-  flex-wrap: wrap;
-  margin: 1.25rem 0 0;
-}
-
-.hero-badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.35rem;
-  padding: 0.3rem 0.75rem;
-  border-radius: 8px;
-  font-family: var(--base-font);
-  font-size: var(--fs-tiny);
-  font-weight: 700;
-  font-style: italic;
-  text-transform: uppercase;
-  letter-spacing: var(--tracking-tabs);
-  border: 1px solid;
-  animation: hero-fade-up var(--dur-slow) var(--ease-out-expo) 320ms both;
-}
-
-.hero-badge--version {
-  background: var(--purple-bg-subtle);
-  border-color: var(--ui-border-dim);
-  color: var(--purple-glow);
-}
-
-.hero-badge--status {
-  background: rgba(16, 185, 129, 0.1);
-  border-color: rgba(16, 185, 129, 0.3);
-  color: #34d399;
-}
-
-.hero-badge--hw {
-  background: rgba(56, 189, 248, 0.1);
-  border-color: rgba(56, 189, 248, 0.3);
-  color: #7dd3fc;
-}
-
-.hero-badge__dot {
-  width: 5px;
-  height: 5px;
-  border-radius: 50%;
-  background: currentColor;
-  animation: pulse-dot 2s ease-in-out infinite;
-}
-
-@keyframes pulse-dot {
-  0%, 100% { opacity: 1;   transform: scale(1);   }
-  50%      { opacity: 0.5; transform: scale(0.7); }
-}
-
-
 /* ============================================================
-   20. SCROLLBAR (WebKit)
+   19. SCROLLBAR (WebKit)
    ============================================================ */
 ::-webkit-scrollbar       { width: 4px; height: 4px; }
 ::-webkit-scrollbar-track { background: transparent; }
@@ -1714,7 +1577,7 @@ td[data-type="null"] code {
 
 
 /* ============================================================
-   21. FOOTER
+   20. FOOTER
    ============================================================ */
 .md-footer {
   background-color: var(--bg-header) !important;
@@ -1732,7 +1595,7 @@ td[data-type="null"] code {
 
 .md-footer-nav__link {
   color: var(--heading-h2) !important;
-  transition: color var(--dur-base) ease !important;
+  transition: color var(--dur-base) ease;
 }
 
 .md-footer-nav__link:hover { color: var(--purple-light) !important; }
@@ -1742,11 +1605,11 @@ td[data-type="null"] code {
 
 
 /* ============================================================
-   22. HOMEPAGE — Presentation, stats, sections, team
+   21. HOMEPAGE — Presentation, sections, team
    ============================================================ */
 .presentation {
   text-align: center;
-  padding: 5rem 0 3rem;
+  padding: 3.5rem 0 2rem;
   position: relative;
   z-index: 1;
 }
@@ -1770,7 +1633,7 @@ td[data-type="null"] code {
   align-items: center;
   justify-content: center;
   gap: 1rem;
-  margin-bottom: 2.5rem;
+  margin-bottom: 1.4rem;
 }
 
 .presentation-line {
@@ -1794,7 +1657,6 @@ td[data-type="null"] code {
 }
 
 .presentation-title {
-  font-size: var(--home-fs-display) !important;
   font-weight: 900 !important;
   font-style: italic !important;
   text-transform: uppercase !important;
@@ -1813,323 +1675,321 @@ td[data-type="null"] code {
 }
 
 .presentation-content {
-  margin-top: 3rem;
+  margin-top: 1.5rem;
   max-width: 700px;
   margin-left: auto;
   margin-right: auto;
 }
 
-.presentation-stats {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 1px;
-  margin-top: 3rem;
-  background: var(--ui-border-subtle);
+/* ============================================================
+   TEAM — homepage / Equipe
+   ------------------------------------------------------------
+   Estrutura: tokens → container (.team-areas) → lane (.team-area)
+              → header → grid → card → variantes → media queries
+
+   Convenções:
+   - Cores e dimensões compartilhadas vivem em --tokens no .team-areas
+   - Cor de cada área controlada por --area-color em .team-area--*
+   - Apenas UM !important defensivo: blindagem de typesetting do Material
+   ============================================================ */
+
+/* ── Container (escopo de tokens) ────────────────────────── */
+.team-areas {
+  /* Tokens — sobrescritos por media queries para responsivo */
+  --area-color:           var(--purple-accent);
+  --team-radius:          14px;
+  --team-card-min:        173px;
+  --team-card-gap:        0.68rem;
+  --team-avatar:          72px;
+  --team-grid-padding:    0.72rem 1rem 0.78rem 1.25rem;
+  --team-header-padding:  0.42rem 1rem 0.42rem 1.15rem;
+  --team-header-min-h:    2.15rem;
+
+  display: flex;
+  flex-direction: column;
+  margin-top: 0.5rem;
+  width: 100%;
   border: 1px solid var(--ui-border-subtle);
-  max-width: 600px;
-  margin-left: auto;
-  margin-right: auto;
+  border-radius: var(--team-radius);
+  background: color-mix(in srgb, var(--bg-surface) 55%, transparent);
+  overflow: hidden;
+  box-sizing: border-box;
 }
 
-@media screen and (max-width: 480px) {
-  .presentation-stats { grid-template-columns: 1fr; }
-}
+/* ── Cor por área ────────────────────────────────────────── */
+.team-area--software   { --area-color: #6366f1; }
+.team-area--hardware   { --area-color: #10b981; }
+.team-area--energia    { --area-color: #f59e0b; }
+.team-area--estruturas { --area-color: #ec4899; }
 
-.stat-card {
-  padding: 1.25rem 1rem;
-  background: var(--bg-surface);
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 0.5rem;
-  border-left: none;
-  transition: background var(--dur-base) ease;
-}
-
-.stat-card:hover { background: var(--bg-raised); }
-
-/* Eyebrows compartilhados (stat / section subtitle / counter) */
-.stat-label,
-.section-subtitle,
-.counter-label {
-  font-family: var(--base-font);
-  color: var(--md-typeset-muted-color);
-  text-transform: uppercase;
-}
-
-.stat-label {
-  font-size: var(--fs-counter);
-  letter-spacing: var(--tracking-loose);
-  font-weight: 700;
-}
-
-.stat-value {
-  font-size: var(--home-fs-h3);
-  font-weight: 900;
-  font-style: italic;
-  color: var(--heading-color);
-  font-family: var(--base-font);
-  letter-spacing: -0.03em;
-  font-feature-settings: "tnum";
-}
-
-.section-header {
-  display: grid;
-  grid-template-columns: 1fr auto;
-  gap: 2rem;
-  align-items: end;
-  padding-bottom: 1.5rem;
-  margin-bottom: 2rem;
-  position: relative;
-  border-bottom: none !important;
-}
-
-.section-header::after {
-  content: "";
-  position: absolute;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  height: 1px;
-  background: var(--grad-bracket-60);
-}
-
-.section-title {
-  font-size: var(--home-fs-h1) !important;
-  font-weight: 900 !important;
-  font-style: italic !important;
-  text-transform: uppercase !important;
-  letter-spacing: -0.05em !important;
-  color: var(--heading-color) !important;
-  margin: 0 !important;
-  line-height: 0.9 !important;
-}
-
-.section-subtitle {
-  font-size: var(--home-fs-sm);
-  letter-spacing: 0.2em;
-  margin-top: 0.6rem;
-  font-weight: 700;
-}
-
-.section-counter {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-  gap: 0.2rem;
-  padding: 0.5rem 1rem 0.5rem 0;
-  border-right: 1px solid var(--ui-border-dim);
-  text-align: right;
-}
-
-.counter-label {
+/* ── Lane (uma faixa por área) ───────────────────────────── */
+.team-area {
   display: block;
-  font-size: var(--fs-counter);
-  font-weight: 700;
-  letter-spacing: 0.2em;
-  color: var(--text-muted-dark);
+  width: 100%;
+  min-width: 0;
+  border-bottom: 1px solid var(--ui-border-dim);
+  overflow: hidden;
+  box-sizing: border-box;
+}
+.team-area:last-child { border-bottom: none; }
+
+/* ── Header da lane ──────────────────────────────────────── */
+.team-area__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  min-height: var(--team-header-min-h);
+  padding: var(--team-header-padding);
+  border-bottom: 1px solid var(--ui-border-ghost);
+  background: linear-gradient(90deg,
+    color-mix(in srgb, var(--area-color) 5%, transparent) 0%,
+    transparent 100%);
+  min-width: 0;
+  box-sizing: border-box;
 }
 
-.counter-value {
-  font-size: var(--home-fs-h2);
+.team-area__title {
+  display: inline-flex;
+  align-items: center;
+  height: 1.3rem;
+  margin: 0;
+  padding: 0;
+  font-size: 0.84rem;
   font-weight: 900;
   font-style: italic;
+  letter-spacing: 0.14em;
+  line-height: 1;
+  text-transform: uppercase;
   color: var(--heading-color);
+  white-space: nowrap;
+  min-width: 0;
+}
+
+/* Blindagem defensiva: caso o título seja convertido para <h2>/<h3> ou
+   o tema aplique resets em .md-content, força os valores corretos. */
+.md-content .team-area__title {
+  margin: 0 !important;
+  padding: 0 !important;
+  font-size: 0.84rem !important;
+  line-height: 1 !important;
+}
+
+.team-area__count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  height: 1.3rem;
+  padding: 0.08rem 0.45rem;
+  font-size: 0.65rem;
+  font-weight: 800;
+  letter-spacing: 0.25em;
+  line-height: 1;
+  color: var(--area-color);
+  background: color-mix(in srgb, var(--area-color) 10%, transparent);
+  border: 1px solid color-mix(in srgb, var(--area-color) 40%, transparent);
+  border-radius: 999px;
   font-feature-settings: "tnum";
-  letter-spacing: -0.03em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  box-sizing: border-box;
 }
 
-@media screen and (max-width: 76.1875em) {
-  .section-header {
-    grid-template-columns: 1fr;
-    gap: 1rem;
-    align-items: flex-start;
-  }
-
-  .section-counter {
-    align-items: flex-start;
-    padding: 0.5rem 0;
-    border-right: none;
-    border-left: 2px solid var(--ui-border-dim);
-    padding-left: 1rem;
-    text-align: left;
-  }
-}
-
-/* Team grid */
-.team-grid {
+/* ── Grid de cards dentro da lane ────────────────────────── */
+.team-area__grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-  gap: 1.5rem;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, var(--team-card-min)), 1fr));
+  gap: var(--team-card-gap);
+  align-items: stretch;
+  padding: var(--team-grid-padding);
+  width: 100%;
+  min-width: 0;
+  overflow: hidden;
+  box-sizing: border-box;
 }
 
+.team-area__grid > .team-card {
+  width: 100%;
+  min-width: 0;
+}
+
+/* ── Card ────────────────────────────────────────────────── */
 .team-card {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 0;
-  padding: 2rem 1.5rem 1.5rem;
-  background: var(--bg-surface);
+  gap: 0.4rem;
+  height: 100%;
+  min-width: 0;
+  padding: 1.45rem 0.7rem 0.78rem;
   border: 1px solid var(--ui-border-subtle);
-  text-decoration: none;
+  border-radius: 10px;
+  background: var(--bg-surface);
   color: inherit;
+  text-decoration: none;
   position: relative;
   overflow: hidden;
-  border-radius: 8px;
-  height: 100%;
+  box-sizing: border-box;
   transition:
     border-color var(--transition-speed) ease,
-    transform    var(--transition-speed) var(--transition-bezier);
+    transform    var(--transition-speed) var(--transition-bezier),
+    box-shadow   var(--transition-speed) ease;
 }
 
 .team-card::before {
   content: "";
   position: absolute;
   inset: 0;
-  background: linear-gradient(135deg, var(--purple-bg-glow) 0%, rgba(79, 70, 229, 0.1) 50%, transparent 100%);
+  background: linear-gradient(160deg,
+    color-mix(in srgb, var(--area-color) 18%, transparent) 0%,
+    transparent 70%);
   opacity: 0;
-  transition: opacity 0.4s ease;
+  transition: opacity 0.35s ease;
   pointer-events: none;
 }
 
 .team-card:hover {
-  border-color: var(--ui-border-hover);
-  transform: translateY(-4px);
+  border-color: var(--area-color);
+  transform: translateY(-3px);
+  box-shadow: 0 8px 24px color-mix(in srgb, var(--area-color) 22%, transparent);
 }
 
 .team-card:hover::before { opacity: 1; }
 
-.team-card__header {
-  height: 2.5rem;
-  width: 100%;
-  display: flex;
-  flex-direction: column;
-  justify-content: flex-start;
-  align-items: flex-start;
-  margin-bottom: 0.5rem;
-}
-
-.team-card__index {
-  font-size: var(--home-fs-sm);
-  font-weight: 900;
-  font-style: italic;
-  color: var(--purple-accent);
-  letter-spacing: 0.2rem;
-  text-transform: uppercase;
-  display: block;
-}
-
-.team-card__manager {
-  font-size: var(--home-fs-xs);
-  font-family: var(--base-font);
-  color: var(--green-racing);
-  text-transform: uppercase;
-  display: block;
-  margin-top: -0.1rem;
-  opacity: 0.9;
-  letter-spacing: 0.05em;
-  min-height: 0.6rem;
-}
-
-.team-card__manager:empty::after { content: "\00a0"; }
-
-.team-card__avatar-wrapper {
-  position: relative;
-  margin: 1rem 0;
-}
-
-.team-card__avatar-wrapper::before {
-  content: "";
-  position: absolute;
-  inset: -10px;
-  border: 1px solid var(--ui-border-dim);
-  border-radius: 50%;
-}
-
-.team-card__avatar-wrapper::after {
-  content: "";
-  position: absolute;
-  inset: -4px;
-  border: 2px solid transparent;
-  border-top-color: var(--purple-accent);
-  border-radius: 50%;
-}
-
+/* Avatar */
 .team-card__avatar-inner {
-  width: 200px;
-  height: 200px;
-  border-radius: 50%;
-  overflow: hidden;
-  border: 4px solid var(--bg-page);
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
   position: relative;
   z-index: 1;
-}
-
-@media screen and (max-width: 480px) {
-  .team-card__avatar-inner {
-    width: 160px;
-    height: 160px;
-  }
+  flex-shrink: 0;
+  width: var(--team-avatar);
+  height: var(--team-avatar);
+  border: 2px solid var(--bg-page);
+  border-radius: 50%;
+  overflow: hidden;
+  box-shadow:
+    0 4px 14px rgba(0, 0, 0, 0.45),
+    0 0 0 1px color-mix(in srgb, var(--area-color) 45%, transparent);
 }
 
 .team-card img {
+  display: block;
   width: 100%;
   height: 100%;
   object-fit: cover;
-  display: block;
-  transition: transform 0.5s var(--transition-bezier);
+  transition: transform 0.45s var(--transition-bezier);
 }
 
-.team-card:hover img { transform: scale(1.1); }
+.team-card:hover img { transform: scale(1.08); }
 
+/* Corpo: nome + handle */
 .team-card__body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
   width: 100%;
+  min-width: 0;
   text-align: center;
-  min-height: 3rem;
 }
 
 .team-card__name {
-  font-size: var(--home-fs-base);
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  width: 100%;
+  /* Reserva 2 linhas para alinhar cards mesmo com nomes curtos */
+  min-height: calc(0.8rem * 1.15 * 2);
+  font-size: 0.8rem;
   font-weight: 900;
   font-style: italic;
+  letter-spacing: -0.02em;
+  line-height: 1.15;
   text-transform: uppercase;
-  line-height: 1.2;
-  letter-spacing: -0.03em;
   color: var(--heading-color);
-  margin-top: 0.75rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  word-break: break-word;
+  overflow-wrap: anywhere;
+  hyphens: auto;
   transition: color var(--transition-speed) ease;
 }
 
-.team-card:hover .team-card__name { color: var(--purple-light); }
-
-.team-card__handle {
-  font-size: var(--home-fs-sm);
-  color: var(--md-typeset-muted-color);
-  font-family: var(--base-font);
-  margin-top: 0.25rem;
+.team-card:hover .team-card__name,
+.team-card:focus-visible .team-card__name {
+  color: var(--area-color);
 }
 
-.team-card__role {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.4rem;
-  padding: 0.3rem 0.75rem;
-  background: var(--purple-bg-subtle);
-  border: 1px solid var(--ui-border-dim);
-  margin-top: 0.75rem;
-  font-size: var(--home-fs-xs);
-  font-weight: 900;
-  color: var(--purple-glow);
-  text-transform: uppercase;
+.team-card__handle {
+  font-family: var(--base-font);
+  font-size: 0.56rem;
+  letter-spacing: 0.01em;
+  line-height: 1.2;
+  color: var(--md-typeset-muted-color);
+  opacity: 0.85;
+  word-break: break-all;
+}
+
+/* ── Variantes ───────────────────────────────────────────── */
+
+/* Badge de gerente — chip pequeno no canto superior direito */
+.team-card__badge {
+  position: absolute;
+  top: 0.28rem;
+  right: 0.28rem;
+  z-index: 2;
+  max-width: calc(100% - 0.7rem);
+  padding: 0.08rem 0.3rem;
+  font-size: 0.45rem;
+  font-weight: 800;
   font-style: italic;
-  letter-spacing: var(--tracking-tabs);
-  min-height: 1.5rem;
+  letter-spacing: 0.08em;
+  line-height: 1.1;
+  text-transform: uppercase;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: var(--area-color);
+  background: color-mix(in srgb, var(--area-color) 18%, var(--bg-surface));
+  border: 1px solid color-mix(in srgb, var(--area-color) 40%, transparent);
+  border-radius: 999px;
+}
+
+/* Card do gerente — destaque sutil pela cor da área */
+.team-card--lead {
+  border-color: color-mix(in srgb, var(--area-color) 40%, var(--ui-border-subtle));
+  background: linear-gradient(180deg,
+    color-mix(in srgb, var(--area-color) 8%, var(--bg-surface)) 0%,
+    var(--bg-surface) 100%);
+}
+
+/* ── Responsivo (apenas re-token, não duplica seletores) ── */
+@media screen and (max-width: 768px) {
+  .team-areas {
+    --team-card-min:       156px;
+    --team-header-padding: 0.36rem 0.85rem;
+    --team-grid-padding:   0.68rem 0.9rem;
+    --team-header-min-h:   2.05rem;
+  }
+}
+
+@media screen and (max-width: 480px) {
+  .team-areas {
+    --team-avatar:    64px;
+    --team-card-gap:  0.55rem;
+  }
+  .team-area__grid    { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .team-card__name    { font-size: 0.74rem; }
+}
+
+@media screen and (max-width: 360px) {
+  .team-area__grid    { grid-template-columns: 1fr; }
 }
 
 
 /* ============================================================
-   23. PRINT
+   22. PRINT
    ============================================================ */
 @media print {
   .md-header, .md-sidebar, .md-footer, .md-search,
@@ -2207,7 +2067,7 @@ td[data-type="null"] code {
 
 
 /* ============================================================
-   24. REDUCED MOTION
+   23. REDUCED MOTION
    ============================================================ */
 @media (prefers-reduced-motion: reduce) {
   *,
