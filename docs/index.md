@@ -130,7 +130,7 @@
           <img src="https://github.com/github.png" alt="João Victor Pereira" />
         </div>
         <div class="team-card__body">
-          <div class="team-card__name">João Vitor Pereira</div>
+          <div class="team-card__name">João Victor Pereira</div>
           <div class="team-card__handle">@joaovitor</div>
         </div>
       </a>
