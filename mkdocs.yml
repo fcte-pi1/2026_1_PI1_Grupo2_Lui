@@ -11,18 +11,20 @@ extra_css:
   - assets/css/maze-bg.css
 
 extra_javascript:
-  - assets/js/maze-bg.js
-  - assets/js/perfect_embed.js
+  # MathJax: config DEVE vir antes da CDN (que consome window.MathJax)
   - assets/js/mathjax.js
-  - assets/js/header-extras.js
-  - assets/js/secondary-nav.js
   - https://unpkg.com/mathjax@3/es5/tex-mml-chtml.js
+
+  # Mermaid
   - https://unpkg.com/mermaid@10/dist/mermaid.min.js
   - assets/js/mermaid-init.js
 
-  - https://unpkg.com/mathjax@3/es5/tex-mml-chtml.js
+  # Comportamento e UI custom
+  - assets/js/maze-bg.js
+  - assets/js/perfect_embed.js
+  - assets/js/header-extras.js
+  - assets/js/secondary-nav.js
 
-  
 
 # Plugins Ativos
 plugins:
@@ -30,6 +32,8 @@ plugins:
 
 # Extensões Markdown
 markdown_extensions:
+  - md_in_html
+  - attr_list
   - pymdownx.superfences:
       custom_fences:
         - name: mermaid

@@ -1410,41 +1410,12 @@ if (typeof document$ !== 'undefined') {
   }
 
   /* ──────────────────────────────────────────────────────────
-     4. HERO BADGES — Versão e status no hero da homepage
-     Injeta .hero-badges logo após .presentation-content
-     apenas se a página tiver a classe .presentation.
-  ────────────────────────────────────────────────────────── */
-  function initHeroBadges() {
-    // Executa apenas na home (contém .presentation)
-    var hero = document.querySelector('.presentation');
-    if (!hero) return;
-    if (hero.querySelector('.hero-badges')) return;
-
-    var badges = document.createElement('div');
-    badges.className = 'hero-badges';
-    badges.innerHTML = [
-      _badge('version', '<span class="hero-badge__dot"></span> v0.3-alpha', 'hero-badge--version'),
-      _badge('status',  '<span class="hero-badge__dot"></span> software: em progresso', 'hero-badge--status'),
-      _badge('hw',      'hardware: protótipo físico', 'hero-badge--hw'),
-    ].join('');
-
-    // Insere após .presentation-content, ou ao fim de .presentation
-    var anchor = hero.querySelector('.presentation-content') || hero;
-    anchor.appendChild(badges);
-  }
-
-  function _badge(key, html, cls) {
-    return '<span class="hero-badge ' + cls + '" aria-label="' + key + '">' + html + '</span>';
-  }
-
-  /* ──────────────────────────────────────────────────────────
      BOOTSTRAP
   ────────────────────────────────────────────────────────── */
   function boot() {
     initBackButton();
     initImageLightbox();
     initTypeBadges();
-    initHeroBadges();
   }
 
   if (typeof document$ !== 'undefined') {
