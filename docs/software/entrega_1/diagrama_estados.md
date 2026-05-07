@@ -22,3 +22,29 @@ Estudo inicial dos estados do sistema
     - Falha Algoritmica: Robô não faz o melhor caminho definido pelo algoritmo de busca -->
 
 
+# 1. Estados Iniciais (Setup e Validação)
+
+- **Boot e Inicialização do Sistema:** O microcontrolador é energizado e o software embarcado entra em execução.
+- **Verificação de Periféricos:** O sistema realiza uma checagem de integridade para garantir que os sensores de distância, motores e comunicação sem fios estão a responder corretamente antes de iniciar qualquer movimento.
+
+# 2. Modos de Operação (Estados Principais)
+
+## 2.1. Modo de Descoberta (Mapeamento do Labirinto)
+
+- **Execução do Algoritmo de Busca:** O robô inicia a exploração de células desconhecidas.
+- **Leitura Contínua de Sensores:** Em cada célula, o robô examina os arredores para decidir a próxima ação (seguir em frente, virar à esquerda ou virar à direita).
+- **Recuperação de Beco Sem Saída:** Caso o robô identifique uma rota falha (beco), executa um retorno e volta ao último ponto de bifurcação/transição válido.
+- **Transmissão de Telemetria:** Paralelamente à navegação, o robô envia em tempo real os dados da rota calculada, estado da bateria e leituras dos sensores.
+- **Registo no Frontend:** A interface recebe, processa e apresenta os dados de maneira depurada para a equipe acompanhar o mapeamento.
+
+## 2.2. Modo de Rota Otimizada (Caminho para o Centro)
+
+- **Cálculo do Caminho Mais Curto:** Com base no mapa gerado no modo de descoberta, o algoritmo processa e define a rota mais rápida e eficiente da origem até ao centro.
+- **Execução da Corrida:** O robô inicia a movimentação seguindo estritamente a rota pré-calculada, otimizando a velocidade.
+- **Recálculo de Rota (Recuperação):** Caso os sensores detetem que o robô se desviou do caminho ou errou uma curva, a movimentação é interrompida para refazer o cálculo da rota ou, se necessário, reativar o mapeamento.
+
+# 3. Estados Finais (Fim de Execução)
+
+- **Sucesso:** O robô encontra o centro do labirinto, salva a rota mais rápida na sua memória e encerra a rotina de busca de forma segura.
+- **Falha por Comunicação:** O sistema entra em estado de paragem segura após detetar a perda prolongada de comunicação entre os sensores e o microcontrolador, ou a perda de ligação de dados com o computador base.
+- **Falha Física:** O software identifica um travamento mecânico e corta a força para evitar danos no chassis.
