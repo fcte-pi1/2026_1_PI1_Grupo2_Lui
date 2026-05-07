@@ -166,12 +166,17 @@ Backend → Frontend: resumo final da corrida
 ```
 
 ---
+## Diagrama BPMN
+
+![Diagrama BPMN do fluxo](../../assets/images/diagramaBPMN.svg)
+
+--- 
 
 ## Histórico de versões
 
-| Versão |    Data    |                          Descrição                         |                        Autor(es)                        | Revisor(es) | Descrição da Revisão |
-| :----: | :--------: | :--------------------------------------------------------: | :-----------------------------------------------------: | :---------: | :------------------: |
-|  `1.0` | 27/04/2026 | Criação do documento de descrição textual do Diagrama BPMN | [Arthur Moreira](https://github.com/arthurrochamoreira) |   Pendente  |                      |
-|  `1.1` | 29/04/2026 |             Melhoria da estrutura do documento             | [Arthur Moreira](https://github.com/arthurrochamoreira) |   Pendente  |                      |
-|  `1.2` | 29/04/2026 |  Reorganização da descrição textual do BPMN  | [Arthur Moreira](https://github.com/arthurrochamoreira) |   Pendente  |                      |
-
+| Versão | Data | Descrição | Autor(es) | Revisor(es) | Descrição da Revisão |
+|:---:|:---:|:---:|:---:|:---:|:---:|
+| `1.0` | 27/04/2026 | Criação do documento de descrição textual do Diagrama BPMN | [Arthur Moreira](https://github.com/arthurrochamoreira) | [Eduardo Ferreira](https://github.com/eduardoferre) | |
+| `1.1` | 29/04/2026 | Melhoria da estrutura do documento | [Arthur Moreira](https://github.com/arthurrochamoreira) | [Eduardo Ferreira](https://github.com/eduardoferre) | |
+| `1.2` | 29/04/2026 | Reorganização da descrição textual do BPMN | [Arthur Moreira](https://github.com/arthurrochamoreira) | [Eduardo Ferreira](https://github.com/eduardoferre) | |
+| `1.3` | 07/05/2026 | Elaboração e Adição do Diagrama BPMN| [Eduardo Ferreira](https://github.com/eduardoferre) | Pendente | |
