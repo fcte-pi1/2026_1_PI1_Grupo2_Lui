@@ -43,8 +43,13 @@ Estudo inicial dos estados do sistema
 - **Execução da Corrida:** O robô inicia a movimentação seguindo estritamente a rota pré-calculada, otimizando a velocidade.
 - **Recálculo de Rota (Recuperação):** Caso os sensores detetem que o robô se desviou do caminho ou errou uma curva, a movimentação é interrompida para refazer o cálculo da rota ou, se necessário, reativar o mapeamento.
 
+## 2.3 Controle Manual
+
+- **Desligamento remoto:** Caso necessário, equipe pode desligar o robô remotamente através do frontend
+
 # 3. Estados Finais (Fim de Execução)
 
 - **Sucesso:** O robô encontra o centro do labirinto, salva a rota mais rápida na sua memória e encerra a rotina de busca de forma segura.
 - **Falha por Comunicação:** O sistema entra em estado de paragem segura após detetar a perda prolongada de comunicação entre os sensores e o microcontrolador, ou a perda de ligação de dados com o computador base.
 - **Falha Física:** O software identifica um travamento mecânico e corta a força para evitar danos no chassis.
+- **Sistema frontend:** O sistema Frontend fornece um resumo de tudo que ocorreu durante a operação, não importando sucesso ou fracasso.
