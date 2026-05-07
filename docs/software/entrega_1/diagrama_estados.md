@@ -53,3 +53,7 @@ Estudo inicial dos estados do sistema
 - **Falha por Comunicação:** O sistema entra em estado de paragem segura após detetar a perda prolongada de comunicação entre os sensores e o microcontrolador, ou a perda de ligação de dados com o computador base.
 - **Falha Física:** O software identifica um travamento mecânico e corta a força para evitar danos no chassis.
 - **Sistema frontend:** O sistema Frontend fornece um resumo de tudo que ocorreu durante a operação, não importando sucesso ou fracasso.
+
+# 4. Representação Gráfica - Diagrama de Estados
+
+<img width="838" height="825" alt="image" src="https://github.com/user-attachments/assets/3ab769a7-40b2-4162-b35d-24e5aca7b32c" />
