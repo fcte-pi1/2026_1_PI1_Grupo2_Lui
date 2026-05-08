@@ -90,7 +90,7 @@ nav:
           - Histórias de Usuário: software/entrega_1/historias_usuario.md
           - Requisitos Não-Funcionais: software/entrega_1/requisitos_nao_funcionais.md
       - Modelagem e Fluxos:
-          - BPMN (Processos): software/entrega_1/diagrama_bpmn.md
+          - Diagrama de Atividades: software/entrega_1/diagrama_atividades.md
           - Casos de Uso: software/entrega_1/diagrama_casos_uso.md
           - Diagrama de Estados: software/entrega_1/diagrama_estados.md
       - Arquitetura:
