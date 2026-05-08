@@ -1,5 +1,11 @@
 # Diagrama BPMN
 
+<div class="svg-embed-container" 
+       data-svg-path="../../../assets/images/diagramaBPMN.svg" 
+       data-title="Diagrama BPMN do fluxo" 
+       style="height: 600px; width: 100%;"> </div>
+
+
 O diagrama BPMN representa o fluxo principal de uma corrida do Micromouse, desde o acionamento do robô pelo operador até o monitoramento em tempo real e a consulta ao histórico de corridas.
 
 O nível adotado é descritivo, com foco nas responsabilidades dos participantes, nas mensagens trocadas entre eles e nas principais decisões do processo.
@@ -164,13 +170,6 @@ Firmware → Backend: sinal de conclusão
 Backend → Frontend: dados processados em tempo real
 Backend → Frontend: resumo final da corrida
 ```
-
----
-## Diagrama BPMN
-
-![Diagrama BPMN do fluxo](../../assets/images/diagramaBPMN.svg)
-
---- 
 
 ## Histórico de versões
 
