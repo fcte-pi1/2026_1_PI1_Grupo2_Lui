@@ -1,0 +1,55 @@
+<svg viewBox="-32 -22 64 44" width="150" height="100" xmlns="http://www.w3.org/2000/svg">
+    <!-- Filtro de Sombra -->
+    <defs>
+        <filter id="shadow" x="-50%" y="-50%" width="200%" height="200%">
+            <feDropShadow dx="3" dy="5" stdDeviation="5" flood-color="rgba(0, 0, 0, 0.6)" />
+        </filter>
+    </defs>
+    
+    <g filter="url(#shadow)">
+        <!-- Rabo -->
+        <path d="M-12,0 C-18,8 -20,-4 -26,2" stroke="#dcb4b4" stroke-width="3" stroke-linecap="round" fill="none" />
+        
+        <!-- Patas Traseiras -->
+        <ellipse cx="-6" cy="-10" rx="4" ry="3" fill="#9e9e9e" />
+        <ellipse cx="-6" cy="10" rx="4" ry="3" fill="#9e9e9e" />
+        
+        <!-- Patas Dianteiras -->
+        <ellipse cx="6" cy="-10" rx="3" ry="2" fill="#9e9e9e" />
+        <ellipse cx="6" cy="10" rx="3" ry="2" fill="#9e9e9e" />
+        
+        <!-- Corpo principal -->
+        <path d="M-16,0 C-16,-15 6,-13 16,0 C6,13 -16,15 -16,0 Z" fill="#9e9e9e" />
+        
+        <!-- Orelha Esquerda -->
+        <circle cx="1" cy="-10" r="7.5" fill="#9e9e9e" />
+        <circle cx="1" cy="-10" r="4.5" fill="#dcb4b4" />
+        
+        <!-- Orelha Direita -->
+        <circle cx="1" cy="10" r="7.5" fill="#9e9e9e" />
+        <circle cx="1" cy="10" r="4.5" fill="#dcb4b4" />
+        
+        <!-- Bochechas -->
+        <circle cx="10" cy="-7" r="2.5" fill="#dcb4b4" opacity="0.5" />
+        <circle cx="10" cy="7" r="2.5" fill="#dcb4b4" opacity="0.5" />
+        
+        <!-- Focinho -->
+        <circle cx="16.5" cy="0" r="3" fill="#dcb4b4" />
+        
+        <!-- Olho Esquerdo -->
+        <circle cx="11" cy="-4.5" r="2" fill="#000000" />
+        <circle cx="11.5" cy="-5" r="0.8" fill="#ffffff" />
+        
+        <!-- Olho Direito -->
+        <circle cx="11" cy="4.5" r="2" fill="#000000" />
+        <circle cx="11.5" cy="4" r="0.8" fill="#ffffff" />
+        
+        <!-- Bigodes -->
+        <g stroke="rgba(0,0,0,0.3)" stroke-width="0.8" stroke-linecap="round">
+            <line x1="15" y1="-2" x2="23" y2="-8" />
+            <line x1="15" y1="-1" x2="24" y2="-4" />
+            <line x1="15" y1="2" x2="23" y2="8" />
+            <line x1="15" y1="1" x2="24" y2="4" />
+        </g>
+    </g>
+</svg>
