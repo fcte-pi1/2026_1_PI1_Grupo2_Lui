@@ -1691,7 +1691,11 @@
 <p>A arquitetura descrita neste documento abrange exclusivamente o software do projeto, cobrindo os artefatos definidos nos requisitos funcionais (US01–US14), não-funcionais (RNF-01–RNF-12) e restrições de ambiente (RE-01–RE-11).</p>
 <h2 id="2-representacao-arquitetural">2. Representação Arquitetural</h2>
 <p>O projeto adota uma <strong>arquitetura em camadas com estilo cliente-servidor</strong> para a parte web, integrada a um <strong>sistema embarcado</strong> que atua como produtor de dados.</p>
-<p>COLOCAR DIAGRAMA AQUI</p>
+<div class="svg-embed-container" 
+       data-svg-path="../../../assets/images/diagramaImplantacao.svg" 
+       data-title="Figura 1 - Representação Arquitetural do Sistema Micromouse" 
+       style="height: 600px; width: 100%;"> </div>
+
 <p>A escolha desse estilo é motivada pelos seguintes fatores:</p>
 <ul>
 <li><strong>Separação de responsabilidades:</strong> o firmware cuida exclusivamente da navegação e coleta de dados; o backend gerencia recepção, validação e persistência; o frontend apresenta os dados ao operador.</li>
@@ -1755,7 +1759,6 @@
 </tbody>
 </table>
 <h2 id="4-diagrama-de-alto-nivel">4. Diagrama de Alto Nível</h2>
-<p>COLOCAR DIAGRAMA AQUI</p>
 <p>Os quatro componentes principais e seus relacionamentos são:</p>
 <ul>
 <li><strong>Firmware → Backend:</strong> envio de pacotes de telemetria (posição, paredes, velocidade, bateria, timestamp) via Wi-Fi UDP ou WebSocket, a uma frequência mínima de 1 pacote/segundo (RE-02, RNF-04).</li>
@@ -1869,7 +1872,7 @@
 </tbody>
 </table>
 <h3 id="52-visao-de-processos">5.2 Visão de Processos</h3>
-<p>A visão de processos descreve o comportamento do sistema em tempo de execução. O fluxo principal de uma corrida é documentado no <strong>Diagrama BPMN</strong> (<code>diagrama_bpmn.md</code>), com quatro participantes: Operador, Firmware, Backend e Frontend.</p>
+<p>A visão de processos descreve o comportamento do sistema em tempo de execução. O fluxo principal de uma corrida é documentado no <strong>Diagrama de Atividades</strong> (<code>diagrama_atividades.md</code>), com quatro participantes: Operador, Firmware, Backend e Frontend.</p>
 <p>O ciclo autônomo do firmware pode ser resumido como:</p>
 <div class="highlight"><pre><span></span><code>ler sensores → atualizar mapa → calcular rota (Flood Fill) → executar movimento → verificar objetivo
                                                                                          │
@@ -1877,7 +1880,7 @@
                                                                              Não ──▶ reinicia ciclo
                                                                              Sim ──▶ envia flag de conclusão
 </code></pre></div>
-<p>Em paralelo ao ciclo de navegação, o firmware executa a transmissão de telemetria (gateway paralelo no BPMN). Os pacotes válidos recebidos pelo backend são retransmitidos ao frontend antes de qualquer operação de escrita no banco (CT-19).</p>
+<p>Em paralelo ao ciclo de navegação, o firmware executa a transmissão de telemetria (fluxo paralelo no Diagrama de Atividades). Os pacotes válidos recebidos pelo backend são retransmitidos ao frontend antes de qualquer operação de escrita no banco (CT-19).</p>
 <h3 id="53-visao-de-implementacao">5.3 Visão de Implementação</h3>
 <p>A organização dos artefatos de software é:</p>
 <div class="highlight"><pre><span></span><code>docs/
@@ -1885,7 +1888,7 @@
     entrega_1/
       diagrama_arquitetura.md   ← este documento
       diagrama_estados.md
-      diagrama_bpmn.md
+      diagrama_atividades.md
       diagrama_casos_uso.md
       diagrama_der.md
       historias_usuario.md
@@ -1924,7 +1927,7 @@ src/
 │  │   Micromouse     │          │  Notebook / PC       │ │
 │  │   (ESP32)        │          │  (qualquer SO)       │ │
 │  │                  │  Wi-Fi   │                      │ │
-│  │  Firmware C/C++  │◀────────▶│  Backend FastAPI      │ │
+│  │  Firmware C/C++  │◀────────▶│  Backend FastAPI     │ │
 │  │  UDP/WS client   │          │  SQLite (arquivo .db)│ │
 │  └──────────────────┘          │                      │ │
 │                                │  Navegador (browser) │ │
