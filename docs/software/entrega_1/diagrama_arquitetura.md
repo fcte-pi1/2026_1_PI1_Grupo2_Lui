@@ -19,7 +19,11 @@ A arquitetura descrita neste documento abrange exclusivamente o software do proj
 
 O projeto adota uma **arquitetura em camadas com estilo cliente-servidor** para a parte web, integrada a um **sistema embarcado** que atua como produtor de dados.
 
-COLOCAR DIAGRAMA AQUI
+
+<div class="svg-embed-container" 
+       data-svg-path="../../../assets/images/diagramaImplantacao.svg" 
+       data-title="Figura 1 - Representação Arquitetural do Sistema Micromouse" 
+       style="height: 600px; width: 100%;"> </div>
 
 A escolha desse estilo é motivada pelos seguintes fatores:
 
@@ -42,8 +46,6 @@ A escolha desse estilo é motivada pelos seguintes fatores:
 
 
 ## 4. Diagrama de Alto Nível
-
-COLOCAR DIAGRAMA AQUI
 
 Os quatro componentes principais e seus relacionamentos são:
 
@@ -94,7 +96,7 @@ Os estados finais possíveis — Sucesso, Falha por Comunicação, Falha Física
 
 ### 5.2 Visão de Processos
 
-A visão de processos descreve o comportamento do sistema em tempo de execução. O fluxo principal de uma corrida é documentado no **Diagrama BPMN** (`diagrama_bpmn.md`), com quatro participantes: Operador, Firmware, Backend e Frontend.
+A visão de processos descreve o comportamento do sistema em tempo de execução. O fluxo principal de uma corrida é documentado no **Diagrama de Atividades** (`diagrama_atividades.md`), com quatro participantes: Operador, Firmware, Backend e Frontend.
 
 O ciclo autônomo do firmware pode ser resumido como:
 
@@ -106,7 +108,7 @@ ler sensores → atualizar mapa → calcular rota (Flood Fill) → executar movi
                                                                              Sim ──▶ envia flag de conclusão
 ```
 
-Em paralelo ao ciclo de navegação, o firmware executa a transmissão de telemetria (gateway paralelo no BPMN). Os pacotes válidos recebidos pelo backend são retransmitidos ao frontend antes de qualquer operação de escrita no banco (CT-19).
+Em paralelo ao ciclo de navegação, o firmware executa a transmissão de telemetria (fluxo paralelo no Diagrama de Atividades). Os pacotes válidos recebidos pelo backend são retransmitidos ao frontend antes de qualquer operação de escrita no banco (CT-19).
 
 ### 5.3 Visão de Implementação
 
@@ -118,7 +120,7 @@ docs/
     entrega_1/
       diagrama_arquitetura.md   ← este documento
       diagrama_estados.md
-      diagrama_bpmn.md
+      diagrama_atividades.md
       diagrama_casos_uso.md
       diagrama_der.md
       historias_usuario.md
@@ -161,7 +163,7 @@ As dependências do backend são gerenciadas via `requirements.txt` com versões
 │  │   Micromouse     │          │  Notebook / PC       │ │
 │  │   (ESP32)        │          │  (qualquer SO)       │ │
 │  │                  │  Wi-Fi   │                      │ │
-│  │  Firmware C/C++  │◀────────▶│  Backend FastAPI      │ │
+│  │  Firmware C/C++  │◀────────▶│  Backend FastAPI     │ │
 │  │  UDP/WS client   │          │  SQLite (arquivo .db)│ │
 │  └──────────────────┘          │                      │ │
 │                                │  Navegador (browser) │ │
