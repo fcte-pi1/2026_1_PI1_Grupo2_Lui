@@ -16,6 +16,7 @@ O sistema é composto por dois blocos:
 | **Limite máximo** | ≤ 500 ms (em condições normais de operação na rede local) |
 | **Condição de medição** | Rede Wi-Fi local, distância de até 10 metros entre robô e roteador |
 | **Justificativa** | Telemetria "em tempo real" percebida pelo usuário exige atualização sub-segundo |
+| **MoSCoW** | **Must Have** — sem latência sub-segundo a interface deixa de ser "em tempo real" e descumpre o enunciado |
 
 ### RNF-02 — Taxa de Atualização da Interface Web
 
@@ -26,6 +27,7 @@ O sistema é composto por dois blocos:
 | **Limite máximo** | ≤ 1 segundo por ciclo de atualização |
 | **Condição de medição** | Navegador moderno (Chrome/Firefox), conexão local ativa |
 | **Justificativa** | Garantir que o observador acompanhe o progresso do micromouse em tempo real |
+| **MoSCoW** | **Must Have** — par de RNF-01; juntos definem a percepção de tempo real exigida pelo enunciado |
 
 A interface deve se atualizar a cada 1 segundo. Para que isso seja possível, a transmissão dos dados do robô até o servidor precisa ser concluída em menos tempo do que esse intervalo, deixando margem para o processamento no servidor e a renderização no navegador. Adotando uma divisão conservadora: metade do tempo para transmissão, metade para processamento e renderização, chegamos a 500 ms como limite para a etapa de transmissão. Em redes locais Wi-Fi comuns, latências na faixa de 10 a 50 ms são típicas, de modo que 500 ms é um limite bastante seguro e alcançável.
 
@@ -38,6 +40,7 @@ A interface deve se atualizar a cada 1 segundo. Para que isso seja possível, a 
 | **Limite máximo** | ≤ 3 segundos (em rede local) |
 | **Condição de medição** | Conexão local, hardware padrão de laboratório |
 | **Justificativa** | Evitar espera excessiva antes do início da corrida |
+| **MoSCoW** | **Should Have** — ajuste de qualidade de uso; um carregamento de 4-5s não inviabiliza a corrida, mas degrada a experiência durante apresentações |
 
 Este requisito se aplica ao carregamento inicial da aplicação, não à telemetria em si. O limite de 3 segundos é amplamente adotado como referência na indústria (Google Core Web Vitals define esse intervalo como limite aceitável de carregamento)
 
@@ -48,6 +51,7 @@ Este requisito se aplica ao carregamento inicial da aplicação, não à telemet
 | **Descrição** | Tempo máximo de execução do loop principal de controle no microcontrolador |
 | **Limite máximo** | ≤ 10 ms por ciclo (equivalente a ≥ 100 Hz) |
 | **Condição de medição** | Execução no microcontrolador alvo, labirinto 16×16 em operação |
+| **MoSCoW** | **Must Have** — derivado da física do robô (velocidade × tamanho da célula); abaixo de 100 Hz a navegação torna-se instável e o robô colide |
 
 Este valor vem das características físicas da competição. O robô precisa detectar paredes, corrigir sua trajetória e tomar decisões de navegação enquanto se move. As células têm 18 cm de lado e robôs em competições Micromouse tipicamente atingem velocidades entre 0,5 e 2 m/s. O tempo disponível para atravessar metade de uma célula é de aproximadamente 45 a 180 ms. Para ter pelo menos 4 a 5 ciclos de controle nesse intervalo (garantindo estabilidade), a frequência mínima deve ser próxima de 100 Hz, ou seja, 10 ms por ciclo. Este requisito deve ser revisado após a definição do microcontrolador.
 
@@ -58,20 +62,24 @@ Este valor vem das características físicas da competição. O robô precisa de
 | **Descrição** | Tempo máximo entre a detecção do objetivo pelo micromouse e a confirmação de escrita dos dados finais no banco |
 | **Limite máximo** | ≤ 2 segundos |
 | **Condição de medição** | Banco de dados local ou servidor na mesma rede |
+| **MoSCoW** | **Should Have** — uma escrita um pouco mais lenta não compromete a avaliação, mas a janela curta evita perda de dados caso o operador desligue o sistema logo após a corrida |
 
 Ao final de uma corrida, o sistema precisa garantir que todos os dados sejam armazenados antes que o operador desligue o robô ou encerre a aplicação. Dois segundos é tempo suficiente para que a interface detecte o evento de conclusão, monte o objeto de dados e execute uma operação de escrita em banco de dados local.
 
 ## 3. Capacidade e Carga
 
-### RNF-06 — Volume de Registros por Corrida
+### RNF-06 — Tamanho do Resumo Final por Corrida
 
 | Atributo | Valor |
 |---|---|
-| **Descrição** | Quantidade mínima de registros de telemetria que o sistema deve ser capaz de armazenar por corrida |
-| **Limite mínimo** | ≥ 10.000 registros por corrida |
-| **Estimativa de tamanho** | ~1 MB por corrida completa |
+| **Descrição** | Tamanho máximo dos dados consolidados de uma corrida persistidos no banco |
+| **Limite máximo** | ≤ 10 KB por corrida |
+| **Conteúdo do resumo** | Tempo total, trajeto percorrido (matriz de paredes + sequência de células), velocidade média, consumo de bateria, status do desafio |
+| **MoSCoW** | **Should Have** — limite de dimensionamento que orienta o desenho do schema; passar disso não quebra o sistema, mas indica que o formato precisa ser revisto |
 
-O maior labirinto tem 16×16 = 256 células. O micromouse pode precisar visitar cada célula mais de uma vez durante a fase de exploração (algoritmos como flood fill revisitam células até mapear o labirinto completamente). Estimando uma média de 3 visitas por célula e leituras de sensores a 100 Hz, com duração média de corrida de 2 a 3 minutos, chegamos a aproximadamente 12.000 a 18.000 leituras por corrida. O limite de 10.000 registros é um mínimo conservador que cobre também corridas mais rápidas nos labirintos menores (4×4 e 8×8).
+Conforme o diagrama BPMN (Lane 3A — Backend) e a história US13, o backend grava no banco apenas o resumo final da corrida, ao receber a flag de conclusão emitida pelo firmware (comportamento verificado por CT-20 e CT-21). O stream contínuo de telemetria não é persistido: ele apenas trafega entre firmware, backend e frontend para alimentar a interface em tempo real.
+
+O dimensionamento do resumo considera o pior caso (labirinto 16×16): a matriz de paredes ocupa cerca de 128 bytes (1 bit por parede em 256 células), e a sequência de células percorridas — mesmo com revisitas durante a fase de exploração — fica abaixo de 4 KB quando serializada em formato compacto. Os demais campos (escalares e enum de status) somam menos de 100 bytes. O limite de 10 KB cobre esse cenário com folga, incluindo overhead de serialização em JSON.
 
 ### RNF-07 — Total de Corridas Armazenadas
 
@@ -80,8 +88,9 @@ O maior labirinto tem 16×16 = 256 células. O micromouse pode precisar visitar 
 | **Descrição** | Quantidade mínima de corridas que o banco de dados deve suportar sem degradação de desempenho nas consultas |
 | **Limite mínimo** | ≥ 100 corridas |
 | **Tempo de consulta** | Resultado de consulta por labirinto específico em ≤ 1 segundo |
+| **MoSCoW** | **Should Have** — cobre o uso estimado do semestre com folga; menos que isso é suficiente para a apresentação final, mas inviabiliza análise histórica |
 
-Estimando aproximadamente 10 sessões de teste distribuídas ao longo do semestre, com 3 labirintos por sessão e até 3 tentativas cada, chegamos a cerca de 90 corridas no total. O limite de 100 corridas cobre esse uso com uma pequena margem de segurança. Com ~1 MB por corrida, o banco precisaria suportar cerca de 100 MB de dados, volume sem qualquer impacto para bancos relacionais como PostgreSQL, SQLite ou MySQL.
+Estimando aproximadamente 10 sessões de teste distribuídas ao longo do semestre, com 3 labirintos por sessão e até 3 tentativas cada, chegamos a cerca de 90 corridas no total. O limite de 100 corridas cobre esse uso com uma pequena margem de segurança. Combinado com o limite do RNF-06 (≤ 10 KB por corrida), o banco precisaria suportar cerca de 1 MB de dados — volume sem qualquer impacto para PostgreSQL, SQLite ou MySQL. ou outros bancos relacionais.
 
 ### RNF-08 — Usuários Simultâneos no Sistema Web
 
@@ -90,6 +99,7 @@ Estimando aproximadamente 10 sessões de teste distribuídas ao longo do semestr
 | **Descrição** | Número mínimo de usuários que podem acessar a interface web simultaneamente sem degradação |
 | **Limite mínimo** | ≥ 10 usuários simultâneos |
 | **Critério de degradação** | Latência de atualização mantida em ≤ 1 segundo com 10 clientes ativos |
+| **MoSCoW** | **Should Have** — cobre o cenário da apresentação final (≈10 pessoas); com menos clientes simultâneos o sistema ainda funciona, apenas reduz o número de avaliadores que podem acompanhar pela própria máquina |
 
 O contexto mais exigente é a apresentação final, onde todos os professores da disciplina e os próprios integrantes da equipe podem estar acompanhando simultaneamente. São 5 professores avaliadores e aproximadamente 5 a 6 membros do grupo, totalizando cerca de 10 a 11 usuários simultâneos no pico de uso. O limite de ≥ 10 conexões simultâneas cobre esse cenário com folga mínima. Ainda assim, precisa ser explicitamente testado pois o sistema de telemetria mantém conexões abertas continuamente (via WebSocket ou polling), o que consome mais recursos do que requisições comuns.
 
@@ -100,6 +110,7 @@ O contexto mais exigente é a apresentação final, onde todos os professores da
 |---|---|
 | **Descrição** | Tamanho máximo de cada pacote de dados enviado pelo micromouse ao servidor por ciclo |
 | **Limite máximo** | ≤ 512 bytes por pacote |
+| **MoSCoW** | **Should Have** — restringe o pacote para caber no buffer típico do ESP32 e evitar fragmentação; pacotes maiores funcionam, mas elevam latência e risco de perda |
 
 Microcontroladores tipicamente utilizados em projetos Micromouse (como STM32 ou ESP32) possuem buffers de comunicação limitados. Pacotes menores também reduzem a latência de transmissão e o risco de fragmentação na rede. Os dados necessários por ciclo: posição, velocidade, nível de bateria e timestamp, podem ser representados em menos de 100 bytes com estrutura binária eficiente. O limite de 512 bytes é generoso o suficiente para acomodar inclusive formatos texto como JSON, que são mais fáceis de depurar durante o desenvolvimento.
 
@@ -111,6 +122,7 @@ Microcontroladores tipicamente utilizados em projetos Micromouse (como STM32 ou 
 |---|---|
 | **Descrição** | Os dados gravados no banco após uma corrida não devem poder ser modificados pela interface web |
 | **Requisito** | Interface de consulta somente leitura; nenhum endpoint de modificação ou exclusão exposto publicamente |
+| **MoSCoW** | **Must Have** — os dados persistidos servem de evidência para avaliação; permitir edição comprometeria a credibilidade do registro |
 
 Como os dados serão utilizados para avaliação, é fundamental garantir que não haja possibilidade de alteração posterior dos resultados, seja acidental ou intencional. A forma mais simples de atender a isso é não implementar endpoints de atualização ou deleção no sistema web, deixando qualquer eventual correção como uma operação administrativa direta no banco de dados, com acesso restrito.
 
@@ -123,6 +135,7 @@ Como os dados serão utilizados para avaliação, é fundamental garantir que n�
 | **Descrição** | Todos os 6 campos de telemetria exigidos pelo projeto devem estar visíveis sem necessidade de rolagem |
 | **Campos obrigatórios** | Tipo do labirinto, trajeto, consumo de bateria, velocidade média, tempo de conclusão, desafio cumprido (S/N) |
 | **Requisito de layout** | Interface responsiva, adaptável a diferentes tamanhos de tela |
+| **MoSCoW** | **Must Have** — o enunciado lista explicitamente os 6 campos exigidos na interface, então todos precisam estar visíveis durante a apresentação |
 
 ### RNF-12 — Compatibilidade de Navegadores
 
@@ -130,6 +143,7 @@ Como os dados serão utilizados para avaliação, é fundamental garantir que n�
 |---|---|
 | **Descrição** | A aplicação deve funcionar corretamente nos navegadores mais utilizados |
 | **Requisito** | Chrome ≥ 110, Firefox ≥ 110, Edge ≥ 110 |
+| **MoSCoW** | **Should Have** — abrir em qualquer um dos três principais navegadores evita depender de um equipamento específico no dia da avaliação, mas funcionar em apenas um deles ainda permite a entrega |
 
 Para garantir que o sistema funcione nos equipamentos disponíveis durante as avaliações, independentemente do laboratório ou computador utilizado, é necessário definir um conjunto mínimo de navegadores suportados. As versões ≥ 110 foram escolhidas por oferecerem amplo suporte a APIs modernas como WebSocket, CSS Grid e Fetch API, recursos que provavelmente serão utilizados no desenvolvimento da interface de telemetria.
 
