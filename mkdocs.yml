@@ -87,8 +87,7 @@ nav:
   - Software:
       - Visão Geral: software/software.md
       - Requisitos e Backlog:
-          - Histórias de Usuário: software/entrega_1/historias_usuario.md
-          - Requisitos Não-Funcionais: software/entrega_1/requisitos_nao_funcionais.md
+          - Backlog do Produto: software/entrega_1/backlog_produto.md
       - Modelagem e Fluxos:
           - BPMN (Processos): software/entrega_1/diagrama_bpmn.md
           - Casos de Uso: software/entrega_1/diagrama_casos_uso.md
