@@ -2,13 +2,13 @@
 
 ## Introdução
 
-A etapa de testes foi estruturada para validar o comportamento do software do Micromouse, abrangendo firmware, simulador, backend, banco de dados e dashboard web. A matriz de testes organiza os casos por código identificador, objetivo, requisito coberto, técnica aplicada, partições e fronteiras, casos concretos, pré-condições, procedimentos, resultado esperado, reparo e pós-reparo. Essa organização assegura rastreabilidade entre requisitos e validações, além de permitir que os testes sejam reproduzidos de forma objetiva ao longo do desenvolvimento.
+A matriz de testes funcionais consolida o roteiro de validação do software do Micromouse, abrangendo as camadas de firmware, simulador, backend, banco de dados e dashboard web. Cada caso é estruturado segundo um conjunto fixo de atributos (código identificador, objetivo, requisitos cobertos, técnica aplicada, partições e fronteiras, casos concretos, pré-condições, procedimentos, resultado esperado, reparo e pós-reparo), o que viabiliza a rastreabilidade entre requisitos e evidências de validação, assegurando, ao mesmo tempo, a reprodutibilidade dos testes ao longo do desenvolvimento.
 
-A definição dos casos considerou partições de equivalência e análise de valores-limite, critérios discutidos por Aniche (2022) no contexto de testes de software. Assim, foram selecionados cenários representativos de entradas válidas, entradas inválidas e pontos críticos de mudança de comportamento, como limites de detecção, tempos de resposta, tamanho de pacotes e estados de navegação. A matriz também delimita o escopo dos testes ao software, tratando dimensões físicas do Tema PI1 apenas quando elas impactam sua representação lógica no sistema.
+A seleção dos casos fundamenta-se nas técnicas de partição de equivalência e análise de valores-limite, conforme discutidas por Aniche (2022). A partir desses critérios, foram identificados cenários representativos de entradas válidas, entradas inválidas e pontos críticos de mudança de comportamento, tais como limites de detecção, tempos de resposta, tamanho de pacotes e transições de estado de navegação. O escopo restringe-se ao comportamento do software, tratando dimensões físicas do Tema PI1 apenas quando estas afetam diretamente sua representação lógica no sistema.
 
 ## Como Ler os Testes
 
-Cada caso foi estruturado a partir do requisito que pretende validar. As partições de equivalência agrupam entradas ou estados que devem produzir comportamento semelhante, como parede presente, parede ausente, pacote válido ou pacote inválido. Os valores-limite exercitam pontos em que o comportamento do software pode mudar, como 5 cm para detecção de parede, 500 ms para latência ou 512 bytes para tamanho de pacote. A seleção dos casos concretos combina valores típicos, valores próximos às fronteiras e cenários inválidos, de modo a aumentar a capacidade de revelar falhas sem tornar o roteiro excessivamente extenso.
+Cada caso é estruturado a partir do requisito que pretende validar. As partições de equivalência consolidam entradas ou estados que devem produzir comportamento semelhante, como parede presente, parede ausente, pacote válido ou pacote inválido. Os valores-limite exercitam os pontos em que o comportamento do software pode alterar-se, como 5 cm para detecção de parede, 500 ms para latência ou 512 bytes para tamanho de pacote. A seleção dos casos concretos combina valores típicos, valores próximos às fronteiras e cenários inválidos, ampliando a capacidade de revelar falhas sem tornar o roteiro excessivamente extenso.
 
 | Atributo | Descrição |
 |---|---|
@@ -27,7 +27,7 @@ Cada caso foi estruturado a partir do requisito que pretende validar. As partiç
 
 ## Firmware e Simulador
 
-Os testes de firmware e simulador delimitam a verificação das unidades de software embarcado responsáveis por interpretar sensores, acionar motores, processar odometria e inicializar os componentes lógicos do Micromouse. Essa etapa antecipa falhas de baixo nível antes da integração com a navegação e com os serviços web, favorecendo diagnósticos mais precisos.
+Os testes de firmware e simulador delimitam a verificação das unidades de software embarcado responsáveis pela interpretação dos sensores, pelo acionamento dos motores, pelo processamento da odometria e pela inicialização dos componentes lógicos do Micromouse. Esta etapa antecipa falhas de baixo nível previamente à integração com a navegação e com os serviços web, viabilizando diagnósticos mais precisos.
 
 ### CT-01 — Detecção Frontal
 
@@ -123,7 +123,7 @@ Os testes de firmware e simulador delimitam a verificação das unidades de soft
 
 ## Navegação e Mapeamento
 
-Os testes de navegação e mapeamento consolidam a validação das rotinas que transformam leituras sensoriais em decisões de movimento, atualização de mapa e cálculo de rota. A organização dos casos permite compreender como o firmware se comporta diante de corredores, curvas, becos sem saída, fronteiras de célula e transições entre exploração e corrida otimizada.
+Os testes de navegação e mapeamento consolidam a validação das rotinas que convertem leituras sensoriais em decisões de movimento, atualização de mapa e cálculo de rota. A organização dos casos permite compreender o comportamento do firmware diante de corredores, curvas, becos sem saída, fronteiras de célula e transições entre as fases de exploração e corrida otimizada.
 
 ### CT-07 — Parada de Segurança
 
@@ -132,8 +132,8 @@ Os testes de navegação e mapeamento consolidam a validação das rotinas que t
 | **Objetivo** | Verificar se a máquina de estados interrompe movimento quando há obstáculo frontal no limite de segurança. |
 | **Requisito(s) coberto(s)** | RF-02 / US02; RF-07 / US07 |
 | **Técnica de teste** | Análise de fronteira + transição de estado |
-| **Partições e fronteiras** | Caminho livre, obstáculo próximo, valor limite e bloqueio. |
-| **Casos concretos** | 30 cm, 10 cm, `limite+1`, `limite` e `limite-1`. |
+| **Partições e fronteiras** | Caminho livre, obstáculo próximo, valor limite de segurança (ex: 5 cm) e bloqueio. |
+| **Casos concretos** | 30 cm (livre), 10 cm (próximo), 5,1 cm (limite superior), 5,0 cm (valor limite exato) e 4,9 cm (limite inferior/bloqueio). |
 | **Pré-condições** | Simulador de navegação ou firmware com injeção de leitura frontal. |
 | **Procedimentos** | 1. Colocar o estado inicial como `movendo`.<br>2. Injetar cada distância frontal.<br>3. Registrar a transição de estado.<br>4. Comparar com a regra de parada. |
 | **Resultado Esperado** | O estado muda de `movendo` para `parado` quando o limite de segurança é atingido. |
@@ -279,7 +279,7 @@ Os testes de navegação e mapeamento consolidam a validação das rotinas que t
 
 ## Backend e Persistência
 
-Os testes de backend e persistência validam a camada responsável por receber telemetria, aplicar validação de payload, retransmitir eventos ao dashboard e consolidar os dados finais no banco. A matriz separa casos de fluxo válido, rejeição de entrada inválida, ordem temporal de processamento e consulta histórica, assegurando que a camada de servidor preserve consistência e rastreabilidade.
+Os testes de backend e persistência validam a camada responsável pela recepção da telemetria, pela validação dos payloads, pela retransmissão dos eventos ao dashboard e pela consolidação dos dados finais no banco. A matriz delimita casos de fluxo válido, rejeição de entradas inválidas, ordenação temporal do processamento e consulta histórica, assegurando que a camada de servidor preserve a consistência e a rastreabilidade dos dados.
 
 ### CT-17 — Recepção de Telemetria
 
@@ -290,7 +290,7 @@ Os testes de backend e persistência validam a camada responsável por receber t
 | **Técnica de teste** | Partição de equivalência de payload válido |
 | **Partições e fronteiras** | Payload mínimo válido, completo típico e completo 16x16. |
 | **Casos concretos** | Posição, paredes, bateria, velocidade, tempo, status e tipo de labirinto. |
-| **Pré-condições** | Backend em execução; cliente HTTP/WebSocket ou teste automatizado disponível. |
+| **Pré-condições** | Backend em execução; cliente WebSocket ou teste automatizado disponível. |
 | **Procedimentos** | 1. Enviar payload mínimo válido.<br>2. Enviar payload completo típico.<br>3. Enviar payload completo representando labirinto 16x16.<br>4. Verificar logs e validação de schema. |
 | **Resultado Esperado** | O backend aceita mensagens válidas e disponibiliza evento para retransmissão. |
 | **Reparo** | Corrigir schema, parser ou normalização dos campos de telemetria. |
@@ -305,7 +305,7 @@ Os testes de backend e persistência validam a camada responsável por receber t
 | **Técnica de teste** | Teste negativo + partição de payload inválido |
 | **Partições e fronteiras** | Campo ausente, tipo incorreto e payload vazio. |
 | **Casos concretos** | Sem `tipo_labirinto`; bateria como texto; `{}`. |
-| **Pré-condições** | Backend em execução; endpoint ou handler de telemetria acessível. |
+| **Pré-condições** | Backend em execução; handler WebSocket de telemetria acessível. |
 | **Procedimentos** | 1. Enviar payload com campo obrigatório ausente.<br>2. Enviar payload com tipo incorreto.<br>3. Enviar payload vazio.<br>4. Consultar saúde/log do backend após cada envio. |
 | **Resultado Esperado** | O backend retorna erro controlado, não retransmite dado inválido e permanece operacional. |
 | **Reparo** | Fortalecer validação de schema e tratamento de exceções. |
@@ -320,9 +320,9 @@ Os testes de backend e persistência validam a camada responsável por receber t
 | **Técnica de teste** | Teste de integração por ordem temporal |
 | **Partições e fronteiras** | Cliente conectado, flag de conclusão e escrita no banco. |
 | **Casos concretos** | Payload final com `concluido=true` e cliente WebSocket ativo. |
-| **Pré-condições** | Backend, WebSocket e banco em execução; timestamps habilitados. |
-| **Procedimentos** | 1. Conectar cliente WebSocket.<br>2. Enviar pacote final.<br>3. Registrar timestamp de chegada no dashboard.<br>4. Registrar timestamp de insert no banco.<br>5. Comparar ordem temporal. |
-| **Resultado Esperado** | O timestamp de recebimento no dashboard é anterior ou igual ao timestamp de persistência. |
+| **Pré-condições** | Backend, WebSocket e banco em execução; registro de data_hora habilitado. |
+| **Procedimentos** | 1. Conectar cliente WebSocket.<br>2. Enviar pacote final.<br>3. Registrar data_hora de chegada no dashboard.<br>4. Registrar data_hora de insert no banco.<br>5. Comparar ordem temporal. |
+| **Resultado Esperado** | A data_hora de recebimento no dashboard é anterior ou igual à data_hora de persistência. |
 | **Reparo** | Revisar ordem de chamadas no handler de telemetria. |
 | **Pós-Reparo** | Reexecutar pacote final com cliente conectado. |
 
@@ -405,7 +405,7 @@ Os testes de backend e persistência validam a camada responsável por receber t
 
 ## Dashboard
 
-Os testes de dashboard verificam a interface responsável por apresentar telemetria em tempo real, sinalizar estados de conexão e disponibilizar consulta ao histórico de corridas. Os casos avaliam tanto a integração com o backend quanto a capacidade da interface de manter visibilidade, atualização e filtragem coerentes com os requisitos do sistema.
+Os testes de dashboard verificam a interface responsável pela apresentação da telemetria em tempo real, pela sinalização dos estados de conexão e pela consulta ao histórico de corridas. Os casos avaliam a integração com o backend e a capacidade da interface de manter visibilidade, atualização e filtragem coerentes com os requisitos do sistema.
 
 ### CT-25 — Conexão WebSocket
 
@@ -501,7 +501,7 @@ Os testes de dashboard verificam a interface responsável por apresentar telemet
 
 ## Requisitos Não-Funcionais
 
-Os testes não-funcionais explicitam critérios mensuráveis de desempenho, capacidade, integridade e compatibilidade. Esses casos complementam a validação funcional ao estabelecer limites objetivos para latência, atualização da interface, tempo de carregamento, persistência, volume de dados, conexões simultâneas e funcionamento em navegadores suportados.
+Os testes não-funcionais explicitam critérios mensuráveis de desempenho, capacidade, integridade e compatibilidade. Esses casos complementam a validação funcional ao estabelecer limites objetivos para latência, taxa de atualização da interface, tempo de carregamento, persistência, volume de dados, conexões simultâneas e funcionamento nos navegadores suportados.
 
 ### CT-31 — Latência de Telemetria
 
@@ -510,12 +510,12 @@ Os testes não-funcionais explicitam critérios mensuráveis de desempenho, capa
 | **Objetivo** | Verificar se a telemetria chega ao dashboard em até 500 ms na rede local. |
 | **Requisito(s) coberto(s)** | RNF-01; RF-08 / US08 |
 | **Técnica de teste** | Análise de fronteira temporal |
-| **Partições e fronteiras** | Abaixo, no limite e acima do limite. |
-| **Casos concretos** | 30 pacotes com timestamp; atenção a 499 ms, 500 ms e 501 ms. |
-| **Pré-condições** | Firmware/simulador, backend e dashboard com timestamps sincronizados ou comparáveis. |
-| **Procedimentos** | 1. Enviar 30 pacotes com timestamp de origem.<br>2. Registrar timestamp de exibição no dashboard.<br>3. Calcular latência de cada amostra.<br>4. Comparar com o limite de 500 ms. |
+| **Partições e fronteiras** | Abaixo do limite (ex: 499 ms), no valor limite exato (500 ms) e acima do limite superior (ex: 501 ms). |
+| **Casos concretos** | 30 pacotes com data_hora; atenção a 499 ms, 500 ms e 501 ms. |
+| **Pré-condições** | Firmware/simulador, backend e dashboard com registros de data_hora sincronizados ou comparáveis. |
+| **Procedimentos** | 1. Enviar 30 pacotes com data_hora de origem.<br>2. Registrar data_hora de exibição no dashboard.<br>3. Calcular latência de cada amostra.<br>4. Comparar com o limite de 500 ms. |
 | **Resultado Esperado** | A latência máxima medida é menor ou igual a 500 ms. |
-| **Reparo** | Otimizar serialização, WebSocket/UDP, fila do backend ou renderização. |
+| **Reparo** | Otimizar serialização, WebSocket, fila do backend ou renderização. |
 | **Pós-Reparo** | Reexecutar as 30 amostras. |
 
 ### CT-32 — Taxa de Atualização da Interface
@@ -540,7 +540,7 @@ Os testes não-funcionais explicitam critérios mensuráveis de desempenho, capa
 | **Objetivo** | Verificar se o dashboard fica interativo em até 3 segundos. |
 | **Requisito(s) coberto(s)** | RNF-03; RE-07 |
 | **Técnica de teste** | Análise de fronteira temporal |
-| **Partições e fronteiras** | Abaixo, no limite e acima de 3 segundos. |
+| **Partições e fronteiras** | Abaixo do limite (ex: 2,9 s), no valor limite exato (3,0 s) e acima do limite superior (ex: 3,1 s). |
 | **Casos concretos** | Três carregamentos com cache limpo. |
 | **Pré-condições** | Servidor local disponível; navegador com cache limpo. |
 | **Procedimentos** | 1. Limpar cache.<br>2. Abrir dashboard.<br>3. Medir tempo até estado interativo.<br>4. Repetir três vezes. |
@@ -570,10 +570,10 @@ Os testes não-funcionais explicitam critérios mensuráveis de desempenho, capa
 | **Objetivo** | Medir se a persistência final ocorre em até 2 segundos após conclusão. |
 | **Requisito(s) coberto(s)** | RNF-05; RF-13 / US13 |
 | **Técnica de teste** | Análise de fronteira temporal |
-| **Partições e fronteiras** | Abaixo, no limite e acima de 2 segundos. |
-| **Casos concretos** | Pacote final com timestamps de recebimento e insert. |
+| **Partições e fronteiras** | Abaixo do limite (ex: 1,9 s), no valor limite exato (2,0 s) e acima do limite superior (ex: 2,1 s). |
+| **Casos concretos** | Pacote final com data_hora de recebimento e insert. |
 | **Pré-condições** | Backend e banco em execução; logs de persistência habilitados. |
-| **Procedimentos** | 1. Enviar pacote final.<br>2. Registrar timestamp de recebimento.<br>3. Registrar timestamp de insert.<br>4. Calcular diferença. |
+| **Procedimentos** | 1. Enviar pacote final.<br>2. Registrar data_hora de recebimento.<br>3. Registrar data_hora de insert.<br>4. Calcular diferença. |
 | **Resultado Esperado** | A diferença entre conclusão e insert é menor ou igual a 2 segundos. |
 | **Reparo** | Otimizar transação, serialização do resumo ou fluxo assíncrono. |
 | **Pós-Reparo** | Reexecutar três pacotes finais. |
@@ -672,7 +672,7 @@ Os testes não-funcionais explicitam critérios mensuráveis de desempenho, capa
 
 ## Funcionalidades Adicionais
 
-Os testes de funcionalidades adicionais cobrem recursos classificados como complementares no escopo do produto. Embora não sejam indispensáveis ao funcionamento mínimo do Micromouse, esses casos estruturam a validação de funcionalidades que ampliam a análise histórica, a exportação de dados e a revisão visual de corridas já registradas.
+Os testes de funcionalidades adicionais cobrem recursos classificados como complementares no escopo do produto. Embora não sejam indispensáveis ao funcionamento mínimo do Micromouse, esses casos estruturam a validação de funcionalidades que ampliam a análise histórica dos dados, a exportação dos resultados e a revisão visual das corridas já registradas.
 
 ### CT-42 — Ranking de Melhores Corridas
 
@@ -700,7 +700,7 @@ Os testes de funcionalidades adicionais cobrem recursos classificados como compl
 | **Casos concretos** | Exportar CSV com cada filtro. |
 | **Pré-condições** | Banco com registros em mais de um tipo de labirinto; exportação implementada. |
 | **Procedimentos** | 1. Selecionar filtro 4x4 e exportar.<br>2. Repetir para 8x8, 16x16 e Todos.<br>3. Validar cabeçalho, registros e filtro aplicado. |
-| **Resultado Esperado** | O CSV contém tempo, trajeto, velocidade, bateria, status, tipo e timestamp coerentes com a API. |
+| **Resultado Esperado** | O CSV contém tempo, trajeto, velocidade, bateria, status, tipo e data_hora coerentes com a API. |
 | **Reparo** | Corrigir serialização, cabeçalho, separador ou aplicação do filtro. |
 | **Pós-Reparo** | Reexportar os quatro cenários. |
 
@@ -723,7 +723,7 @@ Os testes de funcionalidades adicionais cobrem recursos classificados como compl
 
 ## Conformidade com o Tema PI1
 
-Este grupo explicita a aderência do software às regras centrais do Tema PI1 que afetam diretamente a representação lógica do labirinto. A validação considera a escala das células, os tamanhos oficiais de labirinto e a definição da área central como objetivo, sem deslocar para este artefato verificações físicas de construção da pista.
+Este grupo explicita a aderência do software às regras centrais do Tema PI1 que afetam a representação lógica do labirinto. A validação considera a escala das células, os tamanhos oficiais de labirinto e a definição da área central como objetivo, restringindo-se aos aspectos lógicos sem absorver verificações físicas de construção da pista, que pertencem a outro artefato.
 
 ### CT-45 — Geometria Lógica e Objetivo Central
 
@@ -744,7 +744,7 @@ Este grupo explicita a aderência do software às regras centrais do Tema PI1 qu
 
 ## Cobertura Resumida
 
-A cobertura resumida relaciona os grupos de requisitos aos casos de teste que os validam, permitindo verificar rapidamente a rastreabilidade entre navegação, telemetria, persistência, interface e funcionalidades adicionais.
+A cobertura resumida relaciona os grupos de requisitos aos casos de teste que os validam, viabilizando a verificação imediata da rastreabilidade entre navegação, telemetria, persistência, interface e funcionalidades adicionais.
 
 | Grupo de requisito | Casos principais |
 |---|---|

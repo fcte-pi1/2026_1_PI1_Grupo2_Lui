@@ -1,0 +1,119 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Protótipo da Interface Micromouse</title>
+    <link rel="stylesheet" href="./style.css" />
+  </head>
+  <body>
+    <main class="app-shell">
+      <header class="topbar">
+        <div>
+          <p class="eyebrow">Dashboard web</p>
+          <h1>Micromouse</h1>
+        </div>
+        <div class="connection-panel" aria-live="polite">
+          <span class="status-dot" id="statusDot"></span>
+          <span id="connectionStatus">Conectado ao simulador</span>
+        </div>
+      </header>
+
+      <section class="control-strip" aria-label="Controles da simulação">
+        <div class="segmented" role="group" aria-label="Tamanho da pista">
+          <button class="segment is-active" type="button" data-size="4">4x4</button>
+          <button class="segment" type="button" data-size="8">8x8</button>
+          <button class="segment" type="button" data-size="16">16x16</button>
+        </div>
+        <div class="run-actions">
+          <button class="icon-button primary" type="button" id="toggleRun" title="Iniciar ou pausar simulação" aria-label="Iniciar ou pausar simulação">
+            <span id="toggleIcon">II</span>
+          </button>
+          <button class="icon-button" type="button" id="resetRun" title="Reiniciar simulação" aria-label="Reiniciar simulação">↺</button>
+        </div>
+      </section>
+
+      <section class="metric-grid" aria-label="Indicadores de telemetria">
+        <article class="metric-card">
+          <span>Bateria</span>
+          <strong id="batteryValue">91%</strong>
+          <div class="bar"><i id="batteryBar"></i></div>
+        </article>
+        <article class="metric-card">
+          <span>Velocidade média</span>
+          <strong id="speedValue">18,4 cm/s</strong>
+          <div class="trend" id="speedTrend"></div>
+        </article>
+        <article class="metric-card">
+          <span>Tempo</span>
+          <strong id="timeValue">00:14.2</strong>
+          <div class="trend calm"></div>
+        </article>
+        <article class="metric-card">
+          <span>Status</span>
+          <strong id="challengeStatus">Em corrida</strong>
+          <div class="status-line" id="statusLine">Pacote 024 recebido</div>
+        </article>
+      </section>
+
+      <section class="workspace">
+        <section class="maze-panel" aria-label="Visualização do labirinto">
+          <div class="panel-header">
+            <div>
+              <p class="eyebrow">Mapa em tempo real</p>
+              <h2 id="mazeTitle">Labirinto 4x4</h2>
+            </div>
+            <span class="pill" id="currentCell">Célula 1,1</span>
+          </div>
+          <div class="maze-wrap">
+            <div class="maze-grid" id="mazeGrid" aria-label="Labirinto simulado"></div>
+          </div>
+        </section>
+
+        <aside class="side-panel" aria-label="Resumo e histórico">
+          <section class="summary">
+            <div class="panel-header compact">
+              <div>
+                <p class="eyebrow">Resumo final</p>
+                <h2>Corrida atual</h2>
+              </div>
+              <span class="pill success" id="finishFlag">Ativa</span>
+            </div>
+            <dl class="summary-list">
+              <div>
+                <dt>Trajeto</dt>
+                <dd id="pathCount">7 células</dd>
+              </div>
+              <div>
+                <dt>Consumo</dt>
+                <dd id="batterySpent">9%</dd>
+              </div>
+              <div>
+                <dt>Pacotes</dt>
+                <dd id="packetCount">24</dd>
+              </div>
+            </dl>
+          </section>
+
+          <section class="history">
+            <div class="panel-header compact">
+              <div>
+                <p class="eyebrow">Histórico</p>
+                <h2>Registros</h2>
+              </div>
+              <select id="historyFilter" aria-label="Filtrar histórico por pista">
+                <option value="todos">Todos</option>
+                <option value="4x4">4x4</option>
+                <option value="8x8">8x8</option>
+                <option value="16x16">16x16</option>
+              </select>
+            </div>
+            <div class="history-list" id="historyList"></div>
+          </section>
+        </aside>
+      </section>
+    </main>
+
+    <script src="./app.js"></script>
+  </body>
+</html>

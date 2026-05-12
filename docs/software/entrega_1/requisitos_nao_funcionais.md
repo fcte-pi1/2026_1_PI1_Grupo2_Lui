@@ -2,8 +2,7 @@
 
 ## 1. Introdução
 
-O sistema é composto por dois blocos:
-- O firmware embarcado no micromouse, que é responsável pelo controle autônomo do robô, e a aplicação web, que é responsável por exibir telemetria em tempo real e armazenar dados de cada corrida em um banco de dados.
+O sistema do projeto Micromouse estrutura-se em dois blocos integrados: o firmware embarcado no Micromouse, responsável pelo controle autônomo do robô, e a aplicação web, encarregada de exibir a telemetria em tempo real e de armazenar os dados de cada corrida em banco de dados. Os requisitos não-funcionais consolidados neste documento estabelecem os atributos de qualidade necessários para que ambos os blocos operem com confiabilidade, desempenho e integridade compatíveis com o contexto acadêmico de uso.
 
 ## 2. Desempenho: Métricas de Tempo
 
@@ -11,12 +10,12 @@ O sistema é composto por dois blocos:
 
 | Atributo | Valor |
 |---|---|
-| **Descrição** | O micromouse deve transmitir dados de telemetria ao sistema web com latência máxima aceitável |
+| **Descrição** | O Micromouse deve transmitir dados de telemetria ao sistema web com latência máxima aceitável |
 | **Métrica** | Tempo entre geração do dado no robô e exibição na interface web |
 | **Limite máximo** | ≤ 500 ms (em condições normais de operação na rede local) |
 | **Condição de medição** | Rede Wi-Fi local, distância de até 10 metros entre robô e roteador |
-| **Justificativa** | Telemetria "em tempo real" percebida pelo usuário exige atualização sub-segundo |
-| **MoSCoW** | **Must Have** — sem latência sub-segundo a interface deixa de ser "em tempo real" e descumpre o enunciado |
+| **Justificativa** | Telemetria em tempo real, conforme percebida pelo usuário, exige atualização sub-segundo |
+| **MoSCoW** | **Must Have**. Sem latência sub-segundo, a interface deixa de atender ao requisito de tempo real previsto no enunciado |
 
 ### RNF-02 — Taxa de Atualização da Interface Web
 
@@ -26,10 +25,10 @@ O sistema é composto por dois blocos:
 | **Métrica** | Intervalo entre atualizações consecutivas dos dados na tela |
 | **Limite máximo** | ≤ 1 segundo por ciclo de atualização |
 | **Condição de medição** | Navegador moderno (Chrome/Firefox), conexão local ativa |
-| **Justificativa** | Garantir que o observador acompanhe o progresso do micromouse em tempo real |
-| **MoSCoW** | **Must Have** — par de RNF-01; juntos definem a percepção de tempo real exigida pelo enunciado |
+| **Justificativa** | Assegura que o observador acompanhe o progresso do Micromouse em tempo real |
+| **MoSCoW** | **Must Have**. Complementa o RNF-01; em conjunto, ambos definem a percepção de tempo real exigida pelo enunciado |
 
-A interface deve se atualizar a cada 1 segundo. Para que isso seja possível, a transmissão dos dados do robô até o servidor precisa ser concluída em menos tempo do que esse intervalo, deixando margem para o processamento no servidor e a renderização no navegador. Adotando uma divisão conservadora: metade do tempo para transmissão, metade para processamento e renderização, chegamos a 500 ms como limite para a etapa de transmissão. Em redes locais Wi-Fi comuns, latências na faixa de 10 a 50 ms são típicas, de modo que 500 ms é um limite bastante seguro e alcançável.
+A interface deve atualizar-se a cada 1 segundo. Para viabilizar essa cadência, a transmissão dos dados do robô ao servidor precisa ser concluída em tempo inferior a esse intervalo, deixando margem para o processamento no servidor e a renderização no navegador. Adotando uma divisão conservadora (metade do tempo para transmissão e metade para processamento e renderização), chega-se a 500 ms como limite para a etapa de transmissão. Em redes locais Wi-Fi típicas, as latências costumam situar-se entre 10 e 50 ms, de modo que o limite estabelecido é amplamente seguro e alcançável.
 
 ### RNF-03 — Tempo de Carregamento da Página Web
 
@@ -39,10 +38,10 @@ A interface deve se atualizar a cada 1 segundo. Para que isso seja possível, a 
 | **Métrica** | Tempo desde a requisição HTTP até o estado "interativo" da página (TTI) |
 | **Limite máximo** | ≤ 3 segundos (em rede local) |
 | **Condição de medição** | Conexão local, hardware padrão de laboratório |
-| **Justificativa** | Evitar espera excessiva antes do início da corrida |
-| **MoSCoW** | **Should Have** — ajuste de qualidade de uso; um carregamento de 4-5s não inviabiliza a corrida, mas degrada a experiência durante apresentações |
+| **Justificativa** | Evita espera excessiva antes do início da corrida |
+| **MoSCoW** | **Should Have**. Trata-se de ajuste de qualidade de uso; um carregamento de 4 a 5 segundos não inviabiliza a corrida, ainda que degrade a experiência durante apresentações |
 
-Este requisito se aplica ao carregamento inicial da aplicação, não à telemetria em si. O limite de 3 segundos é amplamente adotado como referência na indústria (Google Core Web Vitals define esse intervalo como limite aceitável de carregamento)
+Este requisito se aplica ao carregamento inicial da aplicação, não à telemetria em si. O limite de 3 segundos é amplamente adotado como referência na indústria, sendo definido pelas Core Web Vitals do Google como o intervalo aceitável para o estado interativo.
 
 ### RNF-04 — Tempo de Ciclo de Controle do Firmware
 
@@ -51,20 +50,20 @@ Este requisito se aplica ao carregamento inicial da aplicação, não à telemet
 | **Descrição** | Tempo máximo de execução do loop principal de controle no microcontrolador |
 | **Limite máximo** | ≤ 10 ms por ciclo (equivalente a ≥ 100 Hz) |
 | **Condição de medição** | Execução no microcontrolador alvo, labirinto 16×16 em operação |
-| **MoSCoW** | **Must Have** — derivado da física do robô (velocidade × tamanho da célula); abaixo de 100 Hz a navegação torna-se instável e o robô colide |
+| **MoSCoW** | **Must Have**. Decorre da física do robô (velocidade × tamanho da célula); abaixo de 100 Hz, a navegação torna-se instável e a probabilidade de colisão aumenta |
 
-Este valor vem das características físicas da competição. O robô precisa detectar paredes, corrigir sua trajetória e tomar decisões de navegação enquanto se move. As células têm 18 cm de lado e robôs em competições Micromouse tipicamente atingem velocidades entre 0,5 e 2 m/s. O tempo disponível para atravessar metade de uma célula é de aproximadamente 45 a 180 ms. Para ter pelo menos 4 a 5 ciclos de controle nesse intervalo (garantindo estabilidade), a frequência mínima deve ser próxima de 100 Hz, ou seja, 10 ms por ciclo. Este requisito deve ser revisado após a definição do microcontrolador.
+O valor decorre das características físicas da competição. O robô precisa detectar paredes, corrigir sua trajetória e tomar decisões de navegação enquanto se desloca. As células têm 18 cm de lado e robôs em competições Micromouse tipicamente atingem velocidades entre 0,5 e 2 m/s, o que resulta em um tempo aproximado de 45 a 180 ms para atravessar metade de uma célula. Para garantir pelo menos quatro a cinco ciclos de controle nesse intervalo, assegurando estabilidade, a frequência mínima deve aproximar-se de 100 Hz, ou 10 ms por ciclo. Este requisito deve ser revisado após a definição do microcontrolador.
 
 ### RNF-05 — Tempo de Armazenamento no Banco de Dados
 
 | Atributo | Valor |
 |---|---|
-| **Descrição** | Tempo máximo entre a detecção do objetivo pelo micromouse e a confirmação de escrita dos dados finais no banco |
+| **Descrição** | Tempo máximo entre a detecção do objetivo pelo Micromouse e a confirmação de escrita dos dados finais no banco |
 | **Limite máximo** | ≤ 2 segundos |
 | **Condição de medição** | Banco de dados local ou servidor na mesma rede |
-| **MoSCoW** | **Should Have** — uma escrita um pouco mais lenta não compromete a avaliação, mas a janela curta evita perda de dados caso o operador desligue o sistema logo após a corrida |
+| **MoSCoW** | **Should Have**. Uma escrita ligeiramente mais lenta não compromete a avaliação, mas a janela curta previne a perda de dados caso o operador desligue o sistema logo após a corrida |
 
-Ao final de uma corrida, o sistema precisa garantir que todos os dados sejam armazenados antes que o operador desligue o robô ou encerre a aplicação. Dois segundos é tempo suficiente para que a interface detecte o evento de conclusão, monte o objeto de dados e execute uma operação de escrita em banco de dados local.
+Ao término de uma corrida, o sistema deve garantir que todos os dados sejam armazenados antes que o operador desligue o robô ou encerre a aplicação. Dois segundos constituem tempo suficiente para a interface detectar o evento de conclusão, montar o objeto de dados e executar a operação de escrita no banco local.
 
 ## 3. Capacidade e Carga
 
@@ -74,12 +73,12 @@ Ao final de uma corrida, o sistema precisa garantir que todos os dados sejam arm
 |---|---|
 | **Descrição** | Tamanho máximo dos dados consolidados de uma corrida persistidos no banco |
 | **Limite máximo** | ≤ 10 KB por corrida |
-| **Conteúdo do resumo** | Tempo total, trajeto percorrido (matriz de paredes + sequência de células), velocidade média, consumo de bateria, status do desafio |
-| **MoSCoW** | **Should Have** — limite de dimensionamento que orienta o desenho do schema; passar disso não quebra o sistema, mas indica que o formato precisa ser revisto |
+| **Conteúdo do resumo** | Tempo total, trajeto percorrido (matriz de paredes e sequência de células), velocidade média, consumo de bateria e status do desafio |
+| **MoSCoW** | **Should Have**. Trata-se de limite de dimensionamento que orienta o desenho do schema; ultrapassá-lo não interrompe o sistema, mas evidencia a necessidade de revisão do formato |
 
-Conforme o diagrama BPMN (Lane 3A — Backend) e a história US13, o backend grava no banco apenas o resumo final da corrida, ao receber a flag de conclusão emitida pelo firmware (comportamento verificado por CT-20 e CT-21). O stream contínuo de telemetria não é persistido: ele apenas trafega entre firmware, backend e frontend para alimentar a interface em tempo real.
+Conforme o Diagrama de Atividades (raia do Backend) e a história US13, o backend grava no banco apenas o resumo final da corrida, ao receber a flag de conclusão emitida pelo firmware (comportamento verificado por CT-20 e CT-21). O stream contínuo de telemetria não é persistido: trafega entre firmware, backend e frontend apenas para alimentar a interface em tempo real.
 
-O dimensionamento do resumo considera o pior caso (labirinto 16×16): a matriz de paredes ocupa cerca de 128 bytes (1 bit por parede em 256 células), e a sequência de células percorridas — mesmo com revisitas durante a fase de exploração — fica abaixo de 4 KB quando serializada em formato compacto. Os demais campos (escalares e enum de status) somam menos de 100 bytes. O limite de 10 KB cobre esse cenário com folga, incluindo overhead de serialização em JSON.
+O dimensionamento do resumo considera o pior caso (labirinto 16×16): a matriz de paredes ocupa cerca de 128 bytes (1 bit por parede em 256 células), e a sequência de células percorridas, mesmo com revisitas durante a fase de exploração, fica abaixo de 4 KB quando serializada em formato compacto. Os demais campos (escalares e enum de status) somam menos de 100 bytes. O limite de 10 KB cobre esse cenário com folga, considerando o overhead de serialização em JSON.
 
 ### RNF-07 — Total de Corridas Armazenadas
 
@@ -88,9 +87,9 @@ O dimensionamento do resumo considera o pior caso (labirinto 16×16): a matriz d
 | **Descrição** | Quantidade mínima de corridas que o banco de dados deve suportar sem degradação de desempenho nas consultas |
 | **Limite mínimo** | ≥ 100 corridas |
 | **Tempo de consulta** | Resultado de consulta por labirinto específico em ≤ 1 segundo |
-| **MoSCoW** | **Should Have** — cobre o uso estimado do semestre com folga; menos que isso é suficiente para a apresentação final, mas inviabiliza análise histórica |
+| **MoSCoW** | **Should Have**. O limite cobre o uso estimado do semestre com folga; valores inferiores ainda suportam a apresentação final, mas inviabilizam análise histórica |
 
-Estimando aproximadamente 10 sessões de teste distribuídas ao longo do semestre, com 3 labirintos por sessão e até 3 tentativas cada, chegamos a cerca de 90 corridas no total. O limite de 100 corridas cobre esse uso com uma pequena margem de segurança. Combinado com o limite do RNF-06 (≤ 10 KB por corrida), o banco precisaria suportar cerca de 1 MB de dados — volume sem qualquer impacto para PostgreSQL, SQLite ou MySQL. ou outros bancos relacionais.
+Estimando aproximadamente 10 sessões de teste distribuídas ao longo do semestre, com 3 labirintos por sessão e até 3 tentativas cada, chega-se a cerca de 90 corridas no total. O limite de 100 corridas cobre esse uso com pequena margem de segurança. Combinado ao limite do RNF-06 (≤ 10 KB por corrida), o banco precisaria suportar aproximadamente 1 MB de dados, volume sem qualquer impacto para PostgreSQL, SQLite, MySQL ou outros bancos relacionais.
 
 ### RNF-08 — Usuários Simultâneos no Sistema Web
 
@@ -99,20 +98,19 @@ Estimando aproximadamente 10 sessões de teste distribuídas ao longo do semestr
 | **Descrição** | Número mínimo de usuários que podem acessar a interface web simultaneamente sem degradação |
 | **Limite mínimo** | ≥ 10 usuários simultâneos |
 | **Critério de degradação** | Latência de atualização mantida em ≤ 1 segundo com 10 clientes ativos |
-| **MoSCoW** | **Should Have** — cobre o cenário da apresentação final (≈10 pessoas); com menos clientes simultâneos o sistema ainda funciona, apenas reduz o número de avaliadores que podem acompanhar pela própria máquina |
+| **MoSCoW** | **Should Have**. Cobre o cenário da apresentação final (aproximadamente 10 pessoas); com menos clientes simultâneos, o sistema continua funcional, apenas reduzindo o número de avaliadores que podem acompanhar pela própria máquina |
 
-O contexto mais exigente é a apresentação final, onde todos os professores da disciplina e os próprios integrantes da equipe podem estar acompanhando simultaneamente. São 5 professores avaliadores e aproximadamente 5 a 6 membros do grupo, totalizando cerca de 10 a 11 usuários simultâneos no pico de uso. O limite de ≥ 10 conexões simultâneas cobre esse cenário com folga mínima. Ainda assim, precisa ser explicitamente testado pois o sistema de telemetria mantém conexões abertas continuamente (via WebSocket ou polling), o que consome mais recursos do que requisições comuns.
-
+O contexto mais exigente é a apresentação final, na qual professores avaliadores e integrantes da equipe podem acompanhar o sistema simultaneamente. Considerando 5 professores avaliadores e aproximadamente 5 a 6 membros do grupo, totalizam-se cerca de 10 a 11 usuários simultâneos no pico de uso. O limite de ≥ 10 conexões simultâneas cobre esse cenário com folga mínima e deve ser explicitamente testado, dado que o sistema de telemetria mantém conexões WebSocket abertas continuamente, o que consome mais recursos do que requisições HTTP convencionais.
 
 ### RNF-09 — Tamanho Máximo do Pacote de Telemetria
 
 | Atributo | Valor |
 |---|---|
-| **Descrição** | Tamanho máximo de cada pacote de dados enviado pelo micromouse ao servidor por ciclo |
+| **Descrição** | Tamanho máximo de cada pacote de dados enviado pelo Micromouse ao servidor por ciclo |
 | **Limite máximo** | ≤ 512 bytes por pacote |
-| **MoSCoW** | **Should Have** — restringe o pacote para caber no buffer típico do ESP32 e evitar fragmentação; pacotes maiores funcionam, mas elevam latência e risco de perda |
+| **MoSCoW** | **Should Have**. Restringe o pacote ao buffer típico do ESP32 e evita fragmentação; pacotes maiores funcionam, mas elevam a latência e o risco de perda |
 
-Microcontroladores tipicamente utilizados em projetos Micromouse (como STM32 ou ESP32) possuem buffers de comunicação limitados. Pacotes menores também reduzem a latência de transmissão e o risco de fragmentação na rede. Os dados necessários por ciclo: posição, velocidade, nível de bateria e timestamp, podem ser representados em menos de 100 bytes com estrutura binária eficiente. O limite de 512 bytes é generoso o suficiente para acomodar inclusive formatos texto como JSON, que são mais fáceis de depurar durante o desenvolvimento.
+Microcontroladores tipicamente utilizados em projetos Micromouse (como STM32 ou ESP32) possuem buffers de comunicação limitados. Pacotes menores reduzem também a latência de transmissão e o risco de fragmentação na rede. Os dados necessários por ciclo (posição, velocidade, nível de bateria e data_hora) podem ser representados em menos de 100 bytes com estrutura binária eficiente. O limite de 512 bytes é generoso o bastante para acomodar inclusive formatos textuais como JSON, mais convenientes para depuração durante o desenvolvimento.
 
 ## 4. Segurança
 
@@ -122,9 +120,9 @@ Microcontroladores tipicamente utilizados em projetos Micromouse (como STM32 ou 
 |---|---|
 | **Descrição** | Os dados gravados no banco após uma corrida não devem poder ser modificados pela interface web |
 | **Requisito** | Interface de consulta somente leitura; nenhum endpoint de modificação ou exclusão exposto publicamente |
-| **MoSCoW** | **Must Have** — os dados persistidos servem de evidência para avaliação; permitir edição comprometeria a credibilidade do registro |
+| **MoSCoW** | **Must Have**. Os dados persistidos servem de evidência para avaliação; a possibilidade de edição comprometeria a credibilidade do registro |
 
-Como os dados serão utilizados para avaliação, é fundamental garantir que não haja possibilidade de alteração posterior dos resultados, seja acidental ou intencional. A forma mais simples de atender a isso é não implementar endpoints de atualização ou deleção no sistema web, deixando qualquer eventual correção como uma operação administrativa direta no banco de dados, com acesso restrito.
+Como os dados são utilizados na avaliação acadêmica, é fundamental garantir que não haja possibilidade de alteração posterior dos resultados, seja acidental, seja intencional. A forma mais simples de assegurar essa propriedade é não implementar endpoints de atualização ou deleção no sistema web, restringindo qualquer eventual correção a uma operação administrativa direta no banco de dados, com acesso controlado.
 
 ## 5. Usabilidade
 
@@ -132,10 +130,10 @@ Como os dados serão utilizados para avaliação, é fundamental garantir que n�
 
 | Atributo | Valor |
 |---|---|
-| **Descrição** | Todos os 6 campos de telemetria exigidos pelo projeto devem estar visíveis sem necessidade de rolagem |
+| **Descrição** | Todos os seis campos de telemetria exigidos pelo projeto devem estar visíveis sem necessidade de rolagem |
 | **Campos obrigatórios** | Tipo do labirinto, trajeto, consumo de bateria, velocidade média, tempo de conclusão, desafio cumprido (S/N) |
 | **Requisito de layout** | Interface responsiva, adaptável a diferentes tamanhos de tela |
-| **MoSCoW** | **Must Have** — o enunciado lista explicitamente os 6 campos exigidos na interface, então todos precisam estar visíveis durante a apresentação |
+| **MoSCoW** | **Must Have**. O enunciado lista explicitamente os seis campos exigidos na interface, que devem permanecer visíveis durante a apresentação |
 
 ### RNF-12 — Compatibilidade de Navegadores
 
@@ -143,15 +141,15 @@ Como os dados serão utilizados para avaliação, é fundamental garantir que n�
 |---|---|
 | **Descrição** | A aplicação deve funcionar corretamente nos navegadores mais utilizados |
 | **Requisito** | Chrome ≥ 110, Firefox ≥ 110, Edge ≥ 110 |
-| **MoSCoW** | **Should Have** — abrir em qualquer um dos três principais navegadores evita depender de um equipamento específico no dia da avaliação, mas funcionar em apenas um deles ainda permite a entrega |
+| **MoSCoW** | **Should Have**. Suporte aos três principais navegadores evita a dependência de um equipamento específico no dia da avaliação, embora o funcionamento em apenas um deles ainda viabilize a entrega |
 
-Para garantir que o sistema funcione nos equipamentos disponíveis durante as avaliações, independentemente do laboratório ou computador utilizado, é necessário definir um conjunto mínimo de navegadores suportados. As versões ≥ 110 foram escolhidas por oferecerem amplo suporte a APIs modernas como WebSocket, CSS Grid e Fetch API, recursos que provavelmente serão utilizados no desenvolvimento da interface de telemetria.
+A definição de um conjunto mínimo de navegadores suportados assegura o funcionamento do sistema nos equipamentos disponíveis durante as avaliações, independentemente do laboratório ou computador utilizado. As versões ≥ 110 foram escolhidas por oferecerem amplo suporte a APIs modernas como WebSocket, CSS Grid e Fetch API, recursos previstos para o desenvolvimento da interface de telemetria.
 
 # Restrições de Ambiente e Documentação de Software
 
 ## 1. Introdução
 
-As restrições estão organizadas em quatro camadas: **firmware embarcado** (o software que roda no robô), **backend** (o servidor que recebe e processa os dados), **frontend** (a interface web) e **banco de dados**.
+As restrições de ambiente delimitam as tecnologias e configurações que cada camada do sistema deve adotar. Estão organizadas em quatro grupos: firmware embarcado, backend, frontend e banco de dados. A explicitação dessas restrições assegura a homogeneidade do ambiente entre os integrantes do grupo e a viabilidade de execução no contexto acadêmico.
 
 ## 2. Firmware Embarcado
 
@@ -163,17 +161,17 @@ As restrições estão organizadas em quatro camadas: **firmware embarcado** (o 
 | **Linguagem** | C/C++ (framework Arduino ou ESP-IDF) |
 | **Restrição** | O firmware deve ser compilado e executado exclusivamente no ESP32 |
 
-O ESP32 foi escolhido por integrar Wi-Fi nativamente, o que é indispensável para a transmissão de telemetria em tempo real ao sistema web sem a necessidade de módulos adicionais. É também o microcontrolador com maior disponibilidade de bibliotecas para controle de motores, leitura de sensores infravermelhos e encoders (componentes centrais do micromouse). Alternativas como o STM32 são mais poderosas para controle em tempo real, mas exigiriam um módulo Wi-Fi externo, aumentando a complexidade do hardware.
+O ESP32 foi selecionado por integrar Wi-Fi nativamente, condição indispensável para a transmissão de telemetria em tempo real ao sistema web sem a necessidade de módulos adicionais. Trata-se também do microcontrolador com maior disponibilidade de bibliotecas para controle de motores, leitura de sensores infravermelhos e encoders, componentes centrais do Micromouse. Alternativas como o STM32 oferecem maior capacidade de controle em tempo real, mas exigiriam módulo Wi-Fi externo, o que aumentaria a complexidade do hardware.
 
 ### RE-02 — Protocolo de Comunicação
 
 | Atributo | Valor |
 |---|---|
-| **Protocolo** | Wi-Fi (IEEE 802.11 b/g/n) + UDP ou WebSocket |
+| **Protocolo** | Wi-Fi (IEEE 802.11 b/g/n) + WebSocket |
 | **Restrição** | A comunicação entre robô e servidor deve ocorrer via rede local (LAN) |
 | **Frequência mínima de envio** | 1 pacote por segundo durante a corrida |
 
-O UDP foi considerado por ser mais leve e ter menor latência do que o TCP, adequado para o envio contínuo de dados de telemetria onde a perda eventual de um pacote é aceitável. O WebSocket sobre TCP é uma alternativa caso optemos por uma comunicação bidirecional mais robusta com o servidor. A rede local elimina a dependência de internet durante as apresentações, garantindo maior confiabilidade.
+O WebSocket sobre TCP foi adotado por viabilizar comunicação bidirecional em tempo real com o servidor, mantendo conexão persistente entre firmware e backend. A rede local elimina a dependência de internet durante as apresentações, o que assegura maior confiabilidade e latência compatível com RNF-01 e RNF-02.
 
 ### RE-03 — Sensores Suportados
 
@@ -181,9 +179,9 @@ O UDP foi considerado por ser mais leve e ter menor latência do que o TCP, adeq
 |---|---|
 | **Sensores de distância** | Infravermelho (IR) ou ultrassônico (HC-SR04 ou similar) |
 | **Encoder de rodas** | Encoder incremental compatível com GPIO do ESP32 |
-| **Restrição** | O firmware deve ser capaz de ler e processar dados de pelo menos 3 sensores de distância simultaneamente (frente, esquerda, direita) |
+| **Restrição** | O firmware deve ler e processar dados de pelo menos 3 sensores de distância simultaneamente (frente, esquerda e direita) |
 
-A detecção de paredes em três direções é o mínimo para que algoritmos de navegação como o flood fill ou wall-following funcionem corretamente. O ESP32 possui GPIOs suficientes para suportar essa configuração sem necessidade de multiplexação.
+A detecção de paredes em três direções constitui o mínimo necessário para que algoritmos de navegação como Flood Fill ou wall-following operem corretamente. O ESP32 dispõe de GPIOs suficientes para essa configuração, dispensando o uso de multiplexação.
 
 ## 3. Backend
 
@@ -193,9 +191,9 @@ A detecção de paredes em três direções é o mínimo para que algoritmos de 
 |---|---|
 | **Linguagem** | Python 3.10 ou superior |
 | **Framework** | FastAPI |
-| **Restrição** | O backend deve ser executável localmente sem necessidade de infraestrutura em nuvem |
+| **Restrição** | O backend deve ser executável localmente, sem necessidade de infraestrutura em nuvem |
 
-Python é a linguagem de maior familiaridade entre os integrantes do grupo. O FastAPI foi escolhido sobre o Flask por ter suporte nativo a WebSocket, que é essencial para a transmissão de telemetria em tempo real e por ser assíncrono por padrão, o que permite lidar com múltiplas conexões simultâneas (professores e integrantes acompanhando a apresentação) com melhor desempenho. A execução local elimina dependências externas durante as apresentações.
+Python é a linguagem de maior familiaridade entre os integrantes do grupo. O FastAPI foi preferido ao Flask por oferecer suporte nativo a WebSocket, condição essencial para a transmissão de telemetria em tempo real, e por adotar modelo assíncrono por padrão, o que viabiliza o atendimento simultâneo a múltiplas conexões (professores e integrantes durante a apresentação) com melhor desempenho. A execução local elimina dependências externas durante as apresentações.
 
 ### RE-05 — Sistema Operacional do Servidor
 
@@ -204,7 +202,7 @@ Python é a linguagem de maior familiaridade entre os integrantes do grupo. O Fa
 | **Sistemas suportados** | Windows 10/11, Ubuntu 22.04 LTS, macOS 12 ou superior |
 | **Restrição** | O backend deve inicializar e operar corretamente em qualquer um dos sistemas listados |
 
-O grupo pode usar diferentes sistemas operacionais nas sua máquinas pessoais. Garantir compatibilidade com os três sistemas mais comuns evita que a apresentação dependa de um equipamento específico. O Python 3.10+ e o FastAPI são multiplataforma por natureza, então essa restrição é atendida sem esforço adicional desde que as dependências sejam gerenciadas via `requirements.txt` ou similar.
+Como os integrantes utilizam diferentes sistemas operacionais em suas máquinas pessoais, a compatibilidade com os três sistemas mais comuns evita que a apresentação dependa de um equipamento específico. Python 3.10+ e FastAPI são multiplataforma por natureza, de modo que essa restrição é atendida sem esforço adicional, desde que as dependências sejam gerenciadas via `requirements.txt` ou ferramenta equivalente.
 
 ### RE-06 — Gerenciamento de Dependências
 
@@ -213,7 +211,7 @@ O grupo pode usar diferentes sistemas operacionais nas sua máquinas pessoais. G
 | **Ferramenta** | pip + arquivo `requirements.txt` |
 | **Restrição** | Todas as dependências do backend devem estar listadas no `requirements.txt` com versões fixadas |
 
-Fixar versões das dependências garante que o sistema funcione da mesma forma em qualquer máquina onde for instalado.
+A fixação de versões assegura comportamento idêntico do sistema em qualquer máquina onde for instalado, eliminando inconsistências decorrentes de atualizações silenciosas de pacotes.
 
 ## 4. Frontend
 
@@ -222,9 +220,9 @@ Fixar versões das dependências garante que o sistema funcione da mesma forma e
 | Atributo | Valor |
 |---|---|
 | **Tecnologias** | HTML5, CSS3, JavaScript (ES6+) |
-| **Restrição** | A interface não deve depender de frameworks externos que exijam processo de build (ex: React, Vue com Vite) |
+| **Restrição** | A interface não deve depender de frameworks externos que exijam processo de build (por exemplo, React ou Vue com Vite) |
 
-Utilizar HTML, CSS e JavaScript puros elimina a necessidade de configurar ambientes de build (Node.js, npm, Webpack, etc.), reduzindo a complexidade de instalação e execução. Para o escopo do projeto, frameworks pesados não trazem benefícios que justifiquem o custo de setup. A atualização em tempo real pode ser implementada com a Fetch API ou WebSocket nativos do navegador.
+O uso de HTML, CSS e JavaScript puros elimina a necessidade de configurar ambientes de build (Node.js, npm, Webpack, entre outros), reduzindo a complexidade de instalação e execução. Para o escopo do projeto, frameworks pesados não oferecem benefícios que justifiquem o custo de configuração. A atualização em tempo real é implementada com WebSocket nativo do navegador, enquanto a Fetch API atende às consultas REST ao histórico.
 
 ### RE-08 — Navegadores Suportados
 
@@ -233,16 +231,16 @@ Utilizar HTML, CSS e JavaScript puros elimina a necessidade de configurar ambien
 | **Navegadores** | Google Chrome ≥ 110, Mozilla Firefox ≥ 110, Microsoft Edge ≥ 110 |
 | **Restrição** | A interface deve funcionar corretamente em qualquer um dos navegadores listados, sem plugins adicionais |
 
-As versões ≥ 110 foram escolhidas por garantirem suporte completo a WebSocket, CSS Grid, Flexbox e Fetch API. São também versões com ampla adoção, presentes na maioria dos notebooks atuais sem necessidade de atualização.
+As versões ≥ 110 foram escolhidas por assegurarem suporte completo a WebSocket, CSS Grid, Flexbox e Fetch API. Trata-se ainda de versões amplamente adotadas, presentes na maioria dos notebooks atuais sem necessidade de atualização.
 
 ### RE-09 — Layout Responsivo
 
 | Atributo | Valor |
 |---|---|
-| **Restrição** | A interface deve se adaptar a telas de notebooks e desktops convencionais sem perda de usabilidade |
-| **Referência mínima** | Telas com largura a partir de 1024px |
+| **Restrição** | A interface deve adaptar-se a telas de notebooks e desktops convencionais sem perda de usabilidade |
+| **Referência mínima** | Telas com largura a partir de 1024 px |
 
-Durante as apresentações, diferentes dispositivos podem ser utilizados para acessar a interface. Garantir que o layout funcione a partir de 1024px cobre a grande maioria dos notebooks atualmente, sem a necessidade de otimização para dispositivos móveis, que não fazem parte do escopo de uso do sistema.
+Durante as apresentações, diferentes dispositivos podem ser utilizados para acessar a interface. Assegurar funcionamento a partir de 1024 px cobre a grande maioria dos notebooks atuais, dispensando a otimização para dispositivos móveis, que não integram o escopo de uso do sistema.
 
 ## 5. Banco de Dados
 
@@ -253,26 +251,31 @@ Durante as apresentações, diferentes dispositivos podem ser utilizados para ac
 | **Tecnologia** | SQLite 3 |
 | **Restrição** | O banco de dados deve ser um arquivo local, sem necessidade de servidor dedicado |
 
-O SQLite foi escolhido por ser um banco de dados baseado em arquivo. Para o volume de dados esperado (~100 corridas, ~100 MB), o SQLite é mais que suficiente em termos de desempenho. Sua portabilidade também é uma vantagem, já que o banco de dados é um único arquivo que pode ser copiado, versionado e compartilhado facilmente entre os integrantes do grupo.
+O SQLite foi adotado por ser um banco baseado em arquivo. Para o volume de dados esperado (aproximadamente 100 corridas, totalizando cerca de 1 MB), o SQLite oferece desempenho mais que suficiente. Sua portabilidade também constitui vantagem operacional, dado que o banco se materializa como um único arquivo passível de cópia, versionamento e compartilhamento entre os integrantes do grupo.
 
 ### RE-11 — Acesso ao Banco de Dados
 
 | Atributo | Valor |
 |---|---|
 | **Biblioteca** | SQLAlchemy (ORM) ou sqlite3 (biblioteca padrão do Python) |
-| **Restrição** | O acesso ao banco deve ser feito exclusivamente pelo backend; a interface web não deve ter acesso direto ao banco |
+| **Restrição** | O acesso ao banco deve ser realizado exclusivamente pelo backend; a interface web não deve ter acesso direto ao banco |
 
-Centralizar o acesso ao banco no backend garante que toda escrita e leitura de dados passe por uma camada de validação, prevenindo inconsistências e atendendo ao requisito de integridade dos dados (RNF-10). O uso de SQLAlchemy como ORM facilita a manutenção do código e a eventual migração para outro banco de dados caso necessário.
+A centralização do acesso ao banco no backend assegura que toda escrita e leitura percorram uma camada de validação, o que previne inconsistências e atende ao requisito de integridade dos dados (RNF-10). O uso de SQLAlchemy como ORM facilita a manutenção do código e a eventual migração para outro banco, caso necessário.
 
 ## 6. Resumo das Restrições Tecnológicas
+
+A síntese a seguir consolida as restrições tecnológicas por camada, registrando a versão mínima associada a cada item.
 
 | ID | Camada | Tecnologia | Versão mínima |
 |---|---|---|---|
 | RE-01 | Firmware | ESP32 (C/C++) | ESP-IDF 5.0 / Arduino Core 2.0 |
-| RE-02 | Firmware | Wi-Fi + UDP/WebSocket | IEEE 802.11 b/g/n |
+| RE-02 | Firmware | Wi-Fi + WebSocket | IEEE 802.11 b/g/n |
+| RE-03 | Firmware | Sensores IR/ultrassônicos + encoder | ≥ 3 sensores de distância (frente, esquerda, direita) |
 | RE-04 | Backend | Python + FastAPI | Python 3.10 |
 | RE-05 | Backend | Windows / Ubuntu / macOS | Win 10, Ubuntu 22.04, macOS 12 |
+| RE-06 | Backend | pip + requirements.txt | Dependências com versões fixadas |
 | RE-07 | Frontend | HTML5 + CSS3 + JS | ES6+ |
 | RE-08 | Frontend | Chrome / Firefox / Edge | versão 110 |
 | RE-09 | Frontend | Layout responsivo | largura ≥ 1024px |
 | RE-10 | Banco de dados | SQLite 3 | versão 3.35+ |
+| RE-11 | Banco de dados | SQLAlchemy ou sqlite3 | Acesso exclusivo pelo backend |

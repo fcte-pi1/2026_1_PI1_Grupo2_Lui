@@ -1,49 +1,40 @@
 # Diagrama de Casos de Uso (UML)
 
-Este documento mapeia os requisitos funcionais do projeto Micromouse através da perspectiva de Casos de Uso, definindo as fronteiras do sistema, os atores envolvidos e as interações primárias.
+Este documento mapeia os requisitos funcionais do projeto Micromouse sob a perspectiva de Casos de Uso, delimitando as fronteiras do sistema, identificando os atores envolvidos e explicitando as interações primárias. A finalidade do artefato é viabilizar a rastreabilidade entre as histórias de usuário e as funcionalidades do sistema, servindo de referência para o desenvolvimento e para a validação por meio dos casos de teste.
 
 ## Fronteiras do Sistema
 
-O sistema integrado é composto por duas camadas lógicas principais que operam em conjunto:
-- **Firmware (Micromouse):** Responsável pela navegação, detecção física e transmissão de dados brutos via rede local (UDP/WebSocket).
-- **Sistema Web (Backend/Frontend):** Responsável por receber, processar, exibir em tempo real e persistir os dados da telemetria (FastAPI + SQLite).
+O sistema integrado estrutura-se em duas camadas lógicas que operam de modo articulado. O firmware embarcado no Micromouse responde pela navegação, pela detecção física do ambiente e pela transmissão dos dados brutos por meio de rede local com protocolo WebSocket. O sistema web (composto por backend FastAPI e frontend) recebe, processa, exibe em tempo real e persiste os dados de telemetria no SQLite.
 
 ## Atores do Sistema
 
-Os atores representam entidades externas (humanas ou de hardware) que interagem com o sistema para enviar informações ou extrair valor.
+Os atores representam entidades externas (humanas ou de hardware) que interagem com o sistema, seja fornecendo informações, seja consumindo seus resultados.
 
 | Ator | Tipo | Descrição |
 |---|---|---|
-| **Operador** | Humano (Primário) | Responsável por inicializar o robô no labirinto, monitorar o dashboard web em tempo real e consultar históricos de desempenho. |
-| **Juiz da Prova** | Humano (Primário) | Responsável por validar os critérios da competição, assegurando que o robô cumpre o percurso sem intervenção de controle externo. |
-| **Sensores e Hardware** | Sistema Externo (Secundário) | Módulos físicos (sensores infravermelhos/ultrassônicos, encoders, bateria) que fornecem os dados do mundo real para o Firmware. |
+| **Operador** | Humano (primário) | Inicializa o robô no labirinto, monitora o dashboard web em tempo real e consulta o histórico de desempenho |
+| **Juiz da Prova** | Humano (primário) | Valida os critérios da competição, assegurando que o robô conclui o percurso sem intervenção de controle externo |
+| **Sensores e Hardware** | Sistema externo (secundário) | Módulos físicos (sensores infravermelhos/ultrassônicos, encoders, bateria) que fornecem os dados do mundo real ao firmware |
 
 ## Casos de Uso Mapeados
 
-A nomenclatura dos casos de uso adota verbos no infinitivo, refletindo as ações diretas mapeadas a partir do Backlog Funcional (MoSCoW).
+A nomenclatura dos casos de uso adota verbos no infinitivo, refletindo as ações diretas mapeadas a partir do backlog funcional priorizado pelo método MoSCoW. Os casos foram agrupados em dois módulos, conforme a natureza das funcionalidades.
 
 ### Módulo de Navegação e Telemetria (Firmware)
-- **UC01: Navegar Autonomamente:** O sistema controla os motores e corrige a trajetória via PID para evitar colisões (Cobre US01, US02, US05, US07).
-- **UC02: Mapear Labirinto:** O sistema registra na memória as coordenadas, paredes detectadas e identifica a sala central (Cobre US03, US04).
-- **UC03: Transmitir Telemetria:** O sistema realiza o envio contínuo de dados de trajeto, bateria, velocidade e status (Cobre US08, US09).
+
+O **UC01: Navegar Autonomamente** representa o controle dos motores e a correção da trajetória via PID para evitar colisões, cobrindo US01, US02, US05 e US07. O **UC02: Mapear Labirinto** consolida o registro das coordenadas e das paredes detectadas, bem como a identificação da sala central (US03 e US04). O **UC03: Transmitir Telemetria** explicita o envio contínuo dos dados de trajeto, bateria, velocidade e status (US08 e US09).
 
 ### Módulo de Monitoramento e Persistência (Sistema Web)
-- **UC04: Monitorar Dashboard da Corrida:** O Operador visualiza a renderização do mapa, cronômetro, velocidade média e nível de bateria em tempo real (Cobre US10, US11, US12).
-- **UC05: Salvar Registro da Corrida:** O sistema grava os dados consolidados no banco de dados SQLite ao término do percurso (Cobre US13).
-- **UC06: Consultar Histórico de Corridas:** O Operador visualiza os logs de corridas passadas armazenadas no banco de dados (Cobre US14).
-- **UC07: Filtrar Histórico por Dimensão:** O Operador refina a busca no banco de dados especificando o tamanho do labirinto (4x4, 8x8 ou 16x16) (Cobre US14).
-- **UC08: Validar Autonomia de Navegação:** O Juiz da Prova atesta visualmente e logicamente que o sistema ignorou comandos de direção externos (Cobre US06).
+
+O **UC04: Monitorar Dashboard da Corrida** permite ao operador visualizar a renderização do mapa, o cronômetro, a velocidade média e o nível de bateria em tempo real, abrangendo US10, US11 e US12. O **UC05: Salvar Registro da Corrida** consolida a gravação dos dados no banco SQLite ao término do percurso (US13). O **UC06: Consultar Histórico de Corridas** viabiliza a visualização dos logs armazenados (US14), enquanto o **UC07: Filtrar Histórico por Dimensão** refina a consulta por tamanho de labirinto (4x4, 8x8 ou 16x16), também relacionado a US14. Por fim, o **UC08: Validar Autonomia de Navegação** representa a verificação, pelo juiz da prova, de que o sistema ignorou comandos externos de direção (US06).
 
 ## Relacionamentos Estruturais
 
-Para estruturação nas ferramentas de modelagem (Draw.io, Lucidchart, Astah), os seguintes relacionamentos devem ser aplicados na ligação entre os Casos de Uso:
+A estruturação do diagrama nas ferramentas de modelagem (Draw.io, Lucidchart ou Astah) requer a aplicação de relacionamentos `<<include>>` e `<<extend>>` entre os casos de uso. A navegação autônoma (UC01) inclui obrigatoriamente o mapeamento do labirinto (UC02), uma vez que a navegação eficaz neste projeto depende do mapeamento simultâneo do espaço. O monitoramento do dashboard (UC04) inclui a transmissão de telemetria (UC03), pois o painel web depende da recepção ativa dos dados produzidos pelo firmware. A conclusão do percurso pela navegação (UC01) inclui a persistência do registro da corrida (UC05), assegurando o armazenamento dos dados de desempenho. Por sua vez, o filtro por dimensão (UC07) estende a consulta ao histórico (UC06), por se tratar de ação opcional executada a critério do operador.
 
-- **UC01 (Navegar Autonomamente)** `<<include>>` **UC02 (Mapear Labirinto):** A navegação funcional no contexto deste projeto exige o mapeamento simultâneo do espaço espacial.
-- **UC04 (Monitorar Dashboard da Corrida)** `<<include>>` **UC03 (Transmitir Telemetria):** O dashboard web não pode operar ou exibir dados sem a recepção ativa da transmissão gerada pelo firmware.
-- **UC01 (Navegar Autonomamente)** `<<include>>` **UC05 (Salvar Registro da Corrida):** A conclusão do percurso aciona obrigatoriamente a persistência dos dados de desempenho no backend.
-- **UC07 (Filtrar Histórico por Dimensão)** `<<extend>>` **UC06 (Consultar Histórico de Corridas):** A aplicação do filtro é uma ação opcional executada a critério do operador durante a visualização do histórico.
+## Representação Textual do Diagrama
 
-## Representação Textual do Diagrama 
+A representação textual a seguir consolida atores, casos de uso e relacionamentos em formato compatível com ferramentas de modelagem baseadas em código.
 
 ```mermaid
 flowchart LR
@@ -78,8 +69,8 @@ flowchart LR
 ```
 
 ## Diagrama UML de Casos de Uso
-![Diagrama de Casos de Uso UML](../../assets/images/casoDeUso.png)
 
+![Diagrama de Casos de Uso UML](../../assets/images/casoDeUso.png)
 
 ## Histórico de versões
 

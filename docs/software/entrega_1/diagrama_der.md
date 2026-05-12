@@ -1,37 +1,60 @@
-### Diagrama de Entidade-Relacionamento (DER)
+# Diagrama de Entidade-Relacionamento (DER)
 
-Este documento apresenta o modelo de dados relacional projetado para o sistema web do projeto Micromouse. O objetivo principal deste modelo é garantir a persistência de dados do histórico de corridas para posterior consulta. Em conformidade com os requisitos não funcionais, o banco de dados utilizado é o **SQLite 3**, garantindo uma solução leve e armazenada localmente.
+<div class="svg-embed-container"
+       data-svg-path="../../../assets/images/der.svg"
+       data-title="Representação gráfica do Diagrama de Entidade-Relacionamento"
+       style="height: 600px; width: 100%;"> </div>
 
-### 1. Entidades e Atributos
+Este documento apresenta o modelo de dados relacional projetado para a camada de persistência do sistema web do projeto Micromouse. Sua finalidade é explicitar as entidades, os atributos e os relacionamentos necessários ao armazenamento do histórico de corridas, viabilizando a consulta posterior dos resultados. A representação gráfica é complementada pelo esquema relacional textual, em conformidade com o material de referência da disciplina.
 
-O modelo foi projetado focando na simplicidade exigida pelo projeto e no volume de dados esperado (cerca de 100 corridas). Foram identificadas duas entidades principais:
+A persistência é implementada em SQLite 3, conforme estabelecido pela restrição RE-10. Em decorrência, os tipos de dados restringem-se aos cinco reconhecidos nativamente pelo SGBD: `INTEGER`, `REAL`, `TEXT`, `BLOB` e `NULL`.
 
-**Entidade: `Labirinto`**
-Armazena os tipos de labirintos físicos utilizados na competição.
-*   `id_labirinto` **(PK - Integer)**: Identificador único do labirinto.
-*   `dimensao` **(Varchar)**: O tamanho do labirinto (ex: "4x4", "8x8", "16x16").
+## 1. Entidades e Atributos
 
-**Entidade: `Registro_Corrida`**
-Armazena o "resumo final" consolidado da telemetria, que é salvo pelo backend ao receber o sinal de conclusão do desafio pelo robô. O tamanho de cada registro não excede 10 KB.
-*   `id_corrida` **(PK - Integer)**: Identificador único do registro da corrida.
-*   `id_labirinto` **(FK - Integer)**: Chave estrangeira que referencia a qual pista a corrida pertence, permitindo os filtros na interface web.
-*   `trajeto` **(Text/JSON)**: A matriz de paredes e a sequência de células do caminho percorrido.
-*   `bateria_consumida` **(Float)**: Porcentagem de bateria utilizada.
-*   `velocidade_media` **(Float)**: Velocidade média do robô durante o trajeto.
-*   `tempo_conclusao` **(Float/Time)**: Tempo total percorrido.
-*   `desafio_cumprido` **(Boolean)**: Status indicando se o robô conseguiu chegar à sala central com sucesso (Sim/Não).
-*   `data_hora` **(Timestamp)**: Momento exato em que a corrida foi salva no sistema.
+O modelo identifica duas entidades. A entidade `Labirinto` consolida os tipos de pista utilizados na competição (4x4, 8x8 e 16x16) e atua como tabela de referência. A entidade `Corrida` registra, para cada execução completa, o resumo final consolidado pelo backend ao receber a flag de conclusão emitida pelo firmware. O dimensionamento de cada registro respeita o limite de 10 KB estabelecido pelo RNF-06.
 
-### 2. Cardinalidades dos Relacionamentos
+### Entidade `Labirinto`
 
-A relação estrutural entre as duas tabelas obedece à regra **1:N (Um para Muitos)**:
-*   **Um (1)** `Labirinto` pode ter **Muitos (N)** `Registros_Corrida` associados a ele, visto que o robô fará várias tentativas na mesma pista.
-*   Cada **Uma (1)** corrida em `Registro_Corrida` ocorre em obrigatoriamente **Um (1)** `Labirinto` específico.
+| Atributo | Tipo SQLite | Descrição |
+|---|---|---|
+| `id_labirinto` (PK) | `INTEGER` | Identificador único do tipo de labirinto |
+| `dimensao` | `TEXT` | Dimensão da pista: `"4x4"`, `"8x8"` ou `"16x16"` |
 
-### 3. Validação dos Requisitos
-O modelo atende perfeitamente à necessidade de consulta de histórico proposta. A separação usando a Chave Estrangeira `id_labirinto` permite a aplicação exata das regras de negócio que exigem a listagem das corridas filtrando por "*um labirinto específico*" ou por "*todos os labirintos*". Ademais, entidades de usuários/operadores não foram incluídas propositalmente, visto que a aplicação web deve ter interface de consulta com acesso somente leitura e não exige controle de perfis de acesso logados.
+### Entidade `Corrida`
 
-### 4. Diagrama Visual
+| Atributo | Tipo SQLite | Descrição |
+|---|---|---|
+| `id_corrida` (PK) | `INTEGER` | Identificador único do registro da corrida |
+| `trajeto` | `TEXT` | Sequência de células percorridas, serializada em JSON compacto |
+| `mapa_paredes` | `BLOB` | Matriz de paredes (até 128 bytes no pior caso, em 16x16) |
+| `tempo_conclusao_ms` | `INTEGER` | Tempo total de conclusão, em milissegundos |
+| `velocidade_media_cms` | `REAL` | Velocidade média do robô, em cm/s |
+| `consumo_bateria_pct` | `REAL` | Variação percentual do nível de bateria durante a corrida |
+| `desafio_cumprido` | `INTEGER` | Indicador de sucesso: `1` representa sucesso e `0` representa falha |
+| `data_hora` | `TEXT` | Data e hora de registro, em formato ISO 8601 |
+| `id_labirinto` (FK) | `INTEGER` | Chave estrangeira que referencia `Labirinto(id_labirinto)` |
 
+## 2. Esquema Relacional
 
-![Diagrama DER](/docs/assets/images/der.svg "Representação gráfica do Diagrama de Entidade-Relacionamento")
+A representação textual do modelo segue a convenção adotada na disciplina, com a chave primária sublinhada e a chave estrangeira prefixada por `#`.
+
+```text
+Labirinto(id_labirinto, dimensao)
+Corrida(id_corrida, trajeto, mapa_paredes, tempo_conclusao_ms,
+        velocidade_media_cms, consumo_bateria_pct, desafio_cumprido,
+        data_hora, #id_labirinto)
+```
+
+## 3. Cardinalidades
+
+O relacionamento `registra` vincula as duas entidades segundo a regra (0, n) — (1, 1). Um `Labirinto` pode estar associado a (0, n) `Corridas`, uma vez que um tipo de pista pode permanecer cadastrado antes que qualquer corrida tenha sido executada nele. Uma `Corrida`, por sua vez, pertence obrigatoriamente a (1, 1) `Labirinto`, o que viabiliza o filtro por tipo de pista exigido pela US14 e validado pelos casos de teste CT-22, CT-23 e CT-28.
+
+A síntese gráfica do relacionamento expressa-se da seguinte forma:
+
+```text
+Corrida -(0, n)- registra -(1, 1)- Labirinto
+```
+
+## 4. Validação dos Requisitos
+
+O modelo viabiliza diretamente o atendimento aos requisitos associados à persistência. A separação por meio da chave estrangeira `id_labirinto` permite a aplicação dos filtros previstos pela US14 (consulta por labirinto específico ou por todos os labirintos), validada pelos CT-22, CT-23 e CT-28. A escrita no banco ocorre exclusivamente após a flag de conclusão (US13, CT-20 e CT-21), e nenhum endpoint público de modificação ou exclusão é exposto, conforme determinado pelo RNF-10 e verificado pelo CT-40. A ausência de entidades de usuário é deliberada: a interface web opera em modo somente leitura sobre o histórico e não requer controle de perfis de acesso.

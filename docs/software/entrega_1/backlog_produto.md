@@ -1,16 +1,18 @@
 # Backlog do Produto
 
-Este documento apresenta o backlog de software do Micromouse, consolidando os requisitos funcionais e não-funcionais que orientam o desenvolvimento, a validação e a evolução do sistema. A organização adotada busca garantir rastreabilidade entre necessidades do produto, critérios de aceitação, prioridades de implementação e evidências de validação.
+Este documento apresenta o backlog de software do Micromouse, consolidando os requisitos funcionais e não-funcionais que orientam o desenvolvimento, a validação e a evolução do sistema. A organização adotada assegura a rastreabilidade entre as necessidades do produto, os critérios de aceitação, as prioridades de implementação e as evidências de validação registradas na matriz de testes funcionais.
 
-Os requisitos funcionais (RF) são documentados como histórias de usuário (HU), no formato **Eu como / gostaria de / para**, acompanhadas de critérios de aceitação verificáveis e priorização pelo método MoSCoW. Os requisitos não-funcionais (RNF), por sua vez, são descritos de forma objetiva, com métrica, limite e condição de medição sempre que aplicável, evitando formulações subjetivas ou de difícil validação.
+Os requisitos funcionais (RF) são documentados como Histórias de Usuário (HU), no formato "Eu como / gostaria de / para", acompanhadas de critérios de aceitação verificáveis e priorização pelo método MoSCoW. Os requisitos não-funcionais (RNF) são descritos de forma objetiva, com métrica, limite e condição de medição sempre que aplicável, o que evita formulações subjetivas ou de difícil validação.
 
 ## Escala MoSCoW
+
+A priorização adotada estrutura a entrega em três níveis de criticidade, conforme detalhado a seguir.
 
 | Prioridade | Significado no projeto |
 |---|---|
 | **Must have** | Item obrigatório para que o produto atenda ao escopo mínimo e ao enunciado. |
 | **Should have** | Item importante, mas que não bloqueia a operação mínima do sistema. |
-| **Could have** | Melhoria desejável, entregue apenas depois dos itens obrigatórios. |
+| **Could have** | Melhoria desejável, entregue apenas após o cumprimento dos itens obrigatórios. |
 
 ## Requisitos Funcionais como Histórias de Usuário
 
@@ -24,7 +26,7 @@ Os requisitos funcionais (RF) são documentados como histórias de usuário (HU)
   - A posição deve mudar dinamicamente conforme o deslocamento.
   - A lógica deve iniciar assumindo 3 paredes na casa inicial.
 - **MoSCoW:** Must have.
-- **Justificativa:** Fundamental para a consciência espacial do robô; sem isso, a navegação autônoma é inviável.
+- **Justificativa:** Fundamental para a consciência espacial do robô; sem esse registro, a navegação autônoma é inviável.
 
 #### RF-02 / US02: Descoberta de paredes
 
@@ -42,7 +44,7 @@ Os requisitos funcionais (RF) são documentados como histórias de usuário (HU)
   - O firmware deve gravar o mapa na memória, incluindo paredes e caminhos livres.
   - O mapa deve ser consultável após a exploração.
 - **MoSCoW:** Must have.
-- **Justificativa:** Requisito primário do Micromouse: resolver o labirinto, não apenas percorrê-lo sem estratégia.
+- **Justificativa:** Requisito primário do Micromouse, voltado a resolver o labirinto e não apenas a percorrê-lo sem estratégia.
 
 #### RF-04 / US04: Detecção da sala central
 
@@ -51,7 +53,7 @@ Os requisitos funcionais (RF) são documentados como histórias de usuário (HU)
   - O firmware deve identificar a configuração de destino.
   - O robô deve parar e sinalizar o fim do desafio.
 - **MoSCoW:** Must have.
-- **Justificativa:** A chegada ao centro é a condição de vitória do sistema.
+- **Justificativa:** A chegada ao centro consolida a condição de vitória do sistema.
 
 #### RF-05 / US05: Suporte a labirintos 4x4, 8x8 e 16x16
 
@@ -60,16 +62,16 @@ Os requisitos funcionais (RF) são documentados como histórias de usuário (HU)
   - O algoritmo deve aceitar configuração para labirintos 4x4, 8x8 e 16x16.
   - O dashboard deve exibir o tipo de labirinto ativo.
 - **MoSCoW:** Must have.
-- **Justificativa:** A entrega final prevê validação nos três tamanhos de labirinto.
+- **Justificativa:** A entrega final prevê a validação do sistema nos três tamanhos de labirinto.
 
 #### RF-06 / US06: Autonomia após largada
 
 - **História de usuário:** Eu como juiz da prova, gostaria de que o firmware ignore comandos externos de direção após a largada, para validar a eficácia 100% autônoma do robô.
 - **Critérios de aceitação:**
   - O percurso deve ocorrer do início ao fim sem aceitar controle manual de direção.
-  - A interface deve indicar estado de corrida autônoma durante a execução.
+  - A interface deve indicar o estado de corrida autônoma durante a execução.
 - **MoSCoW:** Must have.
-- **Justificativa:** Intervenção manual descaracteriza a proposta do sistema e invalida a prova.
+- **Justificativa:** A intervenção manual descaracteriza a proposta do sistema e invalida a prova.
 
 #### RF-07 / US07: Correção contínua de trajetória
 
@@ -78,7 +80,7 @@ Os requisitos funcionais (RF) são documentados como histórias de usuário (HU)
   - O loop de controle deve corrigir o alinhamento com base nas leituras laterais.
   - O robô deve percorrer corredores sem tocar nas paredes em condições normais de teste.
 - **MoSCoW:** Should have.
-- **Justificativa:** O controle PID melhora a estabilidade, embora uma estratégia mais simples ainda possa permitir a navegação mínima.
+- **Justificativa:** O controle PID melhora a estabilidade, embora uma estratégia mais simples ainda viabilize a navegação mínima.
 
 ### Firmware: Telemetria
 
@@ -95,11 +97,11 @@ Os requisitos funcionais (RF) são documentados como histórias de usuário (HU)
 
 - **História de usuário:** Eu como operador, gostaria de que o firmware envie o consumo de bateria e a velocidade média em tempo real, para monitorar a integridade do robô.
 - **Critérios de aceitação:**
-  - O firmware deve ler a tensão da bateria e converter o valor para porcentagem.
+  - O firmware deve ler a tensão da bateria e convertê-la em porcentagem.
   - O firmware deve calcular e enviar a velocidade média.
   - O dashboard deve exibir bateria e velocidade média sem rolagem.
 - **MoSCoW:** Must have.
-- **Justificativa:** Bateria e velocidade média fazem parte dos 6 campos obrigatórios de telemetria.
+- **Justificativa:** Bateria e velocidade média compõem os seis campos obrigatórios de telemetria definidos no enunciado.
 
 ### Sistema Web: Tempo Real
 
@@ -110,7 +112,7 @@ Os requisitos funcionais (RF) são documentados como histórias de usuário (HU)
   - A interface deve renderizar um grid/mapa preenchido com a telemetria.
   - A interface deve exibir o tipo do labirinto (4x4, 8x8 ou 16x16).
 - **MoSCoW:** Must have.
-- **Justificativa:** Essa funcionalidade constitui o núcleo operacional do dashboard, pois permite acompanhar visualmente o comportamento do robô durante a execução da corrida.
+- **Justificativa:** Constitui o núcleo operacional do dashboard, viabilizando o acompanhamento visual do comportamento do robô durante a execução.
 
 #### RF-11 / US11: Resultado imediato da corrida
 
@@ -128,7 +130,7 @@ Os requisitos funcionais (RF) são documentados como histórias de usuário (HU)
   - Velocidade média e bateria devem ficar visíveis em tempo real no painel, sem necessidade de rolagem.
   - Os valores devem atualizar dinamicamente conforme a telemetria chega.
 - **MoSCoW:** Must have.
-- **Justificativa:** O enunciado exige a exibição dos 6 campos de telemetria, incluindo bateria e velocidade média.
+- **Justificativa:** O enunciado exige a exibição dos seis campos de telemetria, incluindo bateria e velocidade média.
 
 ### Sistema Web: Banco de Dados
 
@@ -137,9 +139,9 @@ Os requisitos funcionais (RF) são documentados como histórias de usuário (HU)
 - **História de usuário:** Eu como operador, gostaria de que os dados finais de cada corrida sejam salvos automaticamente no banco ao término, para consulta do histórico.
 - **Critérios de aceitação:**
   - O backend deve criar um registro de corrida ao receber a flag de conclusão.
-  - Os dados devem persistir após reinício da aplicação.
+  - Os dados devem persistir após o reinício da aplicação.
 - **MoSCoW:** Must have.
-- **Justificativa:** A persistência é necessária para consulta posterior e validação dos resultados.
+- **Justificativa:** A persistência viabiliza a consulta posterior e a validação dos resultados.
 
 #### RF-14 / US14: Consulta filtrada por tipo de labirinto
 
@@ -160,17 +162,17 @@ Os requisitos funcionais (RF) são documentados como histórias de usuário (HU)
   - Apenas corridas com desafio cumprido = S devem aparecer no ranking.
   - O ranking deve atualizar quando uma nova corrida concluída for registrada.
 - **MoSCoW:** Could have.
-- **Justificativa:** Agrega valor analítico, mas não bloqueia a entrega mínima.
+- **Justificativa:** Agrega valor analítico aos dados, embora não bloqueie a entrega mínima.
 
 #### RF-16 / US16: Exportação do histórico em CSV
 
 - **História de usuário:** Eu como operador, gostaria de exportar o histórico de corridas em formato CSV, para realizar análises externas em planilhas e gráficos.
 - **Critérios de aceitação:**
   - A tela de histórico deve conter botão "Exportar CSV".
-  - O arquivo deve conter tempo total, trajeto, velocidade média, bateria, status, tipo de labirinto e timestamp.
+  - O arquivo deve conter tempo total, trajeto, velocidade média, bateria, status, tipo de labirinto e data_hora.
   - A exportação deve respeitar o filtro de labirinto ativo.
 - **MoSCoW:** Could have.
-- **Justificativa:** Ajuda na análise do relatório final, mas não é exigido pelo escopo mínimo.
+- **Justificativa:** Auxilia a análise do relatório final, mas não é exigida pelo escopo mínimo.
 
 #### RF-17 / US17: Replay de corrida salva
 
@@ -180,22 +182,22 @@ Os requisitos funcionais (RF) são documentados como histórias de usuário (HU)
   - O replay deve animar o trajeto célula a célula.
   - A tela deve possuir controles de play, pause e velocidade.
 - **MoSCoW:** Could have.
-- **Justificativa:** Tem alto valor de depuração e apresentação, mas exige esforço adicional de interface.
+- **Justificativa:** Possui alto valor de depuração e apresentação, embora exija esforço adicional de interface.
 
 #### RF-18 / US18: Indicador de qualidade da conexão
 
 - **História de usuário:** Eu como operador, gostaria de ver no dashboard um indicador da qualidade da conexão WebSocket, com latência atual e status, para identificar rapidamente quedas ou degradação durante a corrida.
 - **Critérios de aceitação:**
   - O indicador deve estar visível no dashboard.
-  - O indicador deve mostrar os estados conectado, reconectando e desconectado.
+  - O indicador deve apresentar os estados conectado, reconectando e desconectado.
   - A interface deve exibir a latência média dos últimos 10 pacotes em milissegundos.
   - Deve haver alerta visual quando a latência exceder 500 ms.
 - **MoSCoW:** Should have.
-- **Justificativa:** Dá visibilidade ao RNF-01 e apoia o diagnóstico de falhas de comunicação.
+- **Justificativa:** Confere visibilidade ao RNF-01 e apoia o diagnóstico de falhas de comunicação.
 
 ## Requisitos Não-Funcionais
 
-Os requisitos não-funcionais estabelecem atributos de qualidade necessários para que o sistema opere de forma confiável, mensurável e compatível com o contexto de uso previsto. Cada RNF é apresentado com descrição objetiva, métrica ou requisito verificável, condição de medição e prioridade MoSCoW, permitindo sua posterior validação por meio de testes e inspeções técnicas.
+Os requisitos não-funcionais estabelecem atributos de qualidade necessários para que o sistema opere de forma confiável, mensurável e compatível com o contexto de uso previsto. Cada RNF é apresentado com descrição objetiva, métrica ou requisito verificável, condição de medição e prioridade MoSCoW, viabilizando sua validação por meio de testes e inspeções técnicas.
 
 ### Desempenho
 
@@ -214,7 +216,7 @@ Os requisitos não-funcionais estabelecem atributos de qualidade necessários pa
 | **RNF-06** | Tamanho máximo do resumo final persistido por corrida. | **<= 10 KB** por corrida. | Registro contendo tempo total, matriz de paredes, sequência de células, velocidade média, bateria e status. | Should have |
 | **RNF-07** | Quantidade mínima de corridas armazenadas sem degradação relevante. | **>= 100 corridas** e consulta filtrada em **<= 1 s**. | Banco com registros distribuídos entre 4x4, 8x8 e 16x16. | Should have |
 | **RNF-08** | Usuários simultâneos acessando a interface web. | **>= 10 clientes ativos** mantendo atualização em **<= 1 s**. | Dashboard aberto em múltiplos navegadores na rede local. | Should have |
-| **RNF-09** | Tamanho máximo do pacote de telemetria. | **<= 512 bytes** por pacote. | Pacote enviado pelo micromouse ao servidor por ciclo de telemetria. | Should have |
+| **RNF-09** | Tamanho máximo do pacote de telemetria. | **<= 512 bytes** por pacote. | Pacote enviado pelo Micromouse ao servidor por ciclo de telemetria. | Should have |
 
 ### Segurança e Integridade
 
@@ -226,17 +228,18 @@ Os requisitos não-funcionais estabelecem atributos de qualidade necessários pa
 
 | ID | Descrição objetiva | Requisito verificável | Condição de medição | MoSCoW |
 |---|---|---|---|---|
-| **RNF-11** | Visibilidade dos 6 campos obrigatórios de telemetria. | Tipo de labirinto, trajeto, consumo de bateria, velocidade média, tempo de conclusão e desafio cumprido (S/N) visíveis sem rolagem. | Tela de notebook ou desktop com largura mínima de 1024 px. | Must have |
+| **RNF-11** | Visibilidade dos seis campos obrigatórios de telemetria. | Tipo de labirinto, trajeto, consumo de bateria, velocidade média, tempo de conclusão e desafio cumprido (S/N) visíveis sem rolagem. | Tela de notebook ou desktop com largura mínima de 1024 px. | Must have |
 | **RNF-12** | Compatibilidade com navegadores. | Funcionamento correto em Chrome >= 110, Firefox >= 110 e Edge >= 110, sem plugins adicionais. | Execução do dashboard nos três navegadores. | Should have |
 
 ## Rastreabilidade Resumida
 
-A rastreabilidade resumida relaciona os principais grupos de requisitos às respectivas evidências de validação, permitindo verificar a cobertura entre funcionalidades previstas, requisitos de qualidade e casos de teste associados.
+A rastreabilidade relaciona os principais grupos de requisitos às respectivas evidências de validação, permitindo verificar a cobertura entre as funcionalidades previstas, os requisitos de qualidade e os casos de teste associados.
 
 | Item | Evidência de validação |
 |---|---|
-| Navegação e mapeamento | CT-01 a CT-16 |
-| Telemetria e tempo real | CT-17 a CT-19, CT-25 e CT-26 |
-| Persistência e histórico | CT-20 a CT-24, CT-28 e CT-29 |
-| Reconexão e qualidade de conexão | CT-30 |
-| RNFs de desempenho | Medições de latência, atualização, carregamento e ciclo de controle |
+| Navegação e mapeamento | CT-01 a CT-16, CT-45 |
+| Telemetria e tempo real | CT-17 a CT-19, CT-25 a CT-27, CT-31, CT-32, CT-39 |
+| Persistência e histórico | CT-20 a CT-24, CT-28, CT-29, CT-35 a CT-37, CT-40 |
+| Reconexão e qualidade de conexão | CT-30, CT-38 |
+| Funcionalidades adicionais | CT-42 a CT-44 |
+| RNFs de desempenho | CT-31 a CT-34, com medições de latência, atualização, carregamento e ciclo de controle |
