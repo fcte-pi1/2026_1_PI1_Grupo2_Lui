@@ -1,23 +1,24 @@
 # Visão Geral do Software
 
-O software do Micromouse tem como objetivo permitir que o robô navegue autonomamente em labirintos desconhecidos e envie dados de telemetria para uma interface web de acompanhamento em tempo real. O sistema também registra o histórico das corridas, permitindo consulta posterior dos resultados.
+O software do projeto Micromouse tem por finalidade viabilizar a navegação autônoma do robô em labirintos desconhecidos e, simultaneamente, transmitir dados de telemetria a uma interface web destinada ao acompanhamento em tempo real. O sistema também consolida o histórico das corridas, permitindo a consulta posterior dos resultados para fins de análise e avaliação.
 
-A solução é composta por quatro partes principais:
+A solução estrutura-se em quatro componentes integrados, cujas responsabilidades e tecnologias estão sintetizadas no quadro a seguir.
 
 | Componente     | Tecnologia             | Responsabilidade                                                                       |
 | -------------- | ---------------------- | -------------------------------------------------------------------------------------- |
 | Firmware       | ESP32, C/C++           | Leitura de sensores, controle dos motores, navegação, mapeamento e envio de telemetria |
-| Backend        | Python, FastAPI        | Recebimento, validação e retransmissão dos dados em tempo real                         |
-| Frontend       | HTML, CSS e JavaScript | Exibição da corrida, indicadores e histórico                                           |
-| Banco de dados | SQLite                 | Armazenamento local das corridas e registros de telemetria                             |
+| Backend        | Python, FastAPI        | Recepção, validação e retransmissão dos dados em tempo real                            |
+| Frontend       | HTML5, CSS3 e JavaScript ES6+ | Exibição da corrida, indicadores e histórico                                    |
+| Banco de dados | SQLite                 | Armazenamento local dos resumos finais das corridas                                    |
 
-O fluxo principal do sistema é:
+O fluxo principal do sistema pode ser representado de forma compacta como:
 
 ```text
-ESP32 → FastAPI/WebSocket → Dashboard → SQLite
+ESP32 → FastAPI/WebSocket → Dashboard
+FastAPI → SQLite (resumo final da corrida)
 ```
 
-As escolhas tecnológicas seguem as restrições definidas no projeto: uso de tecnologias locais, ausência de dependência em nuvem, frontend sem frameworks de build e comunicação por rede local.
+As escolhas tecnológicas decorrem das restrições definidas no projeto, em particular a adoção de tecnologias locais, a ausência de dependência de serviços em nuvem, a dispensa de processos de build no frontend e a comunicação restrita à rede local.
 
 ---
 
@@ -25,9 +26,11 @@ As escolhas tecnológicas seguem as restrições definidas no projeto: uso de te
 
 ## Objetivo da EAP
 
-A EAP organiza o trabalho de software do projeto Micromouse em pacotes menores, facilitando o planejamento, a divisão de responsabilidades, o acompanhamento do progresso e a validação das entregas.
+A Estrutura Analítica do Projeto (EAP) organiza o trabalho de software do Micromouse em pacotes menores, viabilizando o planejamento, a distribuição de responsabilidades, o acompanhamento do progresso e a validação das entregas.
 
 ## Produto, serviço e projeto
+
+A delimitação do escopo distingue o produto entregue, o serviço prestado e o esforço temporário de desenvolvimento, conforme consolidado na tabela a seguir.
 
 | Item    | Definição                                                                                               |
 | ------- | ------------------------------------------------------------------------------------------------------- |
@@ -37,7 +40,7 @@ A EAP organiza o trabalho de software do projeto Micromouse em pacotes menores, 
 
 ## Abordagem de gerenciamento
 
-A abordagem adotada é híbrida. As atividades de requisitos, arquitetura, testes e documentação seguem uma lógica mais tradicional, pois exigem registro e rastreabilidade. Já o desenvolvimento de firmware, backend e frontend segue ciclos incrementais, permitindo ajustes conforme os testes com o robô e a integração entre os componentes evoluem.
+Adota-se uma abordagem híbrida. As atividades de engenharia de requisitos, arquitetura, testes e documentação seguem uma lógica predominantemente tradicional, dada a necessidade de registro e rastreabilidade. Em contrapartida, o desenvolvimento de firmware, backend e frontend é conduzido em ciclos incrementais, o que permite ajustes contínuos à medida que os testes com o robô e as integrações entre os componentes evoluem.
 
 ---
 
@@ -55,24 +58,24 @@ A abordagem adotada é híbrida. As atividades de requisitos, arquitetura, teste
 
    1.2 Engenharia de requisitos
        - Problema e objetivos
-       - Histórias de usuário
-       - Requisitos funcionais e não funcionais
+       - Histórias de usuário (US01–US18)
+       - Requisitos funcionais (RF-01–RF-18) e não-funcionais (RNF-01–RNF-12)
        - Critérios de aceite
-       - Backlog priorizado
+       - Backlog priorizado pelo método MoSCoW
 
    1.3 Modelagem e arquitetura
-       - BPMN
-       - Casos de uso
-       - Diagrama de estados
-       - Arquitetura do sistema
-       - DER
+       - Diagrama de Atividades
+       - Diagrama de Casos de Uso (UC01–UC08)
+       - Diagrama de Estados
+       - Diagrama de Arquitetura
+       - Diagrama Entidade-Relacionamento (DER)
        - Interfaces entre firmware, backend e frontend
 
    1.4 Firmware embarcado
        - Leitura de sensores
        - Controle dos motores
        - Mapeamento do labirinto
-       - Navegação com Flood Fill
+       - Navegação com algoritmo Flood Fill
        - Envio de telemetria
 
    1.5 Backend e comunicação
@@ -80,10 +83,10 @@ A abordagem adotada é híbrida. As atividades de requisitos, arquitetura, teste
        - Comunicação WebSocket
        - Validação dos pacotes de telemetria
        - Retransmissão dos dados ao dashboard
-       - API de consulta ao histórico
+       - API REST de consulta ao histórico
 
    1.6 Banco de dados
-       - Modelo de dados
+       - Modelo de dados (entidade corrida)
        - Configuração do SQLite
        - Persistência das corridas
        - Consulta do histórico
@@ -102,10 +105,10 @@ A abordagem adotada é híbrida. As atividades de requisitos, arquitetura, teste
        - Validação do fluxo completo
 
    1.9 Testes e validação
-       - Testes funcionais
-       - Testes de integração
-       - Testes de sistema
-       - Testes de latência e persistência
+       - Testes funcionais (CT-01–CT-30)
+       - Testes não-funcionais (CT-31–CT-41)
+       - Testes de funcionalidades adicionais (CT-42–CT-44)
+       - Conformidade com o Tema PI1 (CT-45)
        - Registro de evidências
 
    1.10 Entrega
@@ -120,6 +123,8 @@ A abordagem adotada é híbrida. As atividades de requisitos, arquitetura, teste
 
 ## Dicionário resumido da EAP
 
+O dicionário consolida, para cada pacote da EAP, a entrega principal associada e o respectivo critério de conclusão, assegurando a rastreabilidade entre o planejamento e a execução.
+
 | Pacote                      | Entrega principal             | Critério de conclusão                                 |
 | --------------------------- | ----------------------------- | ----------------------------------------------------- |
 | 1.1 Gestão e documentação   | Projeto planejado             | Escopo, responsáveis, cronograma e riscos registrados |
@@ -127,21 +132,23 @@ A abordagem adotada é híbrida. As atividades de requisitos, arquitetura, teste
 | 1.3 Modelagem e arquitetura | Visão do sistema              | Diagramas e interfaces concluídos                     |
 | 1.4 Firmware                | Controle do robô              | Sensores, motores, navegação e telemetria funcionando |
 | 1.5 Backend                 | Servidor de telemetria        | Dados recebidos, validados e retransmitidos           |
-| 1.6 Banco de dados          | Histórico de corridas         | Corridas e telemetrias persistidas corretamente       |
+| 1.6 Banco de dados          | Histórico de corridas         | Resumos finais de corridas persistidos corretamente   |
 | 1.7 Frontend                | Dashboard                     | Corrida exibida em tempo real                         |
 | 1.8 Integração              | Fluxo completo                | Componentes comunicando corretamente                  |
 | 1.9 Testes                  | Qualidade verificada          | Casos executados e evidências registradas             |
-| 1.10 Entrega                | Sistema pronto para avaliação | Código, documentação e demonstração finalizados       |
+| 1.10 Entrega                | Sistema pronto para avaliação | Código, documentação e demonstração finalizados      |
 
 ---
 
 ## Riscos principais
 
-| Risco                                         |                                         |
+A matriz de riscos consolida as principais ameaças identificadas no projeto e as estratégias de mitigação correspondentes, orientando ações preventivas ao longo do ciclo de desenvolvimento.
+
+| Risco                                         | Mitigação                                                |
 | --------------------------------------------- | --------------------------------------------------------- |
 | Dificuldade de integrar firmware e telemetria | Prototipar o envio de dados desde o início                |
 | Instabilidade na comunicação em tempo real    | Implementar reconexão e simulador de pacotes              |
-| Dashboard depender do robô físico             | Usar dados simulados durante o desenvolvimento            |
+| Dashboard depender do robô físico             | Utilizar dados simulados durante o desenvolvimento        |
 | Dados inconsistentes no banco                 | Validar pacotes no backend antes da persistência          |
 | Backlog maior que o tempo disponível          | Priorizar navegação, telemetria básica e dashboard mínimo |
 | Diagramas ficarem desatualizados              | Revisar a documentação a cada mudança relevante           |
@@ -150,13 +157,16 @@ A abordagem adotada é híbrida. As atividades de requisitos, arquitetura, teste
 
 ## Rastreabilidade
 
-| Item                   | Pacote da EAP      | Testes relacionados                |
-| ---------------------- | ------------------ | ---------------------------------- |
-| Navegação              | 1.4 Firmware       | CT-01 a CT-16                      |
-| Telemetria             | 1.4, 1.5, 1.8      | CT-17 a CT-19                      |
-| Persistência           | 1.6 Banco de dados | CT-20 a CT-24                      |
-| Dashboard              | 1.7 Frontend       | CT-25 a CT-30                      |
-| Latência e atualização | 1.5, 1.7, 1.9      | Testes de latência                 |
-| Integridade dos dados  | 1.5, 1.6           | Testes de validação e persistência |
+A rastreabilidade vincula os principais grupos de funcionalidade aos pacotes da EAP que os contemplam e aos casos de teste que validam sua implementação, conforme definido na matriz de testes funcionais.
+
+| Item                            | Pacote da EAP      | Testes relacionados                              |
+| ------------------------------- | ------------------ | ------------------------------------------------ |
+| Navegação e mapeamento          | 1.4 Firmware       | CT-01 a CT-16, CT-45                             |
+| Telemetria em tempo real        | 1.4, 1.5, 1.8      | CT-17 a CT-19, CT-25 a CT-27, CT-31, CT-32, CT-39 |
+| Persistência e histórico        | 1.6 Banco de dados | CT-20 a CT-24, CT-28, CT-29, CT-35 a CT-37, CT-40 |
+| Dashboard e qualidade da conexão | 1.7 Frontend       | CT-25 a CT-30, CT-38, CT-41                      |
+| Ciclo de controle do firmware   | 1.4 Firmware       | CT-34                                            |
+| Tempo de carregamento da web    | 1.7 Frontend       | CT-33                                            |
+| Funcionalidades adicionais      | 1.5, 1.6, 1.7      | CT-42 a CT-44                                    |
 
 ---

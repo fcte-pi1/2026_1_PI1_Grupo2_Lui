@@ -19,7 +19,6 @@ A arquitetura descrita neste documento abrange exclusivamente o software do proj
 
 O projeto adota uma **arquitetura em camadas com estilo cliente-servidor** para a parte web, integrada a um **sistema embarcado** que atua como produtor de dados.
 
-
 <div class="svg-embed-container" 
        data-svg-path="../../../assets/images/diagramaImplantacao.svg" 
        data-title="Figura 1 - Representação Arquitetural do Sistema Micromouse" 
@@ -27,9 +26,9 @@ O projeto adota uma **arquitetura em camadas com estilo cliente-servidor** para 
 
 A escolha desse estilo é motivada pelos seguintes fatores:
 
-- **Separação de responsabilidades:** o firmware cuida exclusivamente da navegação e coleta de dados; o backend gerencia recepção, validação e persistência; o frontend apresenta os dados ao operador.
-- **Comunicação em tempo real:** o uso de WebSocket entre backend e frontend (RE-04) atende ao requisito de latência ≤ 500 ms (RNF-01) e taxa de atualização ≤ 1 s (RNF-02).
-- **Execução local:** toda a solução roda em rede local (LAN), sem dependência de infraestrutura em nuvem, garantindo confiabilidade durante as apresentações (RE-04, RE-05).
+- **Separação de responsabilidades:** o firmware cuida da navegação e coleta de dados; o backend gerencia recepção, validação e persistência; o frontend apresenta os dados ao operador.
+- **Comunicação em tempo real:** o uso de WebSocket atende à latência ≤ 500 ms (RNF-01) e à taxa de atualização ≤ 1 s (RNF-02).
+- **Execução local:** toda a solução roda em rede local (LAN), sem dependência de infraestrutura em nuvem (RE-04, RE-05).
 - **Baixo acoplamento:** cada camada pode ser desenvolvida, testada e corrigida de forma independente.
 
 ## 3. Stack Tecnológica
@@ -37,20 +36,19 @@ A escolha desse estilo é motivada pelos seguintes fatores:
 | Camada | Tecnologia | Versão mínima | Justificativa |
 |---|---|---|---|
 | Firmware | ESP32 (C/C++ Arduino/ESP-IDF) | Arduino Core 2.0 / ESP-IDF 5.0 | Wi-Fi nativo, GPIOs suficientes, amplo ecossistema para motores e sensores |
-| Comunicação | Wi-Fi IEEE 802.11 b/g/n + UDP ou WebSocket | — | UDP: baixa latência para telemetria; WS: bidirecional para controle remoto |
-| Backend | Python 3.10 + FastAPI | Python 3.10 | Suporte nativo a WebSocket, assíncrono, familiar para a equipe |
+| Comunicação | Wi-Fi IEEE 802.11 b/g/n + WebSocket | — | Comunicação bidirecional em tempo real em rede local |
+| Backend | Python 3.10 + FastAPI | Python 3.10 | Suporte nativo a WebSocket, modelo assíncrono e familiaridade da equipe |
 | ORM / DB driver | SQLAlchemy ou sqlite3 | — | Abstração do banco; facilita migração futura |
-| Banco de dados | SQLite 3 | 3.35+ | Arquivo local, sem servidor dedicado, suficiente para ≤ 100 corridas |
+| Banco de dados | SQLite 3 | 3.35+ | Arquivo local, sem servidor dedicado, suficiente para até 100 corridas |
 | Frontend | HTML5 + CSS3 + JavaScript ES6+ | — | Sem build step; WebSocket e Fetch API nativos do navegador |
-| Navegadores suportados | Chrome ≥ 110, Firefox ≥ 110, Edge ≥ 110 | — | Cobertura de todos os equipamentos de laboratório |
-
+| Navegadores suportados | Chrome ≥ 110, Firefox ≥ 110, Edge ≥ 110 | — | Cobertura dos equipamentos de laboratório |
 
 ## 4. Diagrama de Alto Nível
 
 Os quatro componentes principais e seus relacionamentos são:
 
-- **Firmware → Backend:** envio de pacotes de telemetria (posição, paredes, velocidade, bateria, timestamp) via Wi-Fi UDP ou WebSocket, a uma frequência mínima de 1 pacote/segundo (RE-02, RNF-04).
-- **Backend → Frontend:** retransmissão dos dados em tempo real via WebSocket (CT-19); notificação de conclusão de corrida.
+- **Firmware → Backend:** envio de pacotes de telemetria (posição, paredes, velocidade, bateria e `data_hora`) via Wi-Fi e WebSocket, com frequência mínima de 1 pacote/segundo (RE-02, RNF-02).
+- **Backend → Frontend:** retransmissão dos dados em tempo real via WebSocket (CT-19) e notificação de conclusão de corrida.
 - **Backend → SQLite:** escrita do resumo final da corrida somente após recebimento da flag de conclusão do firmware (CT-20, CT-21, US13).
 - **Frontend → Backend (REST):** consultas ao histórico de corridas, com filtro por tipo de labirinto (CT-22, CT-23, US14).
 
@@ -68,7 +66,7 @@ A visão lógica descreve os principais componentes de software e suas responsab
 | `map_manager` | Manutenção da matriz de paredes (16×16 máximo) e registro da posição atual (X, Y) |
 | `flood_fill` | Cálculo e recálculo da rota mais curta até o centro do labirinto |
 | `motion_controller` | Controle PID dos motores; execução de avanço, curvas de 90° e meia-volta |
-| `state_machine` | Máquina de estados principal: Boot → Verificação → Descoberta → Rota Otimizada → [Final] |
+| `state_machine` | Máquina de estados principal: Boot → Verificação → Descoberta → Rota Otimizada → Final |
 | `telemetry_sender` | Serialização e envio dos pacotes de telemetria via Wi-Fi |
 
 Os estados finais possíveis — Sucesso, Falha por Comunicação, Falha Física e Falha Algorítmica — estão detalhados no Diagrama de Estados (`diagrama_estados.md`).
@@ -77,9 +75,9 @@ Os estados finais possíveis — Sucesso, Falha por Comunicação, Falha Física
 
 | Módulo | Responsabilidade |
 |---|---|
-| `telemetry_receiver` | Endpoint de recepção de pacotes UDP ou WebSocket provenientes do firmware |
-| `packet_validator` | Validação de schema dos pacotes; rejeição com HTTP 400 em caso de malformação (CT-18) |
-| `ws_broadcaster` | Retransmissão dos pacotes válidos a todos os clientes frontend conectados via WebSocket |
+| `telemetry_receiver` | Endpoint WebSocket de recepção de pacotes provenientes do firmware |
+| `packet_validator` | Validação de schema dos pacotes; rejeição controlada em caso de malformação (CT-18) |
+| `ws_broadcaster` | Retransmissão dos pacotes válidos aos clientes frontend conectados via WebSocket |
 | `race_manager` | Detecção da flag de conclusão; montagem do resumo final da corrida |
 | `db_writer` | Persistência do resumo no SQLite via SQLAlchemy, somente após conclusão (CT-20) |
 | `history_api` | Endpoints REST de consulta ao histórico, com suporte a filtro por tipo de labirinto (CT-22, CT-23) |
@@ -89,7 +87,7 @@ Os estados finais possíveis — Sucesso, Falha por Comunicação, Falha Física
 | Módulo | Responsabilidade |
 |---|---|
 | `ws_client` | Estabelecimento e manutenção da conexão WebSocket com o backend; reconexão automática (CT-30) |
-| `telemetry_display` | Renderização em tempo real dos 6 campos obrigatórios: tipo do labirinto, trajeto, bateria, velocidade média, tempo de conclusão, desafio cumprido (RNF-11, CT-26) |
+| `telemetry_display` | Renderização em tempo real dos 6 campos obrigatórios: tipo do labirinto, trajeto, bateria, velocidade média, tempo de conclusão e desafio cumprido (RNF-11, CT-26) |
 | `maze_renderer` | Renderização do grid do labirinto e atualização do trajeto célula a célula (US10) |
 | `race_summary` | Exibição dos dados consolidados ao detectar flag de conclusão (CT-27) |
 | `history_panel` | Consulta ao backend e exibição do histórico com filtros por labirinto (CT-28, CT-29, US14) |
@@ -100,7 +98,7 @@ A visão de processos descreve o comportamento do sistema em tempo de execução
 
 O ciclo autônomo do firmware pode ser resumido como:
 
-```
+```text
 ler sensores → atualizar mapa → calcular rota (Flood Fill) → executar movimento → verificar objetivo
                                                                                          │
                                                                               objetivo atingido?
@@ -108,13 +106,13 @@ ler sensores → atualizar mapa → calcular rota (Flood Fill) → executar movi
                                                                              Sim ──▶ envia flag de conclusão
 ```
 
-Em paralelo ao ciclo de navegação, o firmware executa a transmissão de telemetria (fluxo paralelo no Diagrama de Atividades). Os pacotes válidos recebidos pelo backend são retransmitidos ao frontend antes de qualquer operação de escrita no banco (CT-19).
+Em paralelo ao ciclo de navegação, o firmware executa a transmissão de telemetria. Os pacotes válidos recebidos pelo backend são retransmitidos ao frontend antes de qualquer operação de escrita no banco (CT-19).
 
 ### 5.3 Visão de Implementação
 
 A organização dos artefatos de software é:
 
-```
+```text
 docs/
   software/
     entrega_1/
@@ -155,7 +153,7 @@ As dependências do backend são gerenciadas via `requirements.txt` com versões
 
 ### 5.4 Visão de Implantação
 
-```
+```text
 ┌─────────────────────────────────────────────────────────┐
 │                     Rede Local (LAN)                    │
 │                                                         │
@@ -164,7 +162,7 @@ As dependências do backend são gerenciadas via `requirements.txt` com versões
 │  │   (ESP32)        │          │  (qualquer SO)       │ │
 │  │                  │  Wi-Fi   │                      │ │
 │  │  Firmware C/C++  │◀────────▶│  Backend FastAPI     │ │
-│  │  UDP/WS client   │          │  SQLite (arquivo .db)│ │
+│  │  WS client       │          │  SQLite (arquivo .db)│ │
 │  └──────────────────┘          │                      │ │
 │                                │  Navegador (browser) │ │
 │                                │  Frontend HTML/JS    │ │
@@ -176,9 +174,7 @@ As dependências do backend são gerenciadas via `requirements.txt` com versões
 - O backend e o banco de dados rodam no mesmo computador local, sem necessidade de servidor dedicado ou acesso à internet.
 - O frontend é acessado via navegador no mesmo computador ou em qualquer dispositivo conectado à mesma rede local.
 - O backend é compatível com Windows 10/11, Ubuntu 22.04 LTS e macOS 12 ou superior (RE-05).
-- O sistema suporta ≥ 10 conexões WebSocket simultâneas sem degradação (RNF-08), cobrindo o cenário da apresentação final com avaliadores e integrantes do grupo.
-
----
+- O sistema suporta ≥ 10 conexões WebSocket simultâneas sem degradação (RNF-08), cobrindo o cenário da apresentação final.
 
 ### 5.5 Visão de Dados
 
@@ -196,11 +192,9 @@ O banco de dados SQLite armazena apenas o resumo final de cada corrida, conforme
 | `velocidade_media_cms` | REAL | Velocidade média em cm/s |
 | `consumo_bateria_pct` | REAL | Variação percentual do nível de bateria durante a corrida |
 | `desafio_cumprido` | INTEGER | `1` = sucesso, `0` = falha |
-| `timestamp` | TEXT | Data e hora de registro (ISO 8601) |
+| `data_hora` | TEXT | Data e hora de registro (ISO 8601) |
 
 O tamanho máximo de um registro é ≤ 10 KB (RNF-06). A interface web acessa o banco exclusivamente via backend, sem conexão direta (RE-11, RNF-10). Nenhum endpoint de modificação ou exclusão é exposto publicamente.
-
----
 
 ## 6. Qualidade e Restrições Arquiteturais
 
@@ -213,6 +207,3 @@ As principais restrições que influenciam as decisões arquiteturais estão con
 | RNF-08: ≥ 10 conexões simultâneas | FastAPI assíncrono com suporte nativo a múltiplas conexões WebSocket |
 | RNF-10: dados imutáveis | Sem endpoints de UPDATE/DELETE; escrita somente via backend após flag de conclusão |
 | RE-07: sem framework de build | Frontend em HTML/CSS/JS puro, sem Node.js, npm ou bundlers |
-
-
-
