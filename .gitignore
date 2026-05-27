@@ -354,3 +354,7 @@ TSWLatexianTemp*
 
 # xwatermark package
 *.xwm
+.pio/
+include/
+lib/
+test/
