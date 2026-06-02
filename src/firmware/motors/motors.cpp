@@ -1,14 +1,18 @@
 #include "motors.h"
 #include "../pins.h"
 
-static void motor_set(uint8_t chFwd, uint8_t chBwd, int velocidade) {
-    velocidade = constrain(velocidade, -255, 255);
-    if (velocidade > 0) {
-        ledcWrite(chFwd,  velocidade);
+static void motor_set(uint8_t chFwd, uint8_t chBwd, int velocidade_percentual) {
+
+    velocidade_percentual = constrain(velocidade_percentual, -100, 100);
+
+    int pwm = converter_percentual_para_pwm(abs(velocidade_percentual));
+
+    if (velocidade_percentual > 0) {
+        ledcWrite(chFwd,  pwm);
         ledcWrite(chBwd,  0);
-    } else if (velocidade < 0) {
+    } else if (velocidade_percentual < 0) {
         ledcWrite(chFwd,  0);
-        ledcWrite(chBwd, -velocidade);
+        ledcWrite(chBwd,  pwm);
     } else {
         ledcWrite(chFwd, 0);
         ledcWrite(chBwd, 0);
@@ -29,6 +33,14 @@ void motors_init() {
     ledcAttachPin(PIN_MOT2_IN2, CH_MOT2_IN2);
 
     motors_stop_all();
+}
+
+int converter_percentual_para_pwm(int percentual) {
+    // 1. Garante que o valor não passa de 100 nem desce de 0
+    percentual = constrain(percentual, 0, 100);
+    
+    // 2. Converte a escala de 0-100 para 0-255
+    return map(percentual, 0, 100, 0, 255);
 }
 
 void motor_esquerdo_set(int velocidade) {
