@@ -9,6 +9,7 @@ copyright: "Copyright &copy; 2026 UnB Gama - Projeto Integrador 1"
 extra_css:
   - assets/css/custom-general.css
   - assets/css/maze-bg.css
+  - assets/css/stl-viewer.css
 
 extra_javascript:
   # MathJax: config DEVE vir antes da CDN (que consome window.MathJax)
@@ -24,6 +25,7 @@ extra_javascript:
   - assets/js/perfect_embed.js
   - assets/js/header-extras.js
   - assets/js/secondary-nav.js
+  - assets/js/stl-viewer.js
 
 
 # Plugins Ativos
@@ -82,7 +84,6 @@ nav:
   - Home: index.md
   - Energia: energia/energia.md
   - Hardware:
-      - Visão Geral: hardware/hardware.md
       - EAP: hardware/hw_eap.md
   - Software:
       - Visão Geral: software/software.md
@@ -98,4 +99,11 @@ nav:
           - DER (Banco de Dados): software/entrega_1/diagrama_der.md
       - Testes:
           - Matriz de Testes Funcionais: software/entrega_1/matriz_testes_funcionais.md
-  - Estrutura: estrutura/estrutura.md
+  - Estrutura:
+      - Labirinto de Testes: estrutura/labirinto_de_testes.md
+      - CG Micromouse: estrutura/CGmicromouse.md
+      - EAP Estruturas: estrutura/EAPestruturas.md
+      - Estruturas: estrutura/Estruturas.md
+      - Modelo de chassi: estrutura/Modelo de chassi.md
+      - Seleção de Materiais: estrutura/Seleção_materias_chassi.md
+      - Rodas e eixos: estrutura/rodas e eixos.md
