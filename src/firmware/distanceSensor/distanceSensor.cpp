@@ -15,21 +15,18 @@ VL53L0X sensorDir;
 
 void configurarSensoresToF() {
 
-  // 1. Configurar os pinos XSHUT como saída
+  // Configurar os pinos XSHUT como saída
   pinMode(PIN_TOF1_XSHUT, OUTPUT);
   pinMode(PIN_TOF2_XSHUT, OUTPUT);
   pinMode(PIN_TOF3_XSHUT, OUTPUT);
 
-  // 2. Desligar todos os sensores (Reset) puxando XSHUT para LOW
+  // Desligar todos os sensores (Reset) puxando XSHUT para LOW
   digitalWrite(PIN_TOF1_XSHUT, LOW);
   digitalWrite(PIN_TOF2_XSHUT, LOW);
   digitalWrite(PIN_TOF3_XSHUT, LOW);
   delay(10); // Aguarda os sensores desligarem completamente
 
-
-  // ---------------------------------------------------------
-  // 3. Inicializar Sensor Esquerdo (TOF1)
-  // ---------------------------------------------------------
+  // Inicializar Sensor Esquerdo (TOF1)
   digitalWrite(PIN_TOF1_XSHUT, HIGH);
   delay(10); // Tempo para o sensor ligar
   sensorEsq.setTimeout(500);
@@ -41,10 +38,7 @@ void configurarSensoresToF() {
     sensorEsq.startContinuous(20); // Configura para modo de alta velocidade (leitura a cada 20ms)
   }
 
-
-  // ---------------------------------------------------------
-  // 4. Inicializar Sensor Frontal (TOF2)
-  // ---------------------------------------------------------
+  // Inicializar Sensor Frontal (TOF2)
   digitalWrite(PIN_TOF2_XSHUT, HIGH);
   delay(10); // Tempo para o sensor ligar
   sensorFrente.setTimeout(500);
@@ -56,10 +50,7 @@ void configurarSensoresToF() {
     sensorFrente.startContinuous(20); // Configura para modo de alta velocidade (leitura a cada 20ms)
   }
 
-
-  // ---------------------------------------------------------
-  // 5. Inicializar Sensor Direito (TOF3)
-  // ---------------------------------------------------------
+  // Inicializar Sensor Direito (TOF3)
   digitalWrite(PIN_TOF3_XSHUT, HIGH);
   delay(10); // Tempo para o sensor ligar
   sensorDir.setTimeout(500);
@@ -79,7 +70,7 @@ void lerExibirSensoresToF() {
   uint16_t distFrente = sensorFrente.readRangeContinuousMillimeters();
   uint16_t distDir = sensorDir.readRangeContinuousMillimeters();
 
-  // 1. Verifica se houve Timeout
+  // Verifica se houve Timeout
   bool erro = false;
   if (sensorEsq.timeoutOccurred()) { Serial.print("ERRO_ESQ "); erro = true; }
   if (sensorFrente.timeoutOccurred()) { Serial.print("ERRO_FRENTE "); erro = true; }
@@ -90,7 +81,7 @@ void lerExibirSensoresToF() {
     Serial.println(); 
   } 
   else {
-    // 2. Exibição e tratamento do "Fora de Alcance" (> 8000)
+    // Exibição e tratamento do "Fora de Alcance" (> 8000)
     Serial.print("Esq: ");
     if (distEsq > 8000) Serial.print(">Max"); else Serial.print(distEsq);
     
