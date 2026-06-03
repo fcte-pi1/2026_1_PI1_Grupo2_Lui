@@ -123,7 +123,7 @@
     transparent
   );
   --grad-h2-bar:       linear-gradient(to bottom, var(--purple-accent), var(--purple-glow));
-  --grad-code-bar:     linear-gradient(to bottom, var(--purple-accent), var(--teal-accent));
+  --grad-code-bar:     var(--purple-accent);
   --grad-bracket-40:   linear-gradient(
     to right,
     var(--purple-accent) 0,
