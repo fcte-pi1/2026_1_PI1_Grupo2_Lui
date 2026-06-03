@@ -1,0 +1,25 @@
+{
+  "version": 1,
+  "author": "Grupo 2",
+  "editor": "wokwi",
+  "parts": [
+    { "type": "board-esp32-devkit-v1", "id": "esp", "top": 0, "left": 0, "attrs": {} },
+    { "type": "wokwi-l298n", "id": "motor_driver", "top": 100, "left": 200, "attrs": {} },
+    { "type": "wokwi-motor", "id": "motor_esq", "top": -100, "left": 400, "attrs": {} },
+    { "type": "wokwi-motor", "id": "motor_dir", "top": 200, "left": 400, "attrs": {} }
+  ],
+  "connections": [
+    [ "esp:18", "motor_driver:IN1", "green", [ "v0" ] ],
+    [ "esp:19", "motor_driver:IN2", "green", [ "v0" ] ],
+    [ "esp:25", "motor_driver:IN3", "blue", [ "v0" ] ],
+    [ "esp:26", "motor_driver:IN4", "blue", [ "v0" ] ],
+    [ "motor_driver:OUT1", "motor_esq:1", "red", [ "v0" ] ],
+    [ "motor_driver:OUT2", "motor_esq:2", "black", [ "v0" ] ],
+    [ "motor_driver:OUT3", "motor_dir:1", "red", [ "v0" ] ],
+    [ "motor_driver:OUT4", "motor_dir:2", "black", [ "v0" ] ],
+    [ "esp:3V3", "motor_driver:ENA", "purple", [ "v0" ] ],
+    [ "esp:3V3", "motor_driver:ENB", "purple", [ "v0" ] ],
+    [ "esp:5V", "motor_driver:VCC", "red", [ "v0" ] ],
+    [ "esp:GND", "motor_driver:GND", "black", [ "v0" ] ]
+  ]
+}
