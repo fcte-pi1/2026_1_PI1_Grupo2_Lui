@@ -1,20 +1,22 @@
-# _Frontend_
+### 1. Pré-requisitos
+Você precisa ter o **Node.js** instalado no seu computador. Ele automaticamente inclui o `npm` (gerenciador de pacotes).
+[Caso não tenha, baixe a versão LTS do Node.js aqui.](https://nodejs.org/)
 
-Esta pasta deverá armazenar arquivos referentes a:
+### 2. Instalando as Dependências
+Abra o seu terminal/prompt de comando diretamente na raiz desta pasta (`src\frontend`) e rode o seguinte comando:
 
-- Código-fonte da interface: componentes, páginas, estilos e lógica de apresentação, organizados conforme o framework utilizado ([React](https://react.dev/), [Vue](https://vuejs.org/), [Angular](https://angular.io/) etc.).
-- Arquivos de marcação e estilo estáticos: `index.html`, arquivos `.css`, `.scss` ou `.sass` de estilização global.
-- Arquivos de definição de dependências: `package.json` e `package-lock.json` (ou `yarn.lock`) com todas as bibliotecas utilizadas.
-- Arquivos de configuração do bundler/toolchain: `vite.config.js`, `webpack.config.js`, `tsconfig.json` etc.
-- Arquivos de configuração de ambiente: `.env.example` com as variáveis de ambiente públicas necessárias (ex.: URL base da API).
-- Arquivos de containerização: `Dockerfile` e `docker-compose.yml`, caso a aplicação seja servida via contêiner.
+```bash
+npm install
+```
+*O npm vai ler o `package.json`, e baixar automaticamente o React, Tailwind, Lucide e os scripts necessários, criando a pasta `node_modules`.*
 
-Evite incluir:
+### 3. Rodando o Servidor de Desenvolvimento
+Uma vez que as dependências terminaram de baixar, basta "ligar" o dashboard com:
 
-- Dependências instaladas: a pasta `node_modules/` deve ser gerada localmente via `npm install` ou equivalente e nunca incluída no repositório.
-- Artefatos de build: diretórios como `dist/`, `build/` ou `.next/` são gerados pelo processo de compilação e não devem ser versionados.
-- Arquivos de configuração pessoal: arquivos como `.directory` (Linux/KDE) ou configurações locais de editor (ex.: `.vscode/settings.json`), salvo configurações compartilhadas como `.editorconfig`.
-- Credenciais e segredos: arquivos `.env` com valores reais nunca devem ser versionados.
+```bash
+npm start
+```
 
-> [!WARNING]
-> **Não acrescente arquivos referentes ao _backend_ nesta pasta.** Eles deverão ser armazenados na pasta [backend](https://github.com/fcte-pi1/template/tree/main/src/backend) deste repositório.
+### 4. Acessando a Interface
+O comando anterior compilará a interface e abrirá o seu navegador automaticamente. Se não abrir, basta acessar manualmente:
+**[http://localhost:3000](http://localhost:3000)**
