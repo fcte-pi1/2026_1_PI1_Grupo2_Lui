@@ -63,6 +63,20 @@ void configurarSensoresToF() {
   }
 }
 
+ToFSensorReading lerTodosSensores() {
+  ToFSensorReading reading;
+
+  reading.distEsq = sensorEsq.readRangeContinuousMillimeters();
+  reading.distFrente = sensorFrente.readRangeContinuousMillimeters();
+  reading.distDir = sensorDir.readRangeContinuousMillimeters();
+
+  reading.erroEsq = sensorEsq.timeoutOccurred();
+  reading.erroFrente = sensorFrente.timeoutOccurred();
+  reading.erroDir = sensorDir.timeoutOccurred();
+
+  return reading;
+}
+
 void lerExibirSensoresToF() {
 
   // Lê os valores de distância em milímetros
@@ -78,22 +92,22 @@ void lerExibirSensoresToF() {
 
   // Se deu erro quebra a linha para não bagunçar o terminal
   if (erro) {
-    Serial.println(); 
-  } 
+    Serial.println();
+  }
   else {
     // Exibição e tratamento do "Fora de Alcance" (> 8000)
     Serial.print("Esq: ");
     if (distEsq > 8000) Serial.print(">Max"); else Serial.print(distEsq);
-    
+
     Serial.print(" mm\t|\tFrente: ");
     if (distFrente > 8000) Serial.print(">Max"); else Serial.print(distFrente);
-    
+
     Serial.print(" mm\t|\tDir: ");
     if (distDir > 8000) Serial.print(">Max"); else Serial.print(distDir);
-    
+
     Serial.println(" mm");
   }
 
   // Delay para testes, podemos tirar depois para ter leituras mais rápidas
-  delay(50); 
+  delay(50);
 }

@@ -3,11 +3,23 @@
 
 #include <Arduino.h>
 
-// Inicializa os sensores de Distância ToF (VL53L0X) conectados ao barramento I2C compartilhado
+struct ToFSensorReading {
+    uint16_t distEsq;
+    uint16_t distFrente;
+    uint16_t distDir;
+    bool erroEsq;
+    bool erroFrente;
+    bool erroDir;
+};
+
+// Inicializa os sensores de Distância ToF (VL53L0X)
 void configurarSensoresToF();
 
 // Lê os valores dos sensores ToF e exibe
 void lerExibirSensoresToF();
+
+// Lê todos os sensores e retorna as leituras agrupadas
+ToFSensorReading lerTodosSensores();
 
 #endif
 
