@@ -110,3 +110,40 @@ O script irá:
 Abra o navegador e vá para:
 
 [http://127.0.0.1:8123](http://127.0.0.1:8123)
+
+
+## Como compilar o relatório em LaTeX
+
+### Pré-requisitos
+
+#### Windows
+
+Para compilar os arquivos `.tex`, instale:
+
+* MiKTeX: https://miktex.org/download
+* Strawberry Perl: https://strawberryperl.com/
+
+O MiKTeX fornece o ambiente LaTeX, enquanto o Strawberry Perl é necessário para a execução de algumas ferramentas utilizadas durante a compilação.
+
+#### Linux (Ubuntu/Debian)
+
+Instale o TeX Live e o Perl pelos repositórios da distribuição:
+
+```bash
+sudo apt update
+sudo apt install -y texlive-full perl
+```
+
+O TeX Live fornece o ambiente LaTeX completo e o Perl é utilizado por algumas ferramentas auxiliares durante a compilação.
+
+### Utilizando o VS Code
+
+1. Instale a extensão **LaTeX Workshop** no Visual Studio Code.
+2. Abra a pasta do projeto no VS Code.
+3. Abra um arquivo `.tex`.
+4. Utilize o atalho `Ctrl + Alt + B` para compilar o documento.
+5. Utilize o atalho `Ctrl + Alt + V` para visualizar o PDF gerado.
+
+Após a compilação, o PDF será gerado automaticamente na pasta do projeto.
+
+> **Importante:** O arquivo PDF gerado é apenas um artefato de compilação local e **não deve ser commitado** no repositório. Realize commits apenas dos arquivos-fonte (`.tex`, imagens, bibliografia e demais recursos necessários para a geração do relatório.
