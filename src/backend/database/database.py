@@ -2,10 +2,7 @@ import os
 import json
 import sqlite3
 
-os.makedirs("db", exist_ok=True)
-
 DB_PATH = "db/telemetria.db"
-
 _memory_conn: sqlite3.Connection | None = None
 
 def get_connection() -> sqlite3.Connection:
@@ -16,6 +13,8 @@ def get_connection() -> sqlite3.Connection:
             _memory_conn = sqlite3.connect(":memory:", check_same_thread=False)
             _memory_conn.row_factory = sqlite3.Row
         return _memory_conn
+    
+    os.makedirs(os.path.dirname(path) if os.path.dirname(path) else ".", exist_ok=True)
     conn = sqlite3.connect(path)
     conn.row_factory = sqlite3.Row
     return conn
@@ -35,14 +34,13 @@ def init_db() -> None:
             avg_speed_mm_s   REAL    NOT NULL,
             battery_start_v  REAL    NOT NULL,
             battery_end_v    REAL    NOT NULL,
-            path_traversed   TEXT    NOT NULL
+            path_traversed   TEXT    NOT NULL,
+            step_count       INTEGER NOT NULL
         )
         """
     )
     conn.execute("""
-    CREATE INDEX IF NOT EXISTS idx_corridas_maze_type
-    ON corridas (maze_type)
-    """)
+    CREATE INDEX IF NOT EXISTS idx_corridas_maze_type ON corridas (maze_type)""")
     conn.commit()
 
     if os.environ.get("DB_PATH") == ":memory:":
@@ -59,6 +57,7 @@ def salvar_corrida(
     battery_start_v: float,
     battery_end_v: float,
     path_traversed: list,
+    step_count: int
 ) -> int:
     conn = get_connection()
     cursor = conn.execute(
@@ -66,8 +65,8 @@ def salvar_corrida(
         INSERT INTO corridas (
             robot_id, maze_type, started_at, finished_at,
             elapsed_time_ms, avg_speed_mm_s,
-            battery_start_v, battery_end_v, path_traversed
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+            battery_start_v, battery_end_v, path_traversed, step_count
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         """,
         (
             robot_id,
@@ -79,6 +78,7 @@ def salvar_corrida(
             battery_start_v,
             battery_end_v,
             json.dumps(path_traversed),
+            step_count
         ),
     )
     conn.commit()
