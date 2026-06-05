@@ -358,3 +358,7 @@ TSWLatexianTemp*
 include/
 lib/
 test/
+
+# Banco SQLite
+db/*.db
+db/
