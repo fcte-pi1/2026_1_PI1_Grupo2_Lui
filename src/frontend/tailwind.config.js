@@ -10,10 +10,11 @@ module.exports = {
       },
       colors: {
         app: {
-          bg: '#07050F',
-          surface: '#0D0B1A',
-          header: '#0A0718',
+          bg: '#030014',
+          surface: '#0B0822',
+          header: '#0F0A2A',
           raised: '#110E20',
+          hover: '#141032',
         },
         brand: {
           h1: '#EEF2F8',
@@ -31,8 +32,8 @@ module.exports = {
         },
         border: {
           ghost: '#0E0B1B',
-          subtle: '#131024',
-          rule: '#18132D',
+          subtle: '#2A1F5A',
+          rule: '#2A1F5A',
           dim: '#1D1736',
           accent: '#241E40',
           hover: '#2A224A'
