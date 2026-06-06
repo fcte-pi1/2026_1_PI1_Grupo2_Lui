@@ -49,7 +49,7 @@ async function mockHistorico(page, corridas) {
 
 async function irParaCorrida(page) {
   await page.goto('http://localhost:3000');
-  await page.getByRole('button', { name: 'Corrida' }).click();
+  await page.getByRole('button', { name: 'Histórico' }).click();
   await expect(page.getByTestId('historico-corridas')).toBeVisible();
 }
 
