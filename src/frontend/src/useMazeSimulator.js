@@ -6,7 +6,7 @@ const DY = [-1, 0, 1, 0];
 export function useMazeSimulator(initialGridSize = 16) {
     const [gridSize, setGridSize] = useState(initialGridSize);
     
-    // Keep raw mutable state in refs to avoid closure hell in setInterval
+    // ref pra estado mutável — setInterval não vê os useState
     const memory = useRef({
         truthWalls: [],
         knownWalls: [],
@@ -247,7 +247,7 @@ export function useMazeSimulator(initialGridSize = 16) {
         mem.bfsCount = 0;
         mem.timeMs = 0;
         mem.status = 'Aguardando';
-        // Pista física: 18 cm por célula → 180 mm. Centro da célula = celula*180 + 90.
+        // 18 cm/célula = 180 mm; centro = cell*180 + 90
         mem.pathHistory = [{
             x: 0 * 180 + 90,
             y: (currentSize - 1) * 180 + 90,
@@ -268,7 +268,6 @@ export function useMazeSimulator(initialGridSize = 16) {
         resetSimulation(true, newSize);
     }, [resetSimulation]);
 
-    // Initial load
     useEffect(() => {
         if (memory.current.truthWalls.length !== gridSize) {
             resetSimulation(true);
@@ -309,7 +308,6 @@ export function useMazeSimulator(initialGridSize = 16) {
         mem.steps++;
         mem.timeMs += speed;
 
-        // Acumula posição em mm para enviar como path_traversed ao backend.
         mem.pathHistory.push({
             x: mem.robot.x * 180 + 90,
             y: mem.robot.y * 180 + 90,
@@ -324,7 +322,6 @@ export function useMazeSimulator(initialGridSize = 16) {
         if (isRunning) {
             const mem = memory.current;
             mem.status = "Mapeando...";
-            // Marca início da corrida na primeira vez que sai de pausa.
             if (!mem.startedAtIso) {
                 mem.startedAtIso = new Date().toISOString();
                 mem.startedAtMs = Date.now();
