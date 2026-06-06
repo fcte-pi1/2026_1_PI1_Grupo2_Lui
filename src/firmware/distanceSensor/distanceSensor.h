@@ -12,13 +12,13 @@ struct ToFSensorReading {
     bool erroDir;
 };
 
-// Inicializa os sensores de Distância ToF (VL53L0X)
+// Inicializa os sensores de Distância ToF
 void configurarSensoresToF();
 
 // Lê os valores dos sensores ToF e exibe
 void lerExibirSensoresToF();
 
-// Lê todos os sensores e retorna as leituras agrupadas
+// Lê todos os sensores e retorna as leituras agrupadas (usado principalmente em testes)
 ToFSensorReading lerTodosSensores();
 
 #endif

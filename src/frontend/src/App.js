@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Cpu, Wifi, Play, Pause, Bot, RotateCw, ChevronDown, Battery, Clock, Footprints, Gauge, RefreshCw, Zap, Usb, Timer, Radio, Download, CheckCircle2, XCircle, Calendar } from 'lucide-react';
 import { useMazeSimulator } from './useMazeSimulator';
+import { useWebSocket } from './useWebSocket';
 
 const MiniMap = ({ snapshot }) => {
   const { gridSize, knownWalls, explored, goals, robot } = snapshot;
@@ -56,6 +57,7 @@ const MiniMap = ({ snapshot }) => {
 const App = () => {
   const [activeTab, setActiveTab] = useState('Mapa');
   const sim = useMazeSimulator();
+  const { status: wsStatus } = useWebSocket();
 
   const [history, setHistory] = useState([
     { id: 1, date: '04/06/2026 14:30', maze: '16x16', status: 'Centro Alcançado!', time: '1m 45s', speed: '22.4 cm/s', battery: '95%', steps: 142 },
@@ -103,7 +105,7 @@ const App = () => {
                 <MazeCanvas sim={sim} />
               </section>
               <aside className="w-full lg:w-[360px] flex flex-col space-y-3 overflow-hidden shrink-0">
-                <TelemetrySidebar sim={sim} />
+                <TelemetrySidebar sim={sim} wsStatus={wsStatus} />
               </aside>
             </>
           )}
@@ -249,7 +251,7 @@ const MazeCanvas = ({ sim }) => {
   );
 };
 
-const TelemetrySidebar = ({ sim }) => {
+const TelemetrySidebar = ({ sim, wsStatus }) => {
   const mem = sim.memory;
   let statusColor = "bg-brand-cyan";
   if (mem.status === "Centro Alcançado!") statusColor = "bg-brand-green";
@@ -260,35 +262,48 @@ const TelemetrySidebar = ({ sim }) => {
   const distanceCm = mem.steps * 18;
   const avgSpeed = mem.timeMs > 0 ? (distanceCm / (mem.timeMs / 1000)).toFixed(1) : "0.0";
 
+  const getWSStatusColor = (status) => {
+    switch(status) {
+      case 'Conectado': return { text: 'text-brand-green', bg: 'bg-brand-green/10', border: 'border-brand-green/20', dot: 'bg-brand-green' };
+      case 'Conectando...': return { text: 'text-brand-amber', bg: 'bg-brand-amber/10', border: 'border-brand-amber/20', dot: 'bg-brand-amber' };
+      case 'Reconectando...': return { text: 'text-brand-amber', bg: 'bg-brand-amber/10', border: 'border-brand-amber/20', dot: 'bg-brand-amber' };
+      case 'Desconectado': return { text: 'text-red-500', bg: 'bg-red-500/10', border: 'border-red-500/20', dot: 'bg-red-500' };
+      default: return { text: 'text-brand-green', bg: 'bg-brand-green/10', border: 'border-brand-green/20', dot: 'bg-brand-green' };
+    }
+  };
+
+  const wsColor = getWSStatusColor(wsStatus);
+
   return (
     <>
       <section className="bg-panel p-4 shrink-0">
         <div className="grid grid-cols-3 gap-2">
           <BatteryWidget />
-          <MetricCard label="Tempo"     value={timeSec}   unit="s"    icon={<Clock size={14}/>}      iconColor="text-brand-cyan" />
-          <MetricCard label="Passos"    value={mem.steps} unit=""     icon={<Footprints size={14}/>} iconColor="text-brand-purple-glow" />
-          <MetricCard label="Veloc"     value={avgSpeed}  unit="cm/s" icon={<Gauge size={14}/>}      iconColor="text-brand-green" />
-          <MetricCard label="Giros"     value={mem.turns} unit=""     icon={<RefreshCw size={14}/>}  iconColor="text-brand-amber" />
-          <MetricCard label="Algoritmo" value="A-Star"    unit=""     icon={<Zap size={14}/>}        iconColor="text-brand-purple" isString={true} />
+          <MetricCard label="Tempo" value={timeSec} unit="s" icon={<Clock size={14} />} iconColor="text-brand-cyan" />
+          <MetricCard label="Passos" value={mem.steps} unit="" icon={<Footprints size={14} />} iconColor="text-brand-purple-glow" />
+          <MetricCard label="Veloc" value={avgSpeed} unit="cm/s" icon={<Gauge size={14} />} iconColor="text-brand-green" />
+          <MetricCard label="Giros" value={mem.turns} unit="" icon={<RefreshCw size={14} />} iconColor="text-brand-amber" />
+          <MetricCard label="Algoritmo" value="A-Star" unit="" icon={<Zap size={14} />} iconColor="text-brand-purple" isString={true} />
         </div>
       </section>
       <section className="bg-panel p-4 shrink-0 flex-1 min-h-0 flex flex-col justify-center">
         <h3 className="text-lg font-semibold text-brand-h1 mb-3">Conectividade</h3>
         <div className="space-y-3">
           <div className="flex justify-between items-center">
-            <span className="text-brand-h3 text-[11px] font-medium uppercase tracking-wider flex items-center"><Usb className="mr-3 text-brand-h3 w-4 h-4"/>WebSocket</span>
-            <span className="text-brand-green text-[10px] uppercase tracking-wider font-bold flex items-center bg-brand-green/10 border-2 border-brand-green/20 px-3 py-1.5 rounded-full">
-              <span className="relative flex h-2 w-2 mr-2 rounded-full bg-brand-green"></span>Conectado
+            <span className="text-brand-h3 text-[11px] font-medium uppercase tracking-wider flex items-center"><Usb className="mr-3 text-brand-h3 w-4 h-4" />WebSocket</span>
+            <span className={`${wsColor.text} text-[10px] uppercase tracking-wider font-bold flex items-center ${wsColor.bg} border-2 ${wsColor.border} px-3 py-1.5 rounded-full`}>
+              <span className={`relative flex h-2 w-2 mr-2 rounded-full ${wsColor.dot}`}></span>
+              {wsStatus}
             </span>
           </div>
           <div className="border-b border-border-rule"></div>
           <div className="flex justify-between items-center">
-            <span className="text-brand-h3 text-[11px] font-medium uppercase tracking-wider flex items-center"><Timer className="mr-3 text-brand-h3 w-4 h-4"/>Latência</span>
+            <span className="text-brand-h3 text-[11px] font-medium uppercase tracking-wider flex items-center"><Timer className="mr-3 text-brand-h3 w-4 h-4" />Latência</span>
             <span className="text-brand-h2 font-semibold font-mono text-sm">23 ms</span>
           </div>
           <div className="border-b border-border-rule"></div>
           <div className="flex justify-between items-center">
-            <span className="text-brand-h3 text-[11px] font-medium uppercase tracking-wider flex items-center"><Radio className="mr-3 text-brand-h3 w-4 h-4"/>Pacotes RX</span>
+            <span className="text-brand-h3 text-[11px] font-medium uppercase tracking-wider flex items-center"><Radio className="mr-3 text-brand-h3 w-4 h-4" />Pacotes RX</span>
             <span className="text-brand-h2 font-semibold font-mono text-sm">1.8k</span>
           </div>
         </div>
