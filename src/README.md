@@ -15,25 +15,55 @@ make install-frontend
 
 ## Executando os testes
 
-### Backend
+Você pode executar os testes a partir da raiz do repositório utilizando o `Makefile` ou diretamente em cada subdiretório.
 
+### Backend (Pytest)
+
+Os testes do backend utilizam o `pytest`. Para executá-los:
+
+Usando o Make (na raiz do projeto):
 ```bash
 make test-backend
 ```
 
-### Frontend
+Diretamente (em `src/backend`):
+```bash
+pytest
+```
 
+### Frontend Unitário (Jest)
+
+Os testes unitários do frontend são feitos com o Jest. Para executá-los:
+
+Usando o Make (na raiz do projeto):
 ```bash
 make test-frontend
 ```
 
-### E2E
+Diretamente (em `src/frontend`):
+```bash
+npm run test:unit
+```
 
+### E2E Frontend (Playwright)
+
+Os testes End-to-End (ponta a ponta) do frontend utilizam o Playwright. Para executá-los:
+
+Usando o Make (na raiz do projeto):
 ```bash
 make test-frontend-e2e
 ```
 
-### Todos os testes
+Diretamente (em `src/frontend`):
+```bash
+npm run test:e2e
+# Ou para abrir a interface do Playwright:
+npx playwright test --ui
+```
+
+### Todos os testes (Backend + Frontend Unit)
+
+Para rodar de forma automatizada tanto os testes do backend quanto do frontend:
 
 ```bash
 make test
