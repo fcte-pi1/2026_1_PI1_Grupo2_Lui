@@ -1,7 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-
-const DX = [0, 1, 0, -1];
-const DY = [-1, 0, 1, 0];
+import { CELL_MM, DX, DY, getGoals } from './utils/maze';
 
 export function useMazeSimulator(initialGridSize = 16) {
     const [gridSize, setGridSize] = useState(initialGridSize);
@@ -27,14 +25,6 @@ export function useMazeSimulator(initialGridSize = 16) {
     const [isRunning, setIsRunning] = useState(false);
     const [speed, setSpeed] = useState(50);
     const [showTruth, setShowTruth] = useState(false);
-
-    const getGoals = useCallback((size) => {
-        const mid = Math.floor(size / 2);
-        return [
-            {x: mid - 1, y: mid - 1}, {x: mid, y: mid - 1},
-            {x: mid - 1, y: mid}, {x: mid, y: mid}
-        ];
-    }, []);
 
     const generateMaze = useCallback((size) => {
         const mem = memory.current;
@@ -95,7 +85,7 @@ export function useMazeSimulator(initialGridSize = 16) {
         
         mem.truthWalls = tWalls;
         mem.goals = currentGoals;
-    }, [getGoals]);
+    }, []);
 
     const initRobotMemory = useCallback((size) => {
         const mem = memory.current;
@@ -247,10 +237,10 @@ export function useMazeSimulator(initialGridSize = 16) {
         mem.bfsCount = 0;
         mem.timeMs = 0;
         mem.status = 'Aguardando';
-        // 18 cm/célula = 180 mm; centro = cell*180 + 90
+        // 18 cm/célula = CELL_MM; centro = cell*CELL_MM + CELL_MM/2
         mem.pathHistory = [{
-            x: 0 * 180 + 90,
-            y: (currentSize - 1) * 180 + 90,
+            x: 0 * CELL_MM + CELL_MM / 2,
+            y: (currentSize - 1) * CELL_MM + CELL_MM / 2,
             z: 9.81,
         }];
         mem.batteryStartV = 8.0;
@@ -309,8 +299,8 @@ export function useMazeSimulator(initialGridSize = 16) {
         mem.timeMs += speed;
 
         mem.pathHistory.push({
-            x: mem.robot.x * 180 + 90,
-            y: mem.robot.y * 180 + 90,
+            x: mem.robot.x * CELL_MM + CELL_MM / 2,
+            y: mem.robot.y * CELL_MM + CELL_MM / 2,
             z: 9.81,
         });
 

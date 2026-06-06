@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { Cpu, Wifi, Play, Pause, Bot, RotateCw, ChevronDown, Battery, Clock, Footprints, Gauge, RefreshCw, Zap, Usb, Timer, Radio, Download, CheckCircle2, XCircle, Calendar } from 'lucide-react';
 import { useMazeSimulator } from './useMazeSimulator';
+import { CELL_MM, DX as DXR, DY as DYR, mmToCell } from './utils/maze';
 import { useWebSocket } from './useWebSocket';
 import { getHistorico, postTelemetria, batteryVoltsToPercent, getCorrida, parseTimeToSeconds } from './services/api';
 
@@ -23,7 +24,6 @@ const ReplayCanvas = ({ pathMm, mazeSize, knownWalls }) => {
     if (idx >= total - 1) setPlaying(false);
   }, [idx, total]);
 
-  const mmToCell = (mm) => Math.floor(mm / 180);
   const visited = new Set();
   // Conjunto de "arestas atravessadas" (cell→cell adjacente). Toda vez que
   // o robô se move de A para B, sabemos que NÃO há parede entre A e B.
@@ -44,8 +44,6 @@ const ReplayCanvas = ({ pathMm, mazeSize, knownWalls }) => {
   // Paredes do replay:
   //   1) Se vier `knownWalls` do backend (mapa preciso), usa direto.
   //   2) Senão, infere a partir do caminho percorrido (versão antiga).
-  const DXR = [0, 1, 0, -1];
-  const DYR = [-1, 0, 1, 0];
   const hasPreciseWalls = Array.isArray(knownWalls) && knownWalls.length === mazeSize;
   const hasWallReplay = (cx, cy, d) => {
     if (hasPreciseWalls) {
@@ -291,8 +289,8 @@ const App = () => {
     const mem = sim.memory;
     const success = status === 'Centro Alcançado!';
     const robotPathPoint = {
-      x: mem.robot.x * 180 + 90,
-      y: mem.robot.y * 180 + 90,
+      x: mem.robot.x * CELL_MM + CELL_MM / 2,
+      y: mem.robot.y * CELL_MM + CELL_MM / 2,
       z: 9.81,
     };
     const path = (mem.pathHistory && mem.pathHistory.length > 0)
@@ -403,8 +401,7 @@ const App = () => {
   }, [dataMode, liveTelemetry, sim.memory.status]);
 
   // Conversão mm → célula para o canvas e o replay. Coordenadas vêm como
-  // (cell + 0.5) * 180 mm, então floor(x / 180) devolve a célula.
-  const mmToCell = (mm) => Math.floor(mm / 180);
+  // (cell + 0.5) * CELL_MM mm, então mmToCell() devolve a célula (importado de maze.js).
 
   // Em modo Real, o robô e as células visitadas vêm da telemetria.
   const liveRobot = useMemo(() => {
