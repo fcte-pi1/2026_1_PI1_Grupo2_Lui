@@ -58,13 +58,15 @@ else
     PY_FROM_BACKEND = ../../$(VENV)/bin/python3
 endif
 
-.PHONY: help run setup build-up venv install verify serve clean test test-backend test-frontend test-frontend-unit test-frontend-e2e test-coverage coverage-backend coverage-frontend install-backend install-frontend
+.PHONY: help run run-backend run-frontend setup build-up venv install verify serve clean test test-backend test-frontend test-frontend-unit test-frontend-e2e test-coverage coverage-backend coverage-frontend install-backend install-frontend
 
 # help: Lista os principais comandos de automação
 help:
 	@$(CHCP_CMD) || true
 	$(PRINT) "Comandos disponiveis no projeto LUI:"
 	$(PRINT) "  make run      - Inicia o servidor MkDocs e abre o navegador automaticamente."
+	$(PRINT) "  make run-backend - Sobe a API backend (FastAPI/uvicorn) em http://127.0.0.1:8000."
+	$(PRINT) "  make run-frontend- Sobe o dev server do frontend (CRA) em http://localhost:3000."
 	$(PRINT) "  make setup    - Cria o ambiente virtual e instala as dependencias necessarias."
 	$(PRINT) "  make clean    - Remove o ambiente virtual (.venv) e arquivos temporarios."
 	$(PRINT) "  make serve    - Apenas inicia o servidor (sem abrir navegador ou verificar venv)."
@@ -80,6 +82,7 @@ help:
 	$(PRINT) "  make coverage-frontend - Cobertura do frontend (HTML em src/frontend/coverage/)."
 	$(PRINT) ""
 	$(PRINT) "Instalacao de dependencias das stacks:"
+	$(PRINT) "  make install-deps      - Instala dependencias do backend E do frontend."
 	$(PRINT) "  make install-backend   - Instala dependencias Python do backend."
 	$(PRINT) "  make install-frontend  - Instala dependencias Node do frontend."
 
@@ -89,6 +92,16 @@ run:
 	$(PRINT) "$(UI_BOLD)Iniciando servidor na porta $(PORT)...$(UI_RESET)"
 	@$(OPEN_BROWSER)
 	@$(MKDOCS) serve -a 127.0.0.1:$(PORT)
+
+run-backend:
+	@$(CHCP_CMD) || true
+	$(PRINT) "$(UI_BOLD)Iniciando backend (FastAPI/uvicorn) em http://127.0.0.1:8000 ...$(UI_RESET)"
+	@$(PYTHON_VENV) $(SCRIPTS_DIR)/run_backend.py --reload
+
+run-frontend:
+	@$(CHCP_CMD) || true
+	$(PRINT) "$(UI_BOLD)Iniciando frontend (CRA) em http://localhost:3000 ...$(UI_RESET)"
+	@$(PYTHON_VENV) $(SCRIPTS_DIR)/run_frontend.py start
 
 # setup: Fluxo completo de inicialização do ambiente
 setup: build-up
@@ -131,6 +144,10 @@ endif
 # ──────────────────────────────────────────────────────────────────────
 # Instalação de dependências por stack
 # ──────────────────────────────────────────────────────────────────────
+
+# install-deps: instala as dependencias das DUAS stacks (backend + frontend)
+install-deps: install-backend install-frontend
+	@$(PRINT) "$(UI_BOLD)Dependencias de backend e frontend instaladas.$(UI_RESET)"
 
 # install-backend: instala dependências Python do backend dentro do .venv
 install-backend: venv

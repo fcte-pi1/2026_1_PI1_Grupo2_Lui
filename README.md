@@ -112,6 +112,24 @@ Abra o navegador e vá para:
 [http://127.0.0.1:8123](http://127.0.0.1:8123)
 
 
+## Como rodar a aplicação (backend + frontend)
+
+Pela raiz do projeto, usando os atalhos do `Makefile`:
+
+```bash
+# Instalar dependências
+make install-backend    # dependências Python do backend
+make install-frontend   # dependências Node do frontend
+make install-deps       # instala as duas de uma vez
+
+# Rodar a aplicação
+make run-backend        # API (FastAPI/uvicorn) em http://127.0.0.1:8000
+make run-frontend       # dashboard (CRA) em http://localhost:3000
+```
+
+> Rode o backend e o frontend em terminais separados. Use `make help` para ver todos os comandos disponíveis.
+
+
 ## Como compilar o relatório em LaTeX
 
 ### Pré-requisitos
