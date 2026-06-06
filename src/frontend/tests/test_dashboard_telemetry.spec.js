@@ -1,26 +1,28 @@
 import { test, expect } from '@playwright/test';
 
-test.describe('Dashboard Telemetry Test (CT-26)', () => {
-  test('Deve exibir os dados básicos da corrida simulando recebimento de telemetria', async ({ page }) => {
-    // Interceptar a conexão WebSocket para injetar telemetria
+test.describe('Telemetria do dashboard', () => {
+  // Ao receber um pacote via WebSocket, o dashboard mostra bateria, velocidade,
+  // tempo, status e o robô no labirinto.
+  test('exibe os dados da corrida ao receber telemetria', async ({ page }) => {
+    // Intercepta o WebSocket para injetar um pacote de telemetria
     await page.routeWebSocket('**/ws/dashboard', ws => {
       ws.onMessage(() => {
         // Ignora mensagens enviadas pelo cliente
       });
 
-      // Simula a chegada de um pacote de telemetria após a página carregar
+      // Simula a chegada de um pacote após a página carregar
       setTimeout(() => {
         ws.send(JSON.stringify({
           source: 'real',
           timestamp: new Date().toISOString(),
           maze_type: '8x8',
-          battery_voltage_v: 7.2, // 7.2V deve resultar em 50% segundo o batteryVoltsToPercent
-          speed_mm_s: 150.0,      // 150.0 mm/s deve resultar em 15.0 cm/s
-          elapsed_time_ms: 45000, // 45000 ms deve resultar em 45.0 s
+          battery_voltage_v: 7.2, // 7.2V -> 50%
+          speed_mm_s: 150.0,      // 150 mm/s -> 15.0 cm/s
+          elapsed_time_ms: 45000, // 45000 ms -> 45.0 s
           step_count: 55,
           race_status: 'running',
-          event: 'start_race',    // Resulta no status "Mapeando..."
-          current_position: { x: 270, y: 90, orientation: 90 }, // Robô em uma posição válida
+          event: 'start_race',    // status "Mapeando..."
+          current_position: { x: 270, y: 90, orientation: 90 },
           path_traversed: [
             { x: 90, y: 90 },
             { x: 270, y: 90 }
@@ -31,23 +33,22 @@ test.describe('Dashboard Telemetry Test (CT-26)', () => {
 
     await page.goto('/');
 
-    // Aguarda que o modo alterne para "Real" ao receber o pacote via WebSocket
+    // o modo muda para "Real" quando o pacote chega
     await expect(page.getByText('Real', { exact: true })).toBeVisible({ timeout: 5000 });
 
-    // Verificar exibição da bateria (50%)
+    // bateria convertida para 50%
     await expect(page.getByText('50%')).toBeVisible();
 
-    // Verificar exibição da velocidade (15.0)
+    // velocidade convertida para 15.0 cm/s
     await expect(page.getByText('15.0')).toBeVisible();
 
-    // Verificar exibição do tempo (45.0)
+    // tempo convertido para 45.0 s
     await expect(page.getByText('45.0')).toBeVisible();
 
-    // Verificar exibição do status da corrida ("Mapeando...")
+    // status da corrida
     await expect(page.getByText('Mapeando...')).toBeVisible();
 
-    // Verificar exibição do labirinto / trajeto na tela
-    // O id="robot" ou a classe "cell" no maze-container confirmam que a matriz está sendo renderizada
+    // o labirinto e o robô são renderizados
     await expect(page.locator('#robot')).toBeVisible();
     await expect(page.locator('#maze-container')).toBeVisible();
   });

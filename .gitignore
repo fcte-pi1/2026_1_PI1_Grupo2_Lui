@@ -372,3 +372,6 @@ test/
 # Banco SQLite
 db/*.db
 db/
+
+# Artefatos temporários do FUSE / OneDrive
+.fuse_hidden*

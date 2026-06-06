@@ -57,8 +57,9 @@ async function mockHistorico(page, corridas) {
   });
 }
 
-test.describe('CT-28 / CT-29 — Filtros do histórico (API mockada)', () => {
-  test('CT-28: filtro 4x4 exibe apenas corridas 4x4', async ({ page }) => {
+test.describe('Filtros do histórico (API mockada)', () => {
+  // Selecionar 4x4 deixa apenas as corridas desse labirinto na tabela.
+  test('filtro 4x4 exibe apenas corridas 4x4', async ({ page }) => {
     await mockHistorico(page, CORRIDAS_MOCK);
     await abrirHistorico(page);
     await page.getByTestId('filtro-labirinto').selectOption('4x4');
@@ -67,7 +68,8 @@ test.describe('CT-28 / CT-29 — Filtros do histórico (API mockada)', () => {
     await expect(itens.first()).toContainText('4x4');
   });
 
-  test('CT-28: filtro 8x8 exibe apenas corridas 8x8', async ({ page }) => {
+  // Selecionar 8x8 deixa apenas as corridas desse labirinto na tabela.
+  test('filtro 8x8 exibe apenas corridas 8x8', async ({ page }) => {
     await mockHistorico(page, CORRIDAS_MOCK);
     await abrirHistorico(page);
     await page.getByTestId('filtro-labirinto').selectOption('8x8');
@@ -76,7 +78,8 @@ test.describe('CT-28 / CT-29 — Filtros do histórico (API mockada)', () => {
     await expect(itens.first()).toContainText('8x8');
   });
 
-  test('CT-28: filtro 16x16 exibe apenas corridas 16x16', async ({ page }) => {
+  // Selecionar 16x16 deixa apenas as corridas desse labirinto na tabela.
+  test('filtro 16x16 exibe apenas corridas 16x16', async ({ page }) => {
     await mockHistorico(page, CORRIDAS_MOCK);
     await abrirHistorico(page);
     await page.getByTestId('filtro-labirinto').selectOption('16x16');
@@ -85,14 +88,16 @@ test.describe('CT-28 / CT-29 — Filtros do histórico (API mockada)', () => {
     await expect(itens.first()).toContainText('16x16');
   });
 
-  test('CT-29: filtro Todos exibe todas as corridas', async ({ page }) => {
+  // O filtro "Todos" mostra todas as corridas, sem distinção de labirinto.
+  test('filtro Todos exibe todas as corridas', async ({ page }) => {
     await mockHistorico(page, CORRIDAS_MOCK);
     await abrirHistorico(page);
     await page.getByTestId('filtro-labirinto').selectOption('Todos');
     await expect(page.getByTestId('corrida-item')).toHaveCount(3);
   });
 
-  test('CT-29: Todos é o filtro padrão ao abrir a aba', async ({ page }) => {
+  // Ao abrir a aba, o filtro já vem em "Todos" mostrando tudo.
+  test('Todos é o filtro padrão ao abrir a aba', async ({ page }) => {
     await mockHistorico(page, CORRIDAS_MOCK);
     await abrirHistorico(page);
     await expect(page.getByTestId('filtro-labirinto')).toHaveValue('Todos');
@@ -100,15 +105,17 @@ test.describe('CT-28 / CT-29 — Filtros do histórico (API mockada)', () => {
   });
 });
 
-test.describe('CT-24 — Estado vazio', () => {
-  test('Banco vazio mostra o estado vazio em vez de erro', async ({ page }) => {
+test.describe('Estado vazio', () => {
+  // Banco sem corridas mostra o estado vazio em vez de erro.
+  test('banco vazio mostra o estado vazio', async ({ page }) => {
     await mockHistorico(page, []);
     await abrirHistorico(page);
     await expect(page.getByTestId('estado-vazio')).toBeVisible();
     await expect(page.getByTestId('corrida-item')).toHaveCount(0);
   });
 
-  test('Filtro com zero resultados mostra o estado vazio', async ({ page }) => {
+  // Filtro sem resultados também mostra o estado vazio.
+  test('filtro sem resultados mostra o estado vazio', async ({ page }) => {
     await mockHistorico(page, CORRIDAS_MOCK.filter(c => c.maze_type !== '4x4'));
     await abrirHistorico(page);
     await page.getByTestId('filtro-labirinto').selectOption('4x4');
@@ -118,7 +125,8 @@ test.describe('CT-24 — Estado vazio', () => {
 });
 
 test.describe('Coluna Tipo — Simulada × Real', () => {
-  test('Tabela exibe pílula Real para source=real e Simulada para source=simulator', async ({ page }) => {
+  // A tabela mostra a pílula "Real" para origem real e "Simulada" para o simulador.
+  test('exibe pílula Real e Simulada conforme a origem', async ({ page }) => {
     await mockHistorico(page, CORRIDAS_MOCK);
     await abrirHistorico(page);
     const itens = page.getByTestId('corrida-item');

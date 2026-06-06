@@ -168,9 +168,9 @@ const MiniMap = ({ snapshot }) => {
   return (
     <div className="w-full h-full flex flex-col items-center justify-center p-2 bg-app-bg relative rounded-xl border border-border-rule">
         <h4 className="absolute top-3 left-0 right-0 text-center text-brand-h3 text-xs uppercase tracking-widest font-semibold z-10 pointer-events-none drop-shadow-md">Trajeto Mapeado</h4>
-        <div 
+        <div
           className="aspect-square w-full max-w-[200px] border border-border-rule box-border bg-app-bg mt-6"
-          style={{ 
+          style={{
             display: 'grid',
             gridTemplateColumns: `repeat(${gridSize}, minmax(0, 1fr))`,
             gridTemplateRows: `repeat(${gridSize}, minmax(0, 1fr))`
@@ -179,7 +179,7 @@ const MiniMap = ({ snapshot }) => {
           {Array.from({ length: gridSize * gridSize }).map((_, i) => {
               const y = Math.floor(i / gridSize);
               const x = i % gridSize;
-              
+
               let style = {
                 borderTop: knownWalls[x][y][0] ? '1px solid white' : '1px solid rgba(255,255,255,0.06)',
                 borderRight: knownWalls[x][y][1] ? '1px solid white' : '1px solid rgba(255,255,255,0.06)',
