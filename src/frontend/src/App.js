@@ -1,7 +1,168 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { Cpu, Wifi, Play, Pause, Bot, RotateCw, ChevronDown, Battery, Clock, Footprints, Gauge, RefreshCw, Zap, Usb, Timer, Radio, Download, CheckCircle2, XCircle, Calendar } from 'lucide-react';
 import { useMazeSimulator } from './useMazeSimulator';
 import { useWebSocket } from './useWebSocket';
+import { getHistorico, postTelemetria, batteryVoltsToPercent, getCorrida, parseTimeToSeconds } from './services/api';
+
+const ReplayCanvas = ({ pathMm, mazeSize, knownWalls }) => {
+  const total = pathMm?.length ?? 0;
+  const [idx, setIdx] = useState(0);
+  const [playing, setPlaying] = useState(true);
+  const [speedMs, setSpeedMs] = useState(150); // ms por passo
+
+  useEffect(() => { setIdx(0); }, [pathMm]);
+
+  useEffect(() => {
+    if (!playing || idx >= total - 1) return;
+    const t = setTimeout(() => setIdx(i => Math.min(i + 1, total - 1)), speedMs);
+    return () => clearTimeout(t);
+  }, [playing, idx, total, speedMs]);
+
+  // Pausa automática ao chegar no fim
+  useEffect(() => {
+    if (idx >= total - 1) setPlaying(false);
+  }, [idx, total]);
+
+  const mmToCell = (mm) => Math.floor(mm / 180);
+  const visited = new Set();
+  // Conjunto de "arestas atravessadas" (cell→cell adjacente). Toda vez que
+  // o robô se move de A para B, sabemos que NÃO há parede entre A e B.
+  const passable = new Set();
+  for (let i = 0; i <= idx && i < total; i++) {
+    const ax = mmToCell(pathMm[i].x), ay = mmToCell(pathMm[i].y);
+    visited.add(`${ax},${ay}`);
+    if (i > 0) {
+      const bx = mmToCell(pathMm[i - 1].x), by = mmToCell(pathMm[i - 1].y);
+      passable.add(`${ax},${ay}->${bx},${by}`);
+      passable.add(`${bx},${by}->${ax},${ay}`);
+    }
+  }
+  const cur = pathMm[idx] || pathMm[0];
+  const rx = cur ? mmToCell(cur.x) : 0;
+  const ry = cur ? mmToCell(cur.y) : 0;
+
+  // Paredes do replay:
+  //   1) Se vier `knownWalls` do backend (mapa preciso), usa direto.
+  //   2) Senão, infere a partir do caminho percorrido (versão antiga).
+  const DXR = [0, 1, 0, -1];
+  const DYR = [-1, 0, 1, 0];
+  const hasPreciseWalls = Array.isArray(knownWalls) && knownWalls.length === mazeSize;
+  const hasWallReplay = (cx, cy, d) => {
+    if (hasPreciseWalls) {
+      const cell = knownWalls[cx]?.[cy];
+      return Array.isArray(cell) ? Boolean(cell[d]) : false;
+    }
+    const nx = cx + DXR[d];
+    const ny = cy + DYR[d];
+    if (nx < 0 || nx >= mazeSize || ny < 0 || ny >= mazeSize) return true;
+    if (!visited.has(`${cx},${cy}`)) return false;
+    if (!visited.has(`${nx},${ny}`)) return false;
+    return !passable.has(`${cx},${cy}->${nx},${ny}`);
+  };
+
+  // Direção do robô: deduzida do movimento entre células consecutivas
+  // (N=0, E=1, S=2, W=3). Se idx atual repete a célula anterior, anda
+  // para trás no path até achar um movimento real para preservar a
+  // orientação. Inicial = Norte.
+  let robotDir = 0;
+  for (let i = idx; i > 0; i--) {
+    const prev = pathMm[i - 1], curP = pathMm[i];
+    const dxCell = mmToCell(curP.x) - mmToCell(prev.x);
+    const dyCell = mmToCell(curP.y) - mmToCell(prev.y);
+    if (dxCell !== 0 || dyCell !== 0) {
+      if (dyCell < 0)      robotDir = 0; // Norte
+      else if (dxCell > 0) robotDir = 1; // Leste
+      else if (dyCell > 0) robotDir = 2; // Sul
+      else                 robotDir = 3; // Oeste
+      break;
+    }
+  }
+
+  const mid = Math.floor(mazeSize / 2);
+  const goals = [
+    {x: mid - 1, y: mid - 1}, {x: mid, y: mid - 1},
+    {x: mid - 1, y: mid}, {x: mid, y: mid},
+  ];
+
+  return (
+    <div className="bg-app-bg rounded-xl border border-border-rule p-3 h-full flex flex-col">
+      <div className="text-brand-h3 text-[10px] uppercase tracking-widest font-semibold mb-2 flex items-center justify-between">
+        <span>Replay do Trajeto</span>
+        <span className="text-brand-h1 font-mono normal-case">{idx + 1}/{total}</span>
+      </div>
+      <div
+        className="aspect-square w-full max-w-[260px] mx-auto border border-border-rule bg-app-bg"
+        style={{
+          display: 'grid',
+          gridTemplateColumns: `repeat(${mazeSize}, minmax(0, 1fr))`,
+          gridTemplateRows: `repeat(${mazeSize}, minmax(0, 1fr))`,
+        }}
+      >
+        {Array.from({ length: mazeSize * mazeSize }).map((_, i) => {
+          const cy = Math.floor(i / mazeSize);
+          const cx = i % mazeSize;
+          const isVisited = visited.has(`${cx},${cy}`);
+          const isGoal = goals.some(g => g.x === cx && g.y === cy);
+          const isRobot = cx === rx && cy === ry;
+          let bg = 'transparent';
+          if (isVisited) bg = 'rgba(167,139,250,0.18)';
+          if (isGoal) bg = '#10B981';
+          const faint = '1px solid rgba(255,255,255,0.06)';
+          const wall  = '2px solid rgba(255,255,255,0.85)';
+          return (
+            <div key={i} style={{
+              backgroundColor: bg,
+              borderTop:    hasWallReplay(cx, cy, 0) ? wall : faint,
+              borderRight:  hasWallReplay(cx, cy, 1) ? wall : faint,
+              borderBottom: hasWallReplay(cx, cy, 2) ? wall : faint,
+              borderLeft:   hasWallReplay(cx, cy, 3) ? wall : faint,
+              boxSizing: 'border-box',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+            }}>
+              {isRobot && (
+                <div style={{
+                  width: 0, height: 0,
+                  borderLeft: '4px solid transparent',
+                  borderRight: '4px solid transparent',
+                  borderBottom: '8px solid #A78BFA',
+                  transform: `rotate(${robotDir * 90}deg)`,
+                  transition: 'transform 120ms ease-out',
+                }} />
+              )}
+            </div>
+          );
+        })}
+      </div>
+      <div className="mt-3 space-y-2">
+        <input
+          type="range" min={0} max={Math.max(0, total - 1)} value={idx}
+          onChange={(e) => { setPlaying(false); setIdx(parseInt(e.target.value, 10)); }}
+          className="w-full h-1.5 bg-border-ghost rounded-lg appearance-none cursor-pointer accent-brand-purple"
+        />
+        <div className="flex items-center justify-between">
+          <div className="flex space-x-1.5">
+            <button onClick={() => setPlaying(p => !p)} className="bg-app-raised border-2 border-border-dim text-brand-h1 px-3 py-1 rounded-full text-[11px] font-semibold flex items-center space-x-1">
+              {playing ? <><Pause size={11}/><span>Pausar</span></> : <><Play size={11}/><span>Reproduzir</span></>}
+            </button>
+            <button onClick={() => { setIdx(0); setPlaying(true); }} className="bg-app-raised border-2 border-border-dim text-brand-h1 px-3 py-1 rounded-full text-[11px] font-semibold flex items-center space-x-1">
+              <RotateCw size={11}/><span>Reiniciar</span>
+            </button>
+          </div>
+          <select
+            value={speedMs}
+            onChange={(e) => setSpeedMs(parseInt(e.target.value, 10))}
+            className="bg-app-raised border-2 border-border-dim text-brand-h2 text-[11px] font-medium px-2 py-1 rounded-full focus:outline-none cursor-pointer"
+          >
+            <option value={400}>0.5×</option>
+            <option value={150}>1×</option>
+            <option value={75}>2×</option>
+            <option value={30}>5×</option>
+          </select>
+        </div>
+      </div>
+    </div>
+  );
+};
 
 const MiniMap = ({ snapshot }) => {
   const { gridSize, knownWalls, explored, goals, robot } = snapshot;
@@ -57,40 +218,212 @@ const MiniMap = ({ snapshot }) => {
 const App = () => {
   const [activeTab, setActiveTab] = useState('Mapa');
   const sim = useMazeSimulator();
-  const { status: wsStatus } = useWebSocket();
+  const { status: wsStatus, lastMessage } = useWebSocket();
 
-  const [history, setHistory] = useState([
-    { id: 1, date: '04/06/2026 14:30', maze: '16x16', status: 'Centro Alcançado!', time: '1m 45s', speed: '22.4 cm/s', battery: '95%', steps: 142 },
-    { id: 2, date: '04/06/2026 15:10', maze: '8x8',   status: 'Preso!',            time: '0m 32s', speed: '18.1 cm/s', battery: '89%', steps: 34  },
-    { id: 3, date: '04/06/2026 16:05', maze: '4x4',   status: 'Centro Alcançado!', time: '0m 12s', speed: '25.0 cm/s', battery: '88%', steps: 12  },
-    { id: 4, date: '05/06/2026 09:20', maze: '16x16', status: 'Centro Alcançado!', time: '1m 20s', speed: '24.2 cm/s', battery: '82%', steps: 128 },
-  ]);
+  // ── Telemetria viva derivada do WebSocket ─────────────────────────────
+  // Quando o firmware (ou o fake_robot.py) enviar pacotes, esses valores
+  // substituem os literais hardcoded. Antes do primeiro pacote, ficam null
+  // e a UI cai no fallback do simulador.
+  const [liveTelemetry, setLiveTelemetry] = useState(null);
+  const [latencyMs, setLatencyMs] = useState(null);
+  const [packetsRx, setPacketsRx] = useState(0);
 
   useEffect(() => {
-    if (sim.memory.status === 'Centro Alcançado!' || sim.memory.status === 'Preso!') {
-      const isDuplicate = history.some(h => h.id === sim.memory.bfsCount + 1000);
-      if (!isDuplicate && sim.memory.timeMs > 0) {
-        const newRun = {
-          id: sim.memory.bfsCount + 1000,
-          date: new Date().toLocaleString('pt-BR'),
-          maze: `${sim.gridSize}x${sim.gridSize}`,
-          status: sim.memory.status,
-          time: `${Math.floor(sim.memory.timeMs / 60000)}m ${((sim.memory.timeMs % 60000)/1000).toFixed(1)}s`,
-          speed: sim.memory.timeMs > 0 ? ((sim.memory.steps * 18) / (sim.memory.timeMs / 1000)).toFixed(1) + ' cm/s' : '0.0 cm/s',
-          battery: '100%',
-          steps: sim.memory.steps,
-          mapSnapshot: {
-              gridSize: sim.gridSize,
-              knownWalls: JSON.parse(JSON.stringify(sim.memory.knownWalls)),
-              explored: JSON.parse(JSON.stringify(sim.memory.explored)),
-              goals: JSON.parse(JSON.stringify(sim.memory.goals)),
-              robot: JSON.parse(JSON.stringify(sim.memory.robot))
-          }
-        };
-        setHistory(prev => [newRun, ...prev]);
+    if (!lastMessage || typeof lastMessage !== 'object') return;
+    setLiveTelemetry(lastMessage);
+    setPacketsRx(prev => prev + 1);
+    if (lastMessage.timestamp) {
+      const t = Date.parse(lastMessage.timestamp);
+      if (!Number.isNaN(t)) {
+        setLatencyMs(Math.max(0, Date.now() - t));
       }
     }
-  }, [sim.memory.status, sim.memory.timeMs, sim.memory.steps, sim.gridSize, sim.memory.bfsCount, history, sim.memory.knownWalls, sim.memory.explored, sim.memory.goals, sim.memory.robot]);
+  }, [lastMessage]);
+
+  // ── Histórico: corridas reais do backend + corridas do simulador ──────
+  const [apiHistory, setApiHistory] = useState([]);
+  const [simHistory, setSimHistory] = useState([]);
+  const [historyFilter, setHistoryFilter] = useState('Todos');
+  const [historyLoading, setHistoryLoading] = useState(false);
+  const [historyError, setHistoryError] = useState(null);
+
+  const refreshHistory = React.useCallback(async (filter) => {
+    setHistoryLoading(true);
+    setHistoryError(null);
+    try {
+      const items = await getHistorico(filter);
+      setApiHistory(items);
+    } catch (err) {
+      setHistoryError(err.message || 'Erro ao carregar histórico');
+      setApiHistory([]);
+    } finally {
+      setHistoryLoading(false);
+    }
+  }, []);
+
+  // Carrega o histórico ao abrir a aba, ao trocar de filtro e quando
+  // uma corrida nova é persistida (detectada por lastMessage.race_status==finished).
+  useEffect(() => {
+    if (activeTab === 'Histórico') {
+      refreshHistory(historyFilter);
+    }
+  }, [activeTab, historyFilter, refreshHistory]);
+
+  useEffect(() => {
+    if (lastMessage && lastMessage.race_status === 'finished') {
+      // Pequeno atraso para garantir que o backend já confirmou o INSERT.
+      const t = setTimeout(() => refreshHistory(historyFilter), 200);
+      return () => clearTimeout(t);
+    }
+  }, [lastMessage, historyFilter, refreshHistory]);
+
+  // Sessão do simulador → POSTa em /telemetria com source='simulator'.
+  // Fallback: se o backend estiver fora, mantém em simHistory (memória local).
+  const lastSimRunRef = useRef(null);
+  useEffect(() => {
+    const status = sim.memory.status;
+    if (status !== 'Centro Alcançado!' && status !== 'Preso!') return;
+    if (sim.memory.timeMs <= 0) return;
+    const runId = `sim-${sim.memory.bfsCount}-${sim.memory.steps}-${sim.memory.timeMs}`;
+    if (lastSimRunRef.current === runId) return;
+    lastSimRunRef.current = runId;
+
+    const mem = sim.memory;
+    const success = status === 'Centro Alcançado!';
+    const robotPathPoint = {
+      x: mem.robot.x * 180 + 90,
+      y: mem.robot.y * 180 + 90,
+      z: 9.81,
+    };
+    const path = (mem.pathHistory && mem.pathHistory.length > 0)
+      ? mem.pathHistory
+      : [robotPathPoint];
+
+    // Mapa preciso: simulador conhece truthWalls. Converte {0..3:bool} para
+    // o formato do contrato: walls[x][y] = [N, E, S, W].
+    const size = sim.gridSize;
+    const walls = (mem.truthWalls && mem.truthWalls.length === size)
+      ? Array.from({ length: size }, (_, x) =>
+          Array.from({ length: size }, (_, y) => {
+            const w = mem.truthWalls[x][y];
+            return [Boolean(w[0]), Boolean(w[1]), Boolean(w[2]), Boolean(w[3])];
+          })
+        )
+      : null;
+
+    const payload = {
+      robot_id: 'sim_browser',
+      timestamp: new Date().toISOString(),
+      maze_type: `${sim.gridSize}x${sim.gridSize}`,
+      current_position: {
+        ...robotPathPoint,
+        orientation: mem.robot.dir * 90,
+      },
+      path_traversed: path,
+      battery_voltage_v: mem.batteryEndV ?? 7.1,
+      speed_mm_s: 0.0,
+      elapsed_time_ms: Math.max(1, Math.round(mem.timeMs)),
+      race_status: 'finished',
+      event: success ? 'race_ended' : 'simulator_stuck',
+      message: success ? 'Simulador: centro alcançado.' : 'Simulador: robô preso.',
+      source: 'simulator',
+      success,
+      known_walls: walls,
+    };
+
+    postTelemetria(payload)
+      .then(() => {
+        // Backend persistiu; refresca histórico para puxar a nova corrida.
+        if (activeTab === 'Histórico') refreshHistory(historyFilter);
+      })
+      .catch((err) => {
+        console.warn('Falha ao persistir corrida simulada — mantendo em memória local.', err);
+        const fallbackRun = {
+          id: runId,
+          source: 'simulator',
+          success,
+          date: new Date().toLocaleString('pt-BR'),
+          maze: `${sim.gridSize}x${sim.gridSize}`,
+          status,
+          time: `${Math.floor(mem.timeMs / 60000)}m ${((mem.timeMs % 60000) / 1000).toFixed(1)}s`,
+          speed: mem.timeMs > 0
+            ? ((mem.steps * 18) / (mem.timeMs / 1000)).toFixed(1) + ' cm/s'
+            : '0.0 cm/s',
+          battery: '100%',
+          steps: mem.steps,
+          mapSnapshot: {
+            gridSize: sim.gridSize,
+            knownWalls: JSON.parse(JSON.stringify(mem.knownWalls)),
+            explored: JSON.parse(JSON.stringify(mem.explored)),
+            goals: JSON.parse(JSON.stringify(mem.goals)),
+            robot: JSON.parse(JSON.stringify(mem.robot)),
+          },
+        };
+        setSimHistory(prev => [fallbackRun, ...prev]);
+      });
+  }, [sim.memory.status, sim.memory.timeMs, sim.memory.steps, sim.memory.bfsCount, sim.gridSize, sim.memory.knownWalls, sim.memory.explored, sim.memory.goals, sim.memory.robot, sim.memory, activeTab, historyFilter, refreshHistory]);
+
+  // Lista combinada exibida na aba Histórico
+  const combinedHistory = useMemo(() => {
+    const simFiltered = historyFilter === 'Todos'
+      ? simHistory
+      : simHistory.filter(h => h.maze === historyFilter);
+    return [...simFiltered, ...apiHistory];
+  }, [simHistory, apiHistory, historyFilter]);
+
+  // Bateria exibida no widget: % da telemetria real, ou fallback do simulador.
+  const batteryPct = liveTelemetry?.battery_voltage_v != null
+    ? batteryVoltsToPercent(liveTelemetry.battery_voltage_v)
+    : null;
+
+  // Modo de operação: determinado pela origem do último pacote recebido.
+  // Pacote 'real' (firmware) tem prioridade até ficar antigo (>10s); caso
+  // contrário, o sistema está mostrando o simulador local.
+  const dataMode = useMemo(() => {
+    if (liveTelemetry?.source === 'real' && latencyMs != null && latencyMs < 10000) {
+      return 'real';
+    }
+    return 'simulator';
+  }, [liveTelemetry, latencyMs]);
+
+  // Status da corrida traduzido para a UI a partir dos eventos do WS em modo
+  // real; fallback para o status do simulador.
+  const runStatus = useMemo(() => {
+    if (dataMode === 'real' && liveTelemetry) {
+      if (liveTelemetry.event === 'objective_found') return 'Objetivo localizado!';
+      if (liveTelemetry.event === 'race_ended' || liveTelemetry.race_status === 'finished') {
+        return liveTelemetry.success === false ? 'Preso!' : 'Centro Alcançado!';
+      }
+      if (liveTelemetry.race_status === 'error' || liveTelemetry.event === 'error_occurred') return 'Erro!';
+      if (liveTelemetry.event === 'start_race' || liveTelemetry.race_status === 'running') return 'Mapeando...';
+      if (liveTelemetry.race_status === 'paused') return 'Pausado';
+      if (liveTelemetry.race_status === 'ready') return 'Pronto';
+    }
+    return sim.memory.status;
+  }, [dataMode, liveTelemetry, sim.memory.status]);
+
+  // Conversão mm → célula para o canvas e o replay. Coordenadas vêm como
+  // (cell + 0.5) * 180 mm, então floor(x / 180) devolve a célula.
+  const mmToCell = (mm) => Math.floor(mm / 180);
+
+  // Em modo Real, o robô e as células visitadas vêm da telemetria.
+  const liveRobot = useMemo(() => {
+    if (dataMode !== 'real' || !liveTelemetry?.current_position) return null;
+    const p = liveTelemetry.current_position;
+    const dir = Math.round(((p.orientation ?? 0) / 90)) % 4;
+    return { x: mmToCell(p.x), y: mmToCell(p.y), dir: (dir + 4) % 4 };
+  }, [dataMode, liveTelemetry]);
+
+  const liveExplored = useMemo(() => {
+    if (dataMode !== 'real' || !liveTelemetry?.path_traversed) return null;
+    const size = sim.gridSize;
+    const arr = Array(size).fill(null).map(() => Array(size).fill(false));
+    for (const p of liveTelemetry.path_traversed) {
+      const cx = mmToCell(p.x), cy = mmToCell(p.y);
+      if (cx >= 0 && cx < size && cy >= 0 && cy < size) arr[cx][cy] = true;
+    }
+    return arr;
+  }, [dataMode, liveTelemetry, sim.gridSize]);
 
   return (
     <div className="bg-app-bg font-sans h-screen p-2 sm:p-6 flex items-center justify-center overflow-hidden">
@@ -98,14 +431,30 @@ const App = () => {
         <Header activeTab={activeTab} setActiveTab={setActiveTab} />
         <main className="flex-grow flex flex-col lg:flex-row gap-6 h-full pb-2 min-h-0 overflow-hidden">
           {activeTab === 'Histórico' ? (
-            <HistoryView historyData={history} />
+            <HistoryView
+              historyData={combinedHistory}
+              filter={historyFilter}
+              setFilter={setHistoryFilter}
+              loading={historyLoading}
+              error={historyError}
+              onRefresh={() => refreshHistory(historyFilter)}
+            />
           ) : (
             <>
               <section className="flex-grow bg-panel p-6 flex flex-col relative overflow-hidden min-h-0">
-                <MazeCanvas sim={sim} />
+                <MazeCanvas sim={sim} liveRobot={liveRobot} liveExplored={liveExplored} dataMode={dataMode} />
               </section>
               <aside className="w-full lg:w-[360px] flex flex-col space-y-3 overflow-hidden shrink-0">
-                <TelemetrySidebar sim={sim} wsStatus={wsStatus} />
+                <TelemetrySidebar
+                  sim={sim}
+                  wsStatus={wsStatus}
+                  batteryPct={batteryPct}
+                  latencyMs={latencyMs}
+                  packetsRx={packetsRx}
+                  liveTelemetry={liveTelemetry}
+                  dataMode={dataMode}
+                  runStatus={runStatus}
+                />
               </aside>
             </>
           )}
@@ -146,9 +495,14 @@ const Header = ({ activeTab, setActiveTab }) => {
   );
 };
 
-const MazeCanvas = ({ sim }) => {
+const MazeCanvas = ({ sim, liveRobot, liveExplored, dataMode }) => {
   const { memory, isRunning, setIsRunning, speed, setSpeed, showTruth, setShowTruth, resetSimulation, gridSize, changeGridSize } = sim;
   const mem = memory;
+  // Em modo Real, sobrescreve robô e explored com dados do WS; o resto
+  // (paredes, distâncias) continua vindo do simulador (não há fonte real).
+  const robotShown = liveRobot ?? mem.robot;
+  const exploredShown = liveExplored ?? mem.explored;
+  const isRealMode = dataMode === 'real';
 
   if (!mem.truthWalls || mem.truthWalls.length === 0) {
     return (
@@ -192,9 +546,9 @@ const MazeCanvas = ({ sim }) => {
             <input type="range" min="10" max="500" value={510 - speed} onChange={(e) => setSpeed(510 - parseInt(e.target.value))} className="w-24 h-1.5 bg-border-ghost rounded-lg appearance-none cursor-pointer accent-brand-purple" />
           </div>
           <div className="w-px h-6 bg-border-rule"></div>
-          <label className="flex items-center cursor-pointer space-x-2">
+          <label className={`flex items-center space-x-2 ${isRealMode ? 'opacity-40 cursor-not-allowed' : 'cursor-pointer'}`} title={isRealMode ? 'Raio-X só disponível no modo Simulador' : ''}>
             <div className="relative">
-              <input type="checkbox" className="sr-only peer" checked={showTruth} onChange={(e) => setShowTruth(e.target.checked)} />
+              <input type="checkbox" className="sr-only peer" checked={showTruth && !isRealMode} disabled={isRealMode} onChange={(e) => setShowTruth(e.target.checked)} />
               <div className="w-9 h-5 bg-border-ghost peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-brand-purple-glow after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-brand-h3 after:border-border-subtle after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-brand-purple peer-checked:after:bg-white border-2 border-border-rule"></div>
             </div>
             <span className="text-brand-h3 text-[11px] font-medium uppercase tracking-wider">Raio-X</span>
@@ -217,31 +571,36 @@ const MazeCanvas = ({ sim }) => {
           {Array.from({ length: gridSize * gridSize }).map((_, i) => {
             const y = Math.floor(i / gridSize), x = i % gridSize;
             let classes = ["cell"];
-            if (showTruth) {
+            // "Raio-X" só faz sentido em modo Simulador (no Real não há truthWalls).
+            if (showTruth && !isRealMode) {
               if (mem.truthWalls[x][y][0]) classes.push("truth-wall-n");
               if (mem.truthWalls[x][y][1]) classes.push("truth-wall-e");
               if (mem.truthWalls[x][y][2]) classes.push("truth-wall-s");
               if (mem.truthWalls[x][y][3]) classes.push("truth-wall-w");
             }
-            if (mem.explored[x][y]) {
+            const cellExplored = exploredShown[x]?.[y];
+            if (cellExplored) {
               classes.push("explored");
-              if (mem.knownWalls[x][y][0]) classes.push("known-wall-n");
-              if (mem.knownWalls[x][y][1]) classes.push("known-wall-e");
-              if (mem.knownWalls[x][y][2]) classes.push("known-wall-s");
-              if (mem.knownWalls[x][y][3]) classes.push("known-wall-w");
+              if (!isRealMode) {
+                if (mem.knownWalls[x][y][0]) classes.push("known-wall-n");
+                if (mem.knownWalls[x][y][1]) classes.push("known-wall-e");
+                if (mem.knownWalls[x][y][2]) classes.push("known-wall-s");
+                if (mem.knownWalls[x][y][3]) classes.push("known-wall-w");
+              }
             }
             const isGoal = GOALS.some(g => g.x === x && g.y === y);
             if (isGoal) classes.push("goal");
             const d = mem.distances[x][y];
             let dataColor = null;
-            if (mem.explored[x][y] && d !== 0 && d !== 255)
+            // Gradiente de distância só faz sentido com simulador (depende do flood-fill).
+            if (!isRealMode && cellExplored && d !== 0 && d !== 255)
               dataColor = d <= maxD / 3 ? "g" : d <= 2 * maxD / 3 ? "y" : "r";
-            const hasRobot = mem.robot.x === x && mem.robot.y === y;
+            const hasRobot = robotShown && robotShown.x === x && robotShown.y === y;
             return (
               <div key={i} className={classes.join(" ")} data-color={dataColor}>
-                {hasRobot && <div id="robot" className={`dir-${mem.robot.dir}`}></div>}
+                {hasRobot && <div id="robot" className={`dir-${robotShown.dir}`}></div>}
                 {isGoal && !hasRobot && "G"}
-                {!isGoal && !hasRobot && mem.explored[x][y] && d !== 255 ? d : ""}
+                {!isGoal && !hasRobot && cellExplored && !isRealMode && d !== 255 ? d : ""}
               </div>
             );
           })}
@@ -251,16 +610,31 @@ const MazeCanvas = ({ sim }) => {
   );
 };
 
-const TelemetrySidebar = ({ sim, wsStatus }) => {
+const TelemetrySidebar = ({ sim, wsStatus, batteryPct, latencyMs, packetsRx, liveTelemetry, dataMode, runStatus }) => {
   const mem = sim.memory;
+  const statusText = runStatus ?? mem.status;
   let statusColor = "bg-brand-cyan";
-  if (mem.status === "Centro Alcançado!") statusColor = "bg-brand-green";
-  else if (mem.status === "Preso!")       statusColor = "bg-red-500";
-  else if (mem.status === "Mapeando...")  statusColor = "bg-brand-amber";
+  if (statusText === "Centro Alcançado!" || statusText === "Objetivo localizado!") statusColor = "bg-brand-green";
+  else if (statusText === "Preso!" || statusText === "Erro!") statusColor = "bg-red-500";
+  else if (statusText === "Mapeando...") statusColor = "bg-brand-amber";
+  else if (statusText === "Pausado")     statusColor = "bg-brand-purple";
 
-  const timeSec  = (mem.timeMs / 1000).toFixed(1);
-  const distanceCm = mem.steps * 18;
-  const avgSpeed = mem.timeMs > 0 ? (distanceCm / (mem.timeMs / 1000)).toFixed(1) : "0.0";
+  // Tempo/velocidade: prefere telemetria real se disponível, senão usa simulador.
+  const timeSec  = liveTelemetry?.elapsed_time_ms != null
+    ? (liveTelemetry.elapsed_time_ms / 1000).toFixed(1)
+    : (mem.timeMs / 1000).toFixed(1);
+  const avgSpeed = liveTelemetry?.speed_mm_s != null
+    ? (liveTelemetry.speed_mm_s / 10).toFixed(1)
+    : (mem.timeMs > 0 ? ((mem.steps * 18) / (mem.timeMs / 1000)).toFixed(1) : "0.0");
+  const stepsDisplay = liveTelemetry?.step_count ?? mem.steps;
+
+  // Alerta visual quando latência ultrapassa RNF-01 (500 ms)
+  const latencyOver = latencyMs != null && latencyMs > 500;
+
+  const formatPackets = (n) => {
+    if (n < 1000) return String(n);
+    return `${(n / 1000).toFixed(1)}k`;
+  };
 
   const getWSStatusColor = (status) => {
     switch(status) {
@@ -274,16 +648,32 @@ const TelemetrySidebar = ({ sim, wsStatus }) => {
 
   const wsColor = getWSStatusColor(wsStatus);
 
+  const isReal = dataMode === 'real';
+  const modeStyle = isReal
+    ? { text: 'text-brand-green', bg: 'bg-brand-green/10', border: 'border-brand-green/40', dot: 'bg-brand-green' }
+    : { text: 'text-brand-purple-glow', bg: 'bg-brand-purple/15', border: 'border-brand-purple/40', dot: 'bg-brand-purple-glow' };
+
   return (
     <>
+      <section className="bg-panel p-3 shrink-0">
+        <div className={`flex items-center justify-between px-3 py-2 rounded-full border-2 ${modeStyle.bg} ${modeStyle.border}`} title={isReal ? 'Dados do robô físico via WebSocket' : 'Simulador local — sem hardware'}>
+          <span className="text-brand-h3 text-[10px] font-bold uppercase tracking-widest">Modo</span>
+          <span className={`${modeStyle.text} text-xs font-bold uppercase tracking-wider flex items-center`}>
+            <span className={`relative flex h-2 w-2 mr-2 rounded-full ${modeStyle.dot}`}>
+              {isReal && <span className={`animate-ping absolute inline-flex h-full w-full rounded-full ${modeStyle.dot} opacity-60`}></span>}
+            </span>
+            {isReal ? 'Real' : 'Simulador'}
+          </span>
+        </div>
+      </section>
       <section className="bg-panel p-4 shrink-0">
         <div className="grid grid-cols-3 gap-2">
-          <BatteryWidget />
+          <BatteryWidget percent={batteryPct} />
           <MetricCard label="Tempo" value={timeSec} unit="s" icon={<Clock size={14} />} iconColor="text-brand-cyan" />
-          <MetricCard label="Passos" value={mem.steps} unit="" icon={<Footprints size={14} />} iconColor="text-brand-purple-glow" />
+          <MetricCard label="Passos" value={stepsDisplay} unit="" icon={<Footprints size={14} />} iconColor="text-brand-purple-glow" />
           <MetricCard label="Veloc" value={avgSpeed} unit="cm/s" icon={<Gauge size={14} />} iconColor="text-brand-green" />
           <MetricCard label="Giros" value={mem.turns} unit="" icon={<RefreshCw size={14} />} iconColor="text-brand-amber" />
-          <MetricCard label="Algoritmo" value="A-Star" unit="" icon={<Zap size={14} />} iconColor="text-brand-purple" isString={true} />
+          <MetricCard label="Algoritmo" value="Flood-Fill" unit="" icon={<Zap size={14} />} iconColor="text-brand-purple" isString={true} />
         </div>
       </section>
       <section className="bg-panel p-4 shrink-0 flex-1 min-h-0 flex flex-col justify-center">
@@ -299,12 +689,14 @@ const TelemetrySidebar = ({ sim, wsStatus }) => {
           <div className="border-b border-border-rule"></div>
           <div className="flex justify-between items-center">
             <span className="text-brand-h3 text-[11px] font-medium uppercase tracking-wider flex items-center"><Timer className="mr-3 text-brand-h3 w-4 h-4" />Latência</span>
-            <span className="text-brand-h2 font-semibold font-mono text-sm">23 ms</span>
+            <span className={`font-semibold font-mono text-sm ${latencyOver ? 'text-red-500' : 'text-brand-h2'}`} title={latencyOver ? 'Latência acima do limite RNF-01 (500 ms)' : undefined}>
+              {latencyMs != null ? `${latencyMs} ms` : '— ms'}
+            </span>
           </div>
           <div className="border-b border-border-rule"></div>
           <div className="flex justify-between items-center">
             <span className="text-brand-h3 text-[11px] font-medium uppercase tracking-wider flex items-center"><Radio className="mr-3 text-brand-h3 w-4 h-4" />Pacotes RX</span>
-            <span className="text-brand-h2 font-semibold font-mono text-sm">1.8k</span>
+            <span className="text-brand-h2 font-semibold font-mono text-sm">{formatPackets(packetsRx)}</span>
           </div>
         </div>
       </section>
@@ -312,7 +704,7 @@ const TelemetrySidebar = ({ sim, wsStatus }) => {
         <span className="text-[11px] font-medium uppercase tracking-wider text-brand-h3">Status</span>
         <div className="flex items-center space-x-2 bg-app-bg border-2 border-border-ghost py-1.5 px-3 rounded-full">
           <span className={`relative flex h-2.5 w-2.5 rounded-full ${statusColor}`}></span>
-          <span className="text-brand-h1 text-[13px] font-bold">{mem.status}</span>
+          <span className="text-brand-h1 text-[13px] font-bold">{statusText}</span>
         </div>
       </section>
     </>
@@ -332,24 +724,102 @@ const MetricCard = ({ label, value, unit, icon, iconColor, isString = false }) =
   </div>
 );
 
-const BatteryWidget = () => (
-  <div className="bg-app-bg border-2 border-border-rule p-3 rounded-[1rem] flex flex-col relative transition-all duration-300">
-    <div className="flex justify-between items-start mb-1">
-      <span className="text-label">Carga</span>
-      <div className="text-brand-green"><Battery size={14}/></div>
+const BatteryWidget = ({ percent }) => {
+  const display = percent != null ? `${percent}%` : '—';
+  const widthPct = percent != null ? Math.max(0, Math.min(100, percent)) : 0;
+  const barColor = percent == null ? 'bg-border-ghost' : percent <= 20 ? 'bg-red-500' : percent <= 50 ? 'bg-brand-amber' : 'bg-brand-green';
+  const iconColor = percent == null ? 'text-brand-h3' : percent <= 20 ? 'text-red-500' : percent <= 50 ? 'text-brand-amber' : 'text-brand-green';
+  return (
+    <div className="bg-app-bg border-2 border-border-rule p-3 rounded-[1rem] flex flex-col relative transition-all duration-300">
+      <div className="flex justify-between items-start mb-1">
+        <span className="text-label">Carga</span>
+        <div className={iconColor}><Battery size={14}/></div>
+      </div>
+      <span className="text-brand-h1 text-xl font-semibold tracking-tight">{display}</span>
+      <div className="h-1.5 w-full bg-border-ghost mt-2 rounded-full overflow-hidden border border-border-rule">
+        <div className={`h-full ${barColor} rounded-full transition-all`} style={{ width: `${widthPct}%` }}></div>
+      </div>
     </div>
-    <span className="text-brand-h1 text-xl font-semibold tracking-tight">89%</span>
-    <div className="h-1.5 w-full bg-border-ghost mt-2 rounded-full overflow-hidden border border-border-rule">
-      <div className="h-full bg-brand-green w-[89%] rounded-full"></div>
-    </div>
-  </div>
-);
+  );
+};
 
-const HistoryView = ({ historyData }) => {
-  const [filter, setFilter] = useState('Todos');
+const RankingPanel = ({ runs }) => {
+  const ranking = useMemo(() => {
+    const sizes = ['4x4', '8x8', '16x16'];
+    const out = {};
+    for (const size of sizes) {
+      out[size] = runs
+        .filter(r => r.maze === size && r.status === 'Centro Alcançado!')
+        .sort((a, b) => parseTimeToSeconds(a.time) - parseTimeToSeconds(b.time))
+        .slice(0, 5);
+    }
+    return out;
+  }, [runs]);
+
+  return (
+    <div className="mb-6 shrink-0">
+      <div className="flex items-center space-x-2 mb-3">
+        <Zap size={16} className="text-brand-amber" />
+        <h3 className="text-sm font-semibold text-brand-h2 uppercase tracking-wider">Ranking — Top 5 por Labirinto</h3>
+      </div>
+      <div className="grid grid-cols-3 gap-3">
+        {['4x4', '8x8', '16x16'].map(size => (
+          <div key={size} className="bg-app-bg border-2 border-border-rule rounded-2xl p-3">
+            <div className="text-brand-h3 text-[10px] uppercase tracking-wider font-bold mb-2">{size}</div>
+            {ranking[size].length === 0 ? (
+              <div className="text-brand-h3 text-xs italic py-2">Sem corridas concluídas</div>
+            ) : (
+              <ol className="space-y-1">
+                {ranking[size].map((run, idx) => (
+                  <li key={run.id} className="flex items-center justify-between text-xs">
+                    <div className="flex items-center space-x-2 min-w-0">
+                      <span className={`font-bold w-4 text-center ${idx === 0 ? 'text-brand-amber' : 'text-brand-h3'}`}>{idx + 1}</span>
+                      <span className={`w-1.5 h-1.5 rounded-full ${run.source === 'simulator' ? 'bg-brand-purple-glow' : 'bg-brand-green'}`} title={run.source === 'simulator' ? 'Simulada' : 'Real'}></span>
+                      <span className="text-brand-h1 font-mono truncate">{run.time}</span>
+                    </div>
+                    <span className="text-brand-h3 text-[10px]">{run.steps} pas</span>
+                  </li>
+                ))}
+              </ol>
+            )}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+};
+
+const HistoryView = ({ historyData, filter, setFilter, loading, error, onRefresh }) => {
+  const [subTab, setSubTab] = useState('tabela'); // 'tabela' | 'ranking'
   const [selectedRun, setSelectedRun] = useState(null);
+  const [replayPath, setReplayPath] = useState(null);
+  const [replayLoading, setReplayLoading] = useState(false);
+  const [replayError, setReplayError] = useState(null);
 
-  const filteredHistory = historyData.filter(run => filter === 'Todos' || run.maze.includes(filter));
+  // Quando uma corrida do backend é selecionada, busca o path completo.
+  useEffect(() => {
+    setReplayPath(null);
+    setReplayError(null);
+    if (!selectedRun) return;
+    // Corridas locais do simulador (fallback) já têm mapSnapshot; pulam o fetch.
+    if (selectedRun.mapSnapshot) return;
+    const rawPath = selectedRun.raw?.path_traversed;
+    if (rawPath && rawPath.length > 0) {
+      setReplayPath(rawPath);
+      return;
+    }
+    // Caso a corrida não tenha trazido o path (lista resumida no futuro), busca por id.
+    const numericId = parseInt(String(selectedRun.id).replace(/^db-/, ''), 10);
+    if (!Number.isFinite(numericId)) return;
+    setReplayLoading(true);
+    getCorrida(numericId)
+      .then(data => setReplayPath(data?.path_traversed ?? []))
+      .catch(err => setReplayError(err.message || 'Erro ao carregar replay'))
+      .finally(() => setReplayLoading(false));
+  }, [selectedRun]);
+
+  // Lista já vem filtrada (sim+API combinados em App)
+  const filteredHistory = historyData;
 
   const successfulRuns = filteredHistory.filter(r => r.status === 'Centro Alcançado!');
   const bestRun = successfulRuns.length > 0 ? successfulRuns.reduce((prev, curr) => {
@@ -366,8 +836,9 @@ const HistoryView = ({ historyData }) => {
   const avgSpeed     = totalRuns > 0 ? (filteredHistory.reduce((acc, curr) => acc + parseFloat(curr.speed), 0) / totalRuns).toFixed(1) + ' cm/s' : '--';
 
   const exportCSV = () => {
-    const headers = ['Data/Hora', 'Labirinto', 'Status', 'Tempo', 'Velocidade', 'Bateria', 'Movimentos'];
-    const rows = filteredHistory.map(run => [run.date, run.maze, run.status, run.time, run.speed, run.battery, run.steps]);
+    const headers = ['Data/Hora', 'Tipo', 'Labirinto', 'Status', 'Tempo', 'Velocidade', 'Bateria', 'Movimentos'];
+    const tipoLabel = (s) => (s === 'simulator' ? 'Simulada' : 'Real');
+    const rows = filteredHistory.map(run => [run.date, tipoLabel(run.source), run.maze, run.status, run.time, run.speed, run.battery, run.steps]);
     const csvContent = "data:text/csv;charset=utf-8," + [headers.join(','), ...rows.map(e => e.join(','))].join('\n');
     const link = document.createElement("a");
     link.setAttribute("href", encodeURI(csvContent));
@@ -383,7 +854,6 @@ const HistoryView = ({ historyData }) => {
       <div className="flex justify-between items-start mb-8 shrink-0">
         <div>
           <h2 className="text-4xl font-bold text-brand-h1 tracking-tight">Histórico de Corridas</h2>
-          <p className="text-brand-h3 text-base mt-2">Visualize e exporte execuções anteriores do Micromouse</p>
         </div>
         <div className="flex items-center space-x-4 mt-2">
           <div className="relative">
@@ -403,36 +873,82 @@ const HistoryView = ({ historyData }) => {
               <ChevronDown size={16} />
             </div>
           </div>
-          <button onClick={exportCSV} className="flex items-center space-x-2 bg-[#6D28D9] hover:bg-brand-purple-glow hover:shadow-[0_0_15px_rgba(124,58,237,0.3)] text-white font-medium px-5 py-2.5 rounded-full transition-all text-sm border-2 border-transparent">
-            <Download size={16} /><span>Exportar CSV</span>
+          <button onClick={onRefresh} title="Recarregar do backend" className="flex items-center space-x-2 bg-app-bg border-2 border-border-dim hover:border-border-accent text-brand-h1 font-medium px-4 py-2.5 rounded-full transition-all text-sm">
+            <RefreshCw size={14} className={loading ? 'animate-spin' : ''} /><span>{loading ? 'Carregando…' : 'Atualizar'}</span>
           </button>
+          {subTab === 'tabela' && (
+            <button onClick={exportCSV} className="flex items-center space-x-2 bg-[#6D28D9] hover:bg-brand-purple-glow hover:shadow-[0_0_15px_rgba(124,58,237,0.3)] text-white font-medium px-5 py-2.5 rounded-full transition-all text-sm border-2 border-transparent">
+              <Download size={16} /><span>Exportar CSV</span>
+            </button>
+          )}
         </div>
       </div>
 
-      <div className="grid grid-cols-4 gap-4 mb-6 shrink-0">
-        <div className="bg-app-bg border-2 border-border-rule p-4 rounded-2xl flex flex-col">
-          <span className="text-label text-brand-h3 mb-1">Corridas</span>
-          <span className="text-brand-h1 text-2xl font-bold">{totalRuns}</span>
-        </div>
-        <div className="bg-app-bg border-2 border-border-rule p-4 rounded-2xl flex flex-col">
-          <span className="text-label text-brand-h3 mb-1">Sucesso</span>
-          <span className="text-brand-green text-2xl font-bold">{successRate}%</span>
-        </div>
-        <div className="bg-app-bg border-2 border-border-rule p-4 rounded-2xl flex flex-col">
-          <span className="text-label text-brand-h3 mb-1">Melhor Tempo</span>
-          <span className="text-brand-purple-glow text-2xl font-bold">{bestTimeStr}</span>
-        </div>
-        <div className="bg-app-bg border-2 border-border-rule p-4 rounded-2xl flex flex-col">
-          <span className="text-label text-brand-h3 mb-1">Velocidade Média</span>
-          <span className="text-brand-h1 text-2xl font-bold">{avgSpeed}</span>
-        </div>
+      {/* Sub-abas: Tabela ↔ Ranking */}
+      <div className="flex items-center space-x-1 bg-app-header p-1 rounded-full border-2 border-border-rule shadow-sm self-start mb-6 shrink-0">
+        <button
+          onClick={() => setSubTab('tabela')}
+          className={`px-6 py-2 rounded-full font-medium text-sm transition-all flex items-center space-x-2 ${
+            subTab === 'tabela'
+              ? 'bg-brand-purple text-white shadow-[0_0_15px_rgba(124,58,237,0.3)]'
+              : 'text-brand-h3 hover:text-brand-h1 hover:bg-border-ghost'
+          }`}
+        >
+          <Footprints size={14} />
+          <span>Tabela</span>
+        </button>
+        <button
+          onClick={() => setSubTab('ranking')}
+          className={`px-6 py-2 rounded-full font-medium text-sm transition-all flex items-center space-x-2 ${
+            subTab === 'ranking'
+              ? 'bg-brand-purple text-white shadow-[0_0_15px_rgba(124,58,237,0.3)]'
+              : 'text-brand-h3 hover:text-brand-h1 hover:bg-border-ghost'
+          }`}
+        >
+          <Zap size={14} />
+          <span>Ranking</span>
+        </button>
       </div>
 
+      {error && (
+        <div className="mb-4 bg-red-500/10 border-2 border-red-500/30 text-red-400 text-sm px-4 py-3 rounded-2xl shrink-0">
+          Falha ao carregar histórico do backend: {error}. Mostrando apenas corridas do simulador.
+        </div>
+      )}
+
+      {subTab === 'tabela' && (
+        <div className="flex items-center flex-wrap gap-x-6 gap-y-2 bg-app-bg border-2 border-border-rule rounded-full px-5 py-2 mb-3 shrink-0 text-sm">
+          <div className="flex items-center space-x-2">
+            <span className="text-[10px] uppercase tracking-wider text-brand-h3 font-semibold">Corridas</span>
+            <span className="text-brand-h1 font-bold">{totalRuns}</span>
+          </div>
+          <div className="w-px h-4 bg-border-rule"></div>
+          <div className="flex items-center space-x-2">
+            <span className="text-[10px] uppercase tracking-wider text-brand-h3 font-semibold">Sucesso</span>
+            <span className="text-brand-green font-bold">{successRate}%</span>
+          </div>
+          <div className="w-px h-4 bg-border-rule"></div>
+          <div className="flex items-center space-x-2">
+            <span className="text-[10px] uppercase tracking-wider text-brand-h3 font-semibold">Melhor Tempo</span>
+            <span className="text-brand-purple-glow font-bold font-mono">{bestTimeStr}</span>
+          </div>
+          <div className="w-px h-4 bg-border-rule"></div>
+          <div className="flex items-center space-x-2">
+            <span className="text-[10px] uppercase tracking-wider text-brand-h3 font-semibold">Velocidade Média</span>
+            <span className="text-brand-h1 font-bold">{avgSpeed}</span>
+          </div>
+        </div>
+      )}
+
+      {subTab === 'ranking' && <RankingPanel runs={historyData} />}
+
+      {subTab === 'tabela' && (
       <div className="overflow-y-auto max-h-[450px] rounded-2xl border-2 border-border-rule bg-app-bg">
         <table className="w-full text-left border-collapse whitespace-nowrap">
           <thead className="sticky top-0 bg-app-header border-b-2 border-border-rule z-10 shadow-sm">
             <tr>
               <th className="p-4 text-xs font-semibold text-brand-h3 uppercase tracking-wider">Data / Hora</th>
+              <th className="p-4 text-xs font-semibold text-brand-h3 uppercase tracking-wider">Tipo</th>
               <th className="p-4 text-xs font-semibold text-brand-h3 uppercase tracking-wider">Labirinto</th>
               <th className="p-4 text-xs font-semibold text-brand-h3 uppercase tracking-wider">Tempo</th>
               <th className="p-4 text-xs font-semibold text-brand-h3 uppercase tracking-wider">Velocidade</th>
@@ -450,6 +966,19 @@ const HistoryView = ({ historyData }) => {
                     <Calendar size={14} className="text-brand-h3 group-hover:text-brand-h2 transition-colors"/>
                     <span className="text-brand-h1 font-medium text-sm">{run.date}</span>
                   </div>
+                </td>
+                <td className="p-4">
+                  {run.source === 'simulator' ? (
+                    <span className="inline-flex items-center space-x-1.5 text-[11px] uppercase tracking-wider font-bold bg-brand-purple/15 text-brand-purple-glow border border-brand-purple/30 px-3 py-1 rounded-full" title="Corrida gerada no simulador local">
+                      <Cpu size={12} />
+                      <span>Simulada</span>
+                    </span>
+                  ) : (
+                    <span className="inline-flex items-center space-x-1.5 text-[11px] uppercase tracking-wider font-bold bg-brand-green/10 text-brand-green border border-brand-green/30 px-3 py-1 rounded-full" title="Corrida do robô físico">
+                      <Bot size={12} />
+                      <span>Real</span>
+                    </span>
+                  )}
                 </td>
                 <td className="p-4 text-brand-h2 font-medium text-sm">
                   <div className="bg-app-raised inline-block px-3 py-1 rounded-full border border-border-dim">{run.maze}</div>
@@ -483,7 +1012,7 @@ const HistoryView = ({ historyData }) => {
             )) : (
               // ── data-testid adicionado aqui ──
               <tr>
-                <td colSpan="7" data-testid="estado-vazio" className="p-12 text-center text-brand-h3">
+                <td colSpan="8" data-testid="estado-vazio" className="p-12 text-center text-brand-h3">
                   Nenhuma corrida encontrada para o filtro selecionado.
                 </td>
               </tr>
@@ -491,6 +1020,7 @@ const HistoryView = ({ historyData }) => {
           </tbody>
         </table>
       </div>
+      )}
 
       {selectedRun && (
         <div className="absolute inset-0 z-50 bg-app-bg/80 backdrop-blur-sm flex items-center justify-center p-6" onClick={() => setSelectedRun(null)}>
@@ -506,6 +1036,18 @@ const HistoryView = ({ historyData }) => {
             </div>
             <div className="grid grid-cols-2 gap-6">
               <div className="space-y-4">
+                <div className="bg-app-bg p-4 rounded-xl border border-border-rule flex justify-between items-center">
+                  <span className="text-brand-h3 text-sm">Tipo</span>
+                  {selectedRun.source === 'simulator' ? (
+                    <span className="inline-flex items-center space-x-1.5 text-[11px] uppercase tracking-wider font-bold bg-brand-purple/15 text-brand-purple-glow border border-brand-purple/30 px-3 py-1 rounded-full">
+                      <Cpu size={12} /><span>Simulada</span>
+                    </span>
+                  ) : (
+                    <span className="inline-flex items-center space-x-1.5 text-[11px] uppercase tracking-wider font-bold bg-brand-green/10 text-brand-green border border-brand-green/30 px-3 py-1 rounded-full">
+                      <Bot size={12} /><span>Real</span>
+                    </span>
+                  )}
+                </div>
                 <div className="bg-app-bg p-4 rounded-xl border border-border-rule flex justify-between items-center">
                   <span className="text-brand-h3 text-sm">Tempo</span>
                   <span className="text-brand-h1 font-mono font-bold">{selectedRun.time}</span>
@@ -525,14 +1067,23 @@ const HistoryView = ({ historyData }) => {
               </div>
               {selectedRun.mapSnapshot ? (
                 <MiniMap snapshot={selectedRun.mapSnapshot}/>
+              ) : replayLoading ? (
+                <div className="bg-app-bg rounded-xl border border-border-rule flex items-center justify-center p-4 h-full text-brand-h3 text-sm">
+                  Carregando replay…
+                </div>
+              ) : replayError ? (
+                <div className="bg-app-bg rounded-xl border border-red-500/30 flex items-center justify-center p-4 h-full text-red-400 text-sm text-center">
+                  {replayError}
+                </div>
+              ) : replayPath && replayPath.length > 0 ? (
+                <ReplayCanvas
+                  pathMm={replayPath}
+                  mazeSize={parseInt(selectedRun.maze.split('x')[0], 10)}
+                  knownWalls={selectedRun.knownWalls ?? selectedRun.raw?.known_walls ?? null}
+                />
               ) : (
-                <div className="bg-app-bg rounded-xl border border-border-rule flex items-center justify-center p-4 relative overflow-hidden group h-full">
-                  <div className="text-center z-10">
-                    <Bot size={48} className="mx-auto text-brand-purple mb-2 opacity-20 group-hover:opacity-100 transition-opacity"/>
-                    <span className="text-brand-h3 text-xs uppercase tracking-widest font-semibold block">Mini-Mapa Simulado</span>
-                    <span className="text-brand-h4 text-[10px] mt-1 block">Trajeto indisponível no mock atual</span>
-                  </div>
-                  <div className="absolute inset-0 opacity-10" style={{ backgroundImage: 'linear-gradient(rgba(255,255,255,0.1) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.1) 1px, transparent 1px)', backgroundSize: '20px 20px' }}></div>
+                <div className="bg-app-bg rounded-xl border border-border-rule flex items-center justify-center p-4 h-full text-brand-h3 text-xs text-center">
+                  Trajeto indisponível para esta corrida.
                 </div>
               )}
             </div>
