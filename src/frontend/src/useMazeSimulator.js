@@ -1,12 +1,10 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-
-const DX = [0, 1, 0, -1];
-const DY = [-1, 0, 1, 0];
+import { CELL_MM, DX, DY, getGoals } from './utils/maze';
 
 export function useMazeSimulator(initialGridSize = 16) {
     const [gridSize, setGridSize] = useState(initialGridSize);
     
-    // Keep raw mutable state in refs to avoid closure hell in setInterval
+    // ref pra estado mutável — setInterval não vê os useState
     const memory = useRef({
         truthWalls: [],
         knownWalls: [],
@@ -27,14 +25,6 @@ export function useMazeSimulator(initialGridSize = 16) {
     const [isRunning, setIsRunning] = useState(false);
     const [speed, setSpeed] = useState(50);
     const [showTruth, setShowTruth] = useState(false);
-
-    const getGoals = useCallback((size) => {
-        const mid = Math.floor(size / 2);
-        return [
-            {x: mid - 1, y: mid - 1}, {x: mid, y: mid - 1},
-            {x: mid - 1, y: mid}, {x: mid, y: mid}
-        ];
-    }, []);
 
     const generateMaze = useCallback((size) => {
         const mem = memory.current;
@@ -95,7 +85,7 @@ export function useMazeSimulator(initialGridSize = 16) {
         
         mem.truthWalls = tWalls;
         mem.goals = currentGoals;
-    }, [getGoals]);
+    }, []);
 
     const initRobotMemory = useCallback((size) => {
         const mem = memory.current;
@@ -247,6 +237,16 @@ export function useMazeSimulator(initialGridSize = 16) {
         mem.bfsCount = 0;
         mem.timeMs = 0;
         mem.status = 'Aguardando';
+        // 18 cm/célula = CELL_MM; centro = cell*CELL_MM + CELL_MM/2
+        mem.pathHistory = [{
+            x: 0 * CELL_MM + CELL_MM / 2,
+            y: (currentSize - 1) * CELL_MM + CELL_MM / 2,
+            z: 9.81,
+        }];
+        mem.batteryStartV = 8.0;
+        mem.batteryEndV = 7.1;
+        mem.startedAtIso = null;
+        mem.startedAtMs = 0;
 
         initRobotMemory(currentSize);
         floodFill(currentSize);
@@ -258,7 +258,6 @@ export function useMazeSimulator(initialGridSize = 16) {
         resetSimulation(true, newSize);
     }, [resetSimulation]);
 
-    // Initial load
     useEffect(() => {
         if (memory.current.truthWalls.length !== gridSize) {
             resetSimulation(true);
@@ -298,14 +297,25 @@ export function useMazeSimulator(initialGridSize = 16) {
         mem.robot.y += DY[mem.robot.dir];
         mem.steps++;
         mem.timeMs += speed;
-        
+
+        mem.pathHistory.push({
+            x: mem.robot.x * CELL_MM + CELL_MM / 2,
+            y: mem.robot.y * CELL_MM + CELL_MM / 2,
+            z: 9.81,
+        });
+
         forceRender();
     }, [gridSize, senseWalls, floodFill, getBestNeighbor, speed]);
 
     useEffect(() => {
         let interval;
         if (isRunning) {
-            memory.current.status = "Mapeando...";
+            const mem = memory.current;
+            mem.status = "Mapeando...";
+            if (!mem.startedAtIso) {
+                mem.startedAtIso = new Date().toISOString();
+                mem.startedAtMs = Date.now();
+            }
             interval = setInterval(step, speed);
         }
         return () => clearInterval(interval);

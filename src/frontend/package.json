@@ -17,8 +17,35 @@
     "start": "react-scripts start",
     "build": "react-scripts build",
     "test": "react-scripts test",
-    "eject": "react-scripts eject",
-    "test:e2e": "playwright test"
+    "test:unit": "react-scripts test --watchAll=false",
+    "test:ci": "react-scripts test --watchAll=false --ci",
+    "test:coverage": "react-scripts test --watchAll=false --coverage",
+    "test:e2e": "playwright test",
+    "test:all": "npm run test:unit && npm run test:e2e",
+    "eject": "react-scripts eject"
+  },
+  "jest": {
+    "collectCoverageFrom": [
+      "src/**/*.{js,jsx}",
+      "!src/index.js",
+      "!src/reportWebVitals.js",
+      "!src/setupTests.js",
+      "!src/**/*.test.{js,jsx}"
+    ],
+    "coverageReporters": [
+      "text",
+      "text-summary",
+      "html",
+      "lcov"
+    ],
+    "coverageThreshold": {
+      "global": {
+        "branches": 70,
+        "functions": 70,
+        "lines": 70,
+        "statements": 70
+      }
+    }
   },
   "eslintConfig": {
     "extends": [
@@ -41,6 +68,8 @@
   "devDependencies": {
     "@playwright/test": "^1.44.0",
     "autoprefixer": "^10.5.0",
+    "babel-plugin-istanbul": "^8.0.0",
+    "nyc": "^18.0.0",
     "postcss": "^8.5.15",
     "tailwindcss": "^3.4.19"
   }

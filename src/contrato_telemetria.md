@@ -20,6 +20,9 @@ Os dados são transmitidos em pacotes estruturados em JSON. A tabela a seguir co
 | `event` | `string` | Não | Identificador de evento especial (ver seção 3). |
 | `message` | `string` | Não | Mensagem descritiva associada ao evento ou erro. |
 | `objective_location`| `object` | Não | Coordenadas `{x, y, z}` do centro do labirinto (objetivo). |
+| `source` | `string` | Não | Origem do pacote: `"real"` (firmware) ou `"simulator"` (dashboard local). Default `"real"`. |
+| `success` | `bool` | Não | Sinaliza se o desafio foi cumprido. Deve ser enviado no pacote de finalização. |
+| `known_walls` | `array` | Não | Mapa de paredes conhecidas pelo robô ao final da corrida. Veja seção 6. |
 
 ## 2. Protocolo de Transmissão, Frequência e Persistência
 
@@ -116,7 +119,37 @@ Abaixo, um exemplo de pacote transmitido no momento em que o robô localiza o ob
 }
 ```
 
-## 5. Exemplo de Pacote de Finalização (Dispara Persistência)
+## 6. Mapa de Paredes (`known_walls`)
+
+Campo opcional enviado no pacote de finalização (`race_status="finished"`). Permite que a interface reconstrua o labirinto exato percorrido — usado pelo replay de corridas no dashboard.
+
+### Formato
+
+Matriz tridimensional indexada por **`[x][y][direção]`**, onde:
+
+- `x` (coluna), `y` (linha) percorrem `0..size-1` para o tamanho do labirinto (`4`, `8` ou `16`).
+- Direção segue a convenção do projeto: índice `0=Norte`, `1=Leste`, `2=Sul`, `3=Oeste`.
+- Cada elemento é `true` (parede presente) ou `false` (passagem livre).
+
+Paredes do **perímetro** devem ser marcadas como `true` (`x=0` ⇒ `[3]=true`, `y=0` ⇒ `[0]=true`, etc.). A consistência entre células adjacentes (parede norte de `(x,y)` = parede sul de `(x, y-1)`) é responsabilidade do emissor.
+
+### Origem dos dados
+
+- **Firmware real:** envia a matriz de paredes que descobriu durante a exploração (cells não visitados ficam com paredes desconhecidas como `false`).
+- **Simulador:** envia o `truthWalls` completo do labirinto gerado, garantindo que o replay reconstrua o mapa em sua totalidade.
+
+### Exemplo (labirinto 4×4)
+
+```json
+"known_walls": [
+  [[true,false,false,true],  [true,true,false,false], [false,false,true,true], [true,true,true,false]],
+  [[true,true,false,false],  [false,false,true,true], [true,false,false,false],[true,false,true,false]],
+  [[true,false,true,true],   [true,true,false,false], [false,true,true,true],  [true,false,true,true]],
+  [[true,true,false,false],  [false,false,true,true], [true,true,true,false],  [true,true,true,true]]
+]
+```
+
+## 7. Exemplo de Pacote de Finalização (Dispara Persistência)
 
 O pacote abaixo exemplifica a mensagem que encerra a corrida e aciona a gravação no banco de dados.
 

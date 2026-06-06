@@ -1,5 +1,5 @@
 from pydantic import BaseModel
-from typing import List, Optional
+from typing import List, Optional, Literal
 from enum import Enum
 
 
@@ -10,7 +10,9 @@ class MazeTypeEnum(str, Enum):
 
 
 class RaceStatusEnum(str, Enum):
+    ready = "ready"
     running = "running"
+    paused = "paused"
     finished = "finished"
     error = "error"
 
@@ -41,6 +43,13 @@ class TelemetriaSchema(BaseModel):
     event: Optional[str] = None
     message: Optional[str] = None
     objective_location: Optional[Position] = None
+    # Origem do dado: "real" (firmware) ou "simulator" (dashboard local)
+    source: Literal["real", "simulator"] = "real"
+    # Desafio cumprido (S/N do enunciado). Só faz sentido no pacote final.
+    success: Optional[bool] = None
+    # Mapa de paredes conhecidas (opcional, enviado no pacote final).
+    # Formato: walls[x][y] = [N, E, S, W] booleans. Ver seção 6 do contrato.
+    known_walls: Optional[List[List[List[bool]]]] = None
 
 
 class SessionData(BaseModel):
@@ -64,3 +73,6 @@ class CorridaResponse(BaseModel):
     battery_end_v: float
     path_traversed: List[PathPoint]
     step_count: int
+    source: str = "real"
+    success: Optional[bool] = True
+    known_walls: Optional[List[List[List[bool]]]] = None
