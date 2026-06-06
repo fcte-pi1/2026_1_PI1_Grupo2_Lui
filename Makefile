@@ -15,8 +15,13 @@ BACKEND_DIR  = src/backend
 FRONTEND_DIR = src/frontend
 endif
 
-# Detecção de Sistema Operacional (Windows vs Unix)
-OS := $(shell (uname 2>NUL) || echo Windows_NT)
+# Detecção de Sistema Operacional (Windows vs Unix).
+# No Windows, a variável de ambiente OS já vale "Windows_NT" e é importada
+# pelo make; no Unix ela fica vazia e usamos `uname`. Não redirecionamos para
+# NUL: o $(shell) roda em /bin/sh e, no Unix, "2>NUL" criaria um arquivo NUL.
+ifneq ($(OS),Windows_NT)
+OS := $(shell uname)
+endif
 
 # Mapeamento de binários e comandos específicos por OS
 ifeq ($(OS),Windows_NT)
@@ -32,6 +37,7 @@ ifeq ($(OS),Windows_NT)
     UI_BOLD     =
     UI_RESET    =
     PRINT       = @echo
+    PAUSE_CMD   = pause
     # Caminho do Python do .venv visto a partir de src\backend\
     PY_FROM_BACKEND = ..\..\$(VENV)\Scripts\python.exe
 else
@@ -47,6 +53,7 @@ else
     UI_BOLD     = \033[1;36m
     UI_RESET    = \033[0m
     PRINT       = @printf '%b\n'
+    PAUSE_CMD   = true
     # Caminho do Python do .venv visto a partir de src/backend/
     PY_FROM_BACKEND = ../../$(VENV)/bin/python3
 endif
@@ -161,8 +168,11 @@ test-frontend-e2e:
 # test: roda todos os testes do projeto (backend + frontend unit)
 # Obs.: testes E2E (Playwright) não são incluídos por padrão pois exigem o
 # servidor do frontend de pé. Rode `make test-frontend-e2e` separadamente.
-test: test-backend test-frontend-unit
+test:
+	-@$(MAKE) test-backend
+	-@$(MAKE) test-frontend-unit
 	@$(PRINT) "$(UI_BOLD)Todos os testes (backend + frontend unit) concluidos.$(UI_RESET)"
+	@$(PAUSE_CMD)
 
 # ──────────────────────────────────────────────────────────────────────
 # Cobertura de testes (threshold 70%)
