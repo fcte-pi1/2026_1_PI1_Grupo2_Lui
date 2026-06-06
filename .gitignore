@@ -29,6 +29,16 @@ mkdocs_material.egg-info
 .eslintcache
 __pycache__
 
+# Relatorios de cobertura de testes
+coverage
+coverage_html
+coverage.xml
+.coverage
+.coverage.*
+htmlcov
+.pytest_cache
+pytest-cache-files-*
+
 # LaTeX
 
 relatorio.pdf

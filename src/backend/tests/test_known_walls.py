@@ -1,4 +1,3 @@
-"""known_walls: matriz de paredes persistida e devolvida."""
 import os, sys, pathlib
 BACKEND_DIR = pathlib.Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(BACKEND_DIR))
@@ -25,7 +24,7 @@ def _reset():
 
 
 def _walls_4x4():
-    # Matriz 4x4 com perímetro marcado e algumas paredes internas.
+    # walls[x][y] = [N, E, S, W]
     size = 4
     walls = [[[False] * 4 for _ in range(size)] for _ in range(size)]
     for x in range(size):
@@ -34,7 +33,7 @@ def _walls_4x4():
             if x == size - 1: walls[x][y][1] = True
             if y == size - 1: walls[x][y][2] = True
             if x == 0:        walls[x][y][3] = True
-    # Parede interna entre (1,1) e (2,1): leste de (1,1) = oeste de (2,1)
+    # parede compartilhada: leste de (1,1) = oeste de (2,1)
     walls[1][1][1] = True
     walls[2][1][3] = True
     return walls

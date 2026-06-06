@@ -1,10 +1,7 @@
 import { render, screen } from '@testing-library/react';
 import App from './App';
 
-// Mock global do WebSocket: o useWebSocket abre conexão no mount; em ambiente Jest
-// não há servidor, então fornecemos um stub mínimo que registra os handlers e
-// nunca dispara onopen/onmessage. Isso impede o setInterval de reconexão de
-// rodar indefinidamente nos testes.
+// Stub do WS — sem servidor no Jest, evita loop de reconexão do useWebSocket
 beforeAll(() => {
   global.WebSocket = class {
     constructor() {
@@ -15,7 +12,7 @@ beforeAll(() => {
   };
 });
 
-// Mock global do fetch: HistoryView dispara GET /historico ao abrir a aba.
+// HistoryView dispara GET /historico no mount
 beforeAll(() => {
   global.fetch = jest.fn(() =>
     Promise.resolve({
@@ -27,9 +24,7 @@ beforeAll(() => {
 
 test('smoke: o dashboard renderiza com o cabeçalho do projeto', () => {
   render(<App />);
-  // Cabeçalho com a marca do produto
   expect(screen.getByText(/micromouse/i)).toBeInTheDocument();
-  // Tabs principais
   expect(screen.getByRole('button', { name: /Mapa/i })).toBeInTheDocument();
   expect(screen.getByRole('button', { name: /Histórico/i })).toBeInTheDocument();
 });

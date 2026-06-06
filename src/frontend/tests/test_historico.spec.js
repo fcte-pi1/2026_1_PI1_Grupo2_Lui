@@ -1,11 +1,4 @@
-// Playwright — CT-24, CT-28, CT-29 com /historico mockado.
-//
-// Para rodar (com frontend em http://localhost:3000):
-//   npx playwright test tests/test_historico.spec.js
-
 import { test, expect } from '@playwright/test';
-
-// ── Helpers ────────────────────────────────────────────
 
 async function abrirHistorico(page) {
   await page.goto('http://localhost:3000');
@@ -13,7 +6,7 @@ async function abrirHistorico(page) {
   await expect(page.getByTestId('historico-view')).toBeVisible();
 }
 
-// Massa de corridas no shape exato do backend (GET /historico → {status, data}).
+// shape do backend: GET /historico → { status, data }
 const CORRIDAS_MOCK = [
   {
     id: 1, robot_id: 'micromouse_01', maze_type: '4x4',
@@ -63,8 +56,6 @@ async function mockHistorico(page, corridas) {
     });
   });
 }
-
-// ── Testes ────────────────────────────────────────────
 
 test.describe('CT-28 / CT-29 — Filtros do histórico (API mockada)', () => {
   test('CT-28: filtro 4x4 exibe apenas corridas 4x4', async ({ page }) => {
@@ -132,7 +123,6 @@ test.describe('Coluna Tipo — Simulada × Real', () => {
     await abrirHistorico(page);
     const itens = page.getByTestId('corrida-item');
     await expect(itens).toHaveCount(3);
-    // ao menos uma "Real" (id=1 e id=3) e uma "Simulada" (id=2)
     await expect(page.locator('[data-testid="corrida-item"]').filter({ hasText: /Real/i })).toHaveCount(2);
     await expect(page.locator('[data-testid="corrida-item"]').filter({ hasText: /Simulada/i })).toHaveCount(1);
   });

@@ -1,0 +1,25 @@
+[run]
+branch = True
+source = .
+omit =
+    tests/*
+    */__pycache__/*
+    */.pytest_cache/*
+    */pytest-cache-files-*/*
+    .coveragerc
+    pytest.ini
+    db/*
+
+[report]
+exclude_lines =
+    pragma: no cover
+    raise NotImplementedError
+    if __name__ == .__main__.:
+    if TYPE_CHECKING:
+precision = 1
+show_missing = True
+skip_covered = False
+
+[html]
+directory = coverage_html
+title = Cobertura — Backend Micromouse

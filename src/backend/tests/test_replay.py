@@ -1,4 +1,3 @@
-"""GET /historico/{id} para replay (RF-17/US17)."""
 import os, sys, pathlib
 BACKEND_DIR = pathlib.Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(BACKEND_DIR))

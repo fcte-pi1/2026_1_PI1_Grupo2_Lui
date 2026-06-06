@@ -1,8 +1,3 @@
-"""
-Testes do par source/success — distingue corridas reais do firmware das do
-simulador local e registra se o desafio foi cumprido.
-"""
-
 import os
 import sys
 import pathlib
