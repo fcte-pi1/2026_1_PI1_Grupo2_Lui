@@ -247,6 +247,16 @@ export function useMazeSimulator(initialGridSize = 16) {
         mem.bfsCount = 0;
         mem.timeMs = 0;
         mem.status = 'Aguardando';
+        // Pista física: 18 cm por célula → 180 mm. Centro da célula = celula*180 + 90.
+        mem.pathHistory = [{
+            x: 0 * 180 + 90,
+            y: (currentSize - 1) * 180 + 90,
+            z: 9.81,
+        }];
+        mem.batteryStartV = 8.0;
+        mem.batteryEndV = 7.1;
+        mem.startedAtIso = null;
+        mem.startedAtMs = 0;
 
         initRobotMemory(currentSize);
         floodFill(currentSize);
@@ -298,14 +308,27 @@ export function useMazeSimulator(initialGridSize = 16) {
         mem.robot.y += DY[mem.robot.dir];
         mem.steps++;
         mem.timeMs += speed;
-        
+
+        // Acumula posição em mm para enviar como path_traversed ao backend.
+        mem.pathHistory.push({
+            x: mem.robot.x * 180 + 90,
+            y: mem.robot.y * 180 + 90,
+            z: 9.81,
+        });
+
         forceRender();
     }, [gridSize, senseWalls, floodFill, getBestNeighbor, speed]);
 
     useEffect(() => {
         let interval;
         if (isRunning) {
-            memory.current.status = "Mapeando...";
+            const mem = memory.current;
+            mem.status = "Mapeando...";
+            // Marca início da corrida na primeira vez que sai de pausa.
+            if (!mem.startedAtIso) {
+                mem.startedAtIso = new Date().toISOString();
+                mem.startedAtMs = Date.now();
+            }
             interval = setInterval(step, speed);
         }
         return () => clearInterval(interval);
