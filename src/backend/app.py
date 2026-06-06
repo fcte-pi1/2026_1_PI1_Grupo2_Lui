@@ -1,7 +1,8 @@
+import asyncio
 import logging
 import math
 from typing import Optional
-from fastapi import FastAPI, Query, HTTPException
+from fastapi import FastAPI, Query, HTTPException, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
 
 from database.database import init_db, salvar_corrida, listar_corridas
@@ -10,6 +11,7 @@ from memory.session_buffer import (
     clear_session, calculate_avg_speed
 )
 from schemas.telemetria import TelemetriaSchema, MazeTypeEnum, RaceStatusEnum
+from websocket.manager import manager
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
@@ -37,9 +39,20 @@ def calcular_distancia_total(path_traversed: list) -> float:
         dist_total += math.hypot(p2.x - p1.x, p2.y - p1.y)
     return dist_total
 
+@app.websocket("/ws/dashboard")
+async def websocket_dashboard(websocket: WebSocket):
+    await manager.connect(websocket)
+    try:
+        while True:
+            await websocket.receive_text()
+    except WebSocketDisconnect:
+        manager.disconnect(websocket)
+    except Exception as exc:
+        logger.warning(f"Conexão WebSocket encerrada inesperadamente: {exc}")
+        manager.disconnect(websocket)
 
 @app.post("/telemetria", status_code=200)
-def receber_telemetria(dados: TelemetriaSchema):
+async def receber_telemetria(dados: TelemetriaSchema):
     logger.info(f"Recebido: Robô {dados.robot_id} | Status: {dados.race_status} | Evento: {dados.event}")
 
     if dados.race_status == RaceStatusEnum.running:
@@ -89,6 +102,11 @@ def receber_telemetria(dados: TelemetriaSchema):
     elif dados.race_status == RaceStatusEnum.error:
         clear_session(dados.robot_id)
 
+    session = get_session(dados.robot_id)
+    passos_atual = len(session.path_points) if session else len(dados.path_traversed)
+    await manager.broadcast({**dados.model_dump(), "step_count": passos_atual})
+    logger.info(f"Telemetria transmitidas para {manager.active_count} dashboard(s) conectados.")
+
     return {"status": "sucesso", "mensagem": "Dados processados"}
 
 
@@ -99,7 +117,7 @@ def obter_historico(
         description="Filtra o histórico pelo tipo de labirinto. Valores permitidos: 4x4, 8x8, 16x16"
     )
 ):
-    try:
+    try: 
         filtro = maze_type.value if maze_type else None
         corridas = listar_corridas(filtro)
         return {"status": "sucesso", "data": corridas}

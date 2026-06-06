@@ -1,19 +1,54 @@
-# _Backend_
+# Backend — API de Telemetria do Robô
 
-Esta pasta deverá armazenar arquivos referentes a:
+API REST + WebSocket desenvolvida com **FastAPI** para recebimento, processamento e transmissão em tempo real dos dados de telemetria do micromouse.
 
-- Código-fonte da API REST: rotas, controladores, modelos e lógica de negócio.
-- Arquivos de configuração do servidor: `app.py`, `server.js`, `main.go` etc., dependendo da linguagem/framework utilizado ([Flask](https://flask.palletsprojects.com/), [FastAPI](https://fastapi.tiangolo.com/), [Express](https://expressjs.com/), [Django](https://www.djangoproject.com/) etc.).
-- Arquivos de definição de dependências: `requirements.txt` ou `pyproject.toml` (Python), `package.json` (Node.js), `pom.xml` (Java/Maven) etc.
-- Scripts de migração e esquemas de banco de dados: arquivos `.sql`, scripts de migração ([Alembic](https://alembic.sqlalchemy.org/), [Sequelize](https://sequelize.org/) etc.) e seeds de dados para desenvolvimento.
-- Arquivos de configuração de ambiente: `.env.example` com as variáveis de ambiente necessárias (nunca o `.env` real).
-- Arquivos de containerização: `Dockerfile` e `docker-compose.yml`, caso o serviço seja executado em contêiner.
+## Estrutura
 
-Evite incluir:
+```
+backend/
+├── app.py                  # Entrypoint da aplicação (rotas HTTP e WebSocket)
+├── requirements.txt        # Dependências do projeto
+├── database/
+│   └── database.py         # Inicialização do banco e persistência de corridas
+├── memory/
+│   └── session_buffer.py   # Buffer em memória para sessões de corrida ativas
+├── schemas/
+│   └── telemetria.py       # Schemas Pydantic (validação dos pacotes)
+├── websocket/
+│   └── manager.py          # Gerenciador de conexões WebSocket (broadcast)
+├── tests/
+│   └── test_app.py         # Testes da API
+└── db/
+    └── telemetria.db       # Banco de dados SQLite (gerado automaticamente)
+```
 
-- Credenciais e segredos: arquivos `.env`, chaves de API, senhas, tokens de acesso ou qualquer dado sensível **nunca** devem ser versionados.
-- Artefatos de build: diretórios como `__pycache__/`, `dist/`, `build/`, `.eggs/` devem ser gerados localmente e ignorados via `.gitignore`.
-- Dependências instaladas: pastas como `node_modules/` ou ambientes virtuais Python (`venv/`, `.env/`) não devem ser incluídos no repositório.
-- Arquivos temporários/específicos do sistema operacional: arquivos gerados automaticamente pelo sistema ou pelo gerenciador de arquivos (ex.: `*~`, `.DS_Store`, `Thumbs.db`).
-> [!WARNING]
-> **Não acrescente arquivos referentes ao _frontend_ nesta pasta.** Eles deverão ser armazenados na pasta [frontend](https://github.com/fcte-pi1/template/tree/main/src/frontend) deste repositório.
+## Endpoints
+
+### `POST /telemetria`
+Recebe pacotes de telemetria do firmware. Valida o payload, atualiza a sessão em memória e, ao final da corrida, persiste o histórico no banco. Todo pacote válido é transmitido em tempo real via WebSocket para os dashboards conectados.
+
+### `GET /historico`
+Retorna o histórico de corridas salvas. Aceita filtro opcional por tipo de labirinto (`4x4`, `8x8`, `16x16`).
+
+### `WS /ws/dashboard`
+Endpoint WebSocket para conexão dos dashboards. Suporta múltiplos clientes simultâneos — cada pacote de telemetria válido recebido é transmitido a todos os conectados em tempo real.
+
+## Como executar
+
+```bash
+pip install -r requirements.txt
+uvicorn app:app --reload
+```
+
+A API estará disponível em `http://localhost:8000`.  
+Documentação interativa em `http://localhost:8000/docs`.
+
+## Como testar o WebSocket
+
+Com o servidor rodando, conecte um cliente WebSocket:
+
+```bash
+websocat ws://localhost:8000/ws/dashboard
+```
+
+Em outro terminal, envie um pacote de telemetria via `POST /telemetria` e o dashboard receberá o JSON imediatamente.
