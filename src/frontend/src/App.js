@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
-import { Cpu, Wifi, Play, Pause, Bot, RotateCw, ChevronDown, Battery, Clock, Footprints, Gauge, RefreshCw, Zap, Timer, Download, CheckCircle2, XCircle, Calendar, Square, Trophy, Table } from 'lucide-react';
+import { Cpu, Wifi, Play, Pause, Bot, RotateCw, ChevronDown, Battery, Clock, Footprints, Gauge, RefreshCw, Zap, Timer, Download, CheckCircle2, XCircle, Calendar, Square, Trophy, Table, ChevronRight } from 'lucide-react';
 import { useMazeSimulator } from './useMazeSimulator';
 import { CELL_MM, DX as DXR, DY as DYR, mmToCell } from './utils/maze';
 import { useWebSocket } from './useWebSocket';
@@ -907,47 +907,130 @@ const AlgoStat = ({ label, value }) => (
 /* ============================================================
    VISÃO DE HISTÓRICO
    ============================================================ */
-const RankingPanel = ({ runs }) => {
+const RankingPanel = ({ runs, onSelectRun }) => {
+  const [sourceFilter, setSourceFilter] = useState('Todos');
+
   const ranking = useMemo(() => {
-    const sizes = ['4x4', '8x8', '16x16'];
-    const out = {};
-    for (const size of sizes) {
-      out[size] = runs
-        .filter(r => r.maze === size && r.status === 'Centro Alcançado!')
-        .sort((a, b) => parseTimeToSeconds(a.time) - parseTimeToSeconds(b.time))
-        .slice(0, 5);
-    }
-    return out;
-  }, [runs]);
+    return runs
+      .filter(r => r.status === 'Centro Alcançado!')
+      .filter(r => sourceFilter === 'Todos' || r.source === (sourceFilter === 'Físico' ? 'real' : 'simulator'))
+      .sort((a, b) => parseTimeToSeconds(a.time) - parseTimeToSeconds(b.time));
+  }, [runs, sourceFilter]);
+
+  const getPodiumStyle = (idx) => {
+    if (idx === 0) return 'border-l-2 border-l-yellow-400 bg-yellow-500/10 text-yellow-400';
+    if (idx === 1) return 'border-l-2 border-l-slate-400 bg-slate-400/10 text-slate-300';
+    if (idx === 2) return 'border-l-2 border-l-amber-600 bg-amber-600/10 text-amber-500';
+    return 'border-l-2 border-l-transparent text-brand-h3 hover:bg-app-hover';
+  };
+
+  const getPodiumIcon = (idx) => {
+    if (idx === 0) return <div className="w-3 h-3 rounded-full bg-yellow-400/80" />;
+    if (idx === 1) return <div className="w-3 h-3 rounded-full bg-slate-400/80" />;
+    if (idx === 2) return <div className="w-3 h-3 rounded-full bg-amber-600/80" />;
+    return <span className="font-bold text-xs opacity-50 text-brand-h3">{idx + 1}</span>;
+  };
 
   return (
     <div className="mb-6">
-      <div className="flex items-center gap-2 mb-3">
-        <Zap size={16} className="text-brand-amber" />
-        <h3 className="text-sm font-semibold text-brand-h2 uppercase tracking-wider">Ranking — Top 5 por Labirinto</h3>
+      <div className="flex justify-between items-center mb-4">
+        <div className="flex items-center gap-2">
+          <h3 className="text-sm font-semibold text-brand-h2 uppercase tracking-wider">Ranking Geral</h3>
+        </div>
+        <div className="pill-container">
+          {['Todos', 'Físico', 'Simulador'].map(f => (
+            <button
+              key={f}
+              onClick={() => setSourceFilter(f)}
+              className={`pill-item font-medium text-xs transition-colors ${
+                sourceFilter === f ? 'bg-brand-purple text-white' : 'text-brand-h3 hover:text-brand-h1 hover:bg-white/[0.03]'
+              }`}
+            >
+              {f}
+            </button>
+          ))}
+        </div>
       </div>
-      <div className="grid grid-cols-3 gap-3">
-        {['4x4', '8x8', '16x16'].map(size => (
-          <div key={size} className="bg-app-bg border border-border-rule rounded-xl p-3 shadow-card">
-            <div className="text-label mb-2">{size}</div>
-            {ranking[size].length === 0 ? (
-              <div className="text-brand-h3 text-xs italic py-2">Sem corridas concluídas</div>
-            ) : (
-              <ol className="space-y-1">
-                {ranking[size].map((run, idx) => (
-                  <li key={run.id} className="flex items-center justify-between text-xs">
-                    <div className="flex items-center gap-2 min-w-0">
-                      <span className={`font-bold w-4 text-center ${idx === 0 ? 'text-brand-amber' : 'text-brand-h3'}`}>{idx + 1}</span>
-                      <span className={`w-1.5 h-1.5 rounded-full ${run.source === 'simulator' ? 'bg-brand-purple-light' : 'bg-brand-green'}`} title={run.source === 'simulator' ? 'Simulada' : 'Real'} />
-                      <span className="text-brand-h1 font-mono truncate">{run.time}</span>
-                    </div>
-                    <span className="text-brand-h3 text-[10px]">{run.steps} pas</span>
-                  </li>
-                ))}
-              </ol>
+      
+      <div className="overflow-hidden rounded-xl border border-border-rule bg-app-bg shadow-card">
+        <table className="w-full text-left border-collapse whitespace-nowrap">
+          <thead className="bg-app-surface border-b border-border-rule">
+            <tr>
+              <th className="p-4 text-label w-16 text-center">Posição</th>
+              <th className="p-4 text-label">Tipo</th>
+              <th className="p-4 text-label">Labirinto</th>
+              <th className="p-4 text-label">Tempo</th>
+              <th className="p-4 text-label">Velocidade</th>
+              <th className="p-4 text-label">Bateria</th>
+              <th className="p-4 text-label">Movimentos</th>
+              <th className="p-4 text-label">Status</th>
+              <th className="p-4 text-label w-10 text-center"></th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-border-rule">
+            {ranking.length > 0 ? ranking.map((run, idx) => (
+              <tr key={run.id} onClick={() => onSelectRun(run)} className={`transition-colors cursor-pointer group ${getPodiumStyle(idx)}`}>
+                <td className="p-4">
+                  <div className="flex justify-center items-center h-full">
+                    {getPodiumIcon(idx)}
+                  </div>
+                </td>
+                <td className="p-4">
+                  {run.source === 'simulator' ? (
+                    <span className="badge w-[100px] bg-brand-purple text-white" title="Corrida gerada no simulador local">
+                      <Cpu size={14} />
+                      <span>Simulada</span>
+                    </span>
+                  ) : (
+                    <span className="badge w-[100px] bg-brand-green text-white" title="Corrida do robô físico">
+                      <Bot size={14} />
+                      <span>Corrida</span>
+                    </span>
+                  )}
+                </td>
+                <td className="p-4 text-brand-h2 font-medium text-sm">
+                  <div className="bg-app-raised inline-block px-3 py-1 rounded-lg border border-border-rule font-mono">{run.maze}</div>
+                </td>
+                <td className={`p-4 font-mono text-sm h-14 ${idx === 0 ? 'text-yellow-400 font-bold' : 'text-brand-h1'}`}>
+                  <div className="flex items-center gap-2 h-full">
+                    <span>{run.time}</span>
+                  </div>
+                </td>
+                <td className="p-4 text-brand-h2 text-sm">{run.speed}</td>
+                <td className="p-4">
+                  <div className="flex items-center gap-2">
+                    <Battery size={16} className="text-brand-green"/>
+                    <span className="text-brand-h1 text-sm">{run.battery}</span>
+                  </div>
+                </td>
+                <td className="p-4">
+                  <div className="flex items-center gap-2">
+                    <Footprints size={16} className="text-brand-purple-light"/>
+                    <span className="text-brand-h1 text-sm">{run.steps}</span>
+                  </div>
+                </td>
+                <td className="p-4">
+                  <div className="inline-flex items-center justify-center h-6 px-3 rounded-md border text-[11px] font-semibold leading-none gap-1.5 w-max text-white bg-brand-green border-transparent">
+                    <CheckCircle2 size={14}/>
+                    <span>{run.status}</span>
+                  </div>
+                </td>
+                <td className="p-4 text-right">
+                  <div className="text-brand-h3 group-hover:text-brand-h1 transition-colors flex items-center justify-end">
+                    <span className="text-xs mr-1 opacity-0 group-hover:opacity-100 transition-opacity">Replay</span>
+                    <ChevronRight size={16} />
+                  </div>
+                </td>
+              </tr>
+            )) : (
+              <tr>
+                <td colSpan="8" data-testid="estado-vazio" className="p-12 text-center text-brand-h3">
+                  Nenhuma corrida concluída encontrada no ranking.
+                </td>
+              </tr>
             )}
-          </div>
-        ))}
+          </tbody>
+        </table>
       </div>
     </div>
   );
@@ -1015,26 +1098,24 @@ const HistoryView = ({ historyData, filter, setFilter, loading, error, onRefresh
           <button
             data-testid="pill-item"
             onClick={() => setSubTab('tabela')}
-            className={`group pill-item gap-2 font-medium text-sm transition-all ${
+            className={`group pill-item font-medium text-sm transition-all ${
               subTab === 'tabela'
                 ? 'text-white bg-brand-purple'
                 : 'text-brand-h3 hover:text-brand-h1 hover:bg-white/[0.03]'
             }`}
           >
-            <Footprints size={16} className="transition-transform group-hover:rotate-12 group-active:scale-90" />
-            <span>Tabela</span>
+            Tabela
           </button>
           <button
             data-testid="pill-item"
             onClick={() => setSubTab('ranking')}
-            className={`group pill-item gap-2 font-medium text-sm transition-all ${
+            className={`group pill-item font-medium text-sm transition-all ${
               subTab === 'ranking'
                 ? 'text-white bg-brand-purple'
                 : 'text-brand-h3 hover:text-brand-h1 hover:bg-white/[0.03]'
             }`}
           >
-            <Zap size={16} className="transition-transform group-hover:scale-110 group-active:scale-90" />
-            <span>Ranking</span>
+            Ranking
           </button>
         </div>
 
@@ -1096,7 +1177,7 @@ const HistoryView = ({ historyData, filter, setFilter, loading, error, onRefresh
         </div>
       )}
 
-      {subTab === 'ranking' && <RankingPanel runs={historyData} />}
+      {subTab === 'ranking' && <RankingPanel runs={historyData} onSelectRun={setSelectedRun} />}
 
       {subTab === 'tabela' && (
         <div className="overflow-hidden rounded-xl border border-border-rule bg-app-bg shadow-card">
@@ -1111,6 +1192,7 @@ const HistoryView = ({ historyData, filter, setFilter, loading, error, onRefresh
                 <th className="p-4 text-label">Bateria</th>
                 <th className="p-4 text-label">Movimentos</th>
                 <th className="p-4 text-label">Status</th>
+                <th className="p-4 text-label w-10 text-center"></th>
               </tr>
           </thead>
           <tbody className="divide-y divide-border-rule">
@@ -1164,6 +1246,12 @@ const HistoryView = ({ historyData, filter, setFilter, loading, error, onRefresh
                   }`}>
                     {run.status === 'Centro Alcançado!' ? <CheckCircle2 size={14}/> : <XCircle size={14}/>}
                     <span>{run.status}</span>
+                  </div>
+                </td>
+                <td className="p-4 text-right">
+                  <div className="text-brand-h3 group-hover:text-brand-h1 transition-colors flex items-center justify-end">
+                    <span className="text-xs mr-1 opacity-0 group-hover:opacity-100 transition-opacity">Replay</span>
+                    <ChevronRight size={16} />
                   </div>
                 </td>
               </tr>
