@@ -48,8 +48,13 @@ export function formatSpeedMmS(mmS) {
  * Converte tensão da bateria (V) em porcentagem aproximada.
  * Assume pack 2S Li-Ion (vazia ≈ 6.0 V, cheia ≈ 8.4 V). Ajuste se o hardware mudar.
  */
-export function batteryVoltsToPercent(v, vMin = 6.0, vMax = 8.4) {
+export function batteryVoltsToPercent(v, defaultMin = 6.0, defaultMax = 8.4) {
   if (v === null || v === undefined) return null;
+  const storedMin = localStorage.getItem('BATT_VMIN');
+  const storedMax = localStorage.getItem('BATT_VMAX');
+  const vMin = storedMin !== null ? parseFloat(storedMin) : defaultMin;
+  const vMax = storedMax !== null ? parseFloat(storedMax) : defaultMax;
+  
   const pct = ((v - vMin) / (vMax - vMin)) * 100;
   return Math.max(0, Math.min(100, Math.round(pct)));
 }

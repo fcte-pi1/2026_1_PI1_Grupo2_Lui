@@ -283,4 +283,9 @@ describe('estabilidade de layout e componentes customizados', () => {
       expect(match).toMatch(/rounded-\[16px\]/);
     });
   });
+
+  test('o sistema não usa elementos nativos <select> em favor de <CustomSelect> para consistência de UI', () => {
+    // Validar que o código de App.js não contém a tag nativa <select>
+    expect(APP_SRC).not.toMatch(/<select\b/);
+  });
 });

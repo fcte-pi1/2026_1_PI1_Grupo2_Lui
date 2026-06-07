@@ -142,16 +142,18 @@ const ReplayCanvas = ({ pathMm, mazeSize, knownWalls }) => {
               <RotateCw size={11}/><span>Reiniciar</span>
             </button>
           </div>
-          <select
+          <CustomSelect
             value={speedMs}
-            onChange={(e) => setSpeedMs(parseInt(e.target.value, 10))}
-            className="bg-app-raised border border-border-rule text-brand-h2 text-xs font-medium px-2 py-1 rounded-lg focus:outline-none cursor-pointer"
-          >
-            <option value={400}>0.5×</option>
-            <option value={150}>1×</option>
-            <option value={75}>2×</option>
-            <option value={30}>5×</option>
-          </select>
+            onChange={(val) => setSpeedMs(parseInt(val, 10))}
+            options={[
+              { value: 400, label: '0.5×' },
+              { value: 150, label: '1×' },
+              { value: 75, label: '2×' },
+              { value: 30, label: '5×' }
+            ]}
+            className="bg-app-raised border border-border-rule text-brand-h2 text-xs font-medium px-2 py-1 rounded-[16px] cursor-pointer min-w-[70px]"
+            dropdownWidth="w-auto"
+          />
         </div>
       </div>
     </div>
@@ -215,9 +217,26 @@ const SettingsView = ({ wsUrl, setWsUrl, wsStatus, refreshHistory }) => {
   const [deleteInput, setDeleteInput] = useState('');
   const [feedbackMessage, setFeedbackMessage] = useState(null);
 
+  const [battMin, setBattMin] = useState(() => localStorage.getItem('BATT_VMIN') || '6.0');
+  const [battMax, setBattMax] = useState(() => localStorage.getItem('BATT_VMAX') || '8.4');
+  const [latencyLimit, setLatencyLimit] = useState(() => localStorage.getItem('LATENCY_THRESHOLD') || '500');
+
   const handleSaveWs = () => {
     localStorage.setItem('WS_URL', inputUrl);
     setWsUrl(inputUrl);
+    setFeedbackMessage({ title: 'Sucesso', text: 'URL do WebSocket salva com sucesso!', type: 'success' });
+  };
+
+  const handleSaveBattery = () => {
+    localStorage.setItem('BATT_VMIN', battMin);
+    localStorage.setItem('BATT_VMAX', battMax);
+    refreshHistory('Todos'); // Atualiza a tabela para recalcular as %
+    setFeedbackMessage({ title: 'Sucesso', text: 'Calibração de bateria salva! Os percentuais foram recalculados.', type: 'success' });
+  };
+
+  const handleSaveLatency = () => {
+    localStorage.setItem('LATENCY_THRESHOLD', latencyLimit);
+    setFeedbackMessage({ title: 'Sucesso', text: 'Sensibilidade de conexão atualizada.', type: 'success' });
   };
 
   const handleExportCsv = async () => {
@@ -277,7 +296,7 @@ const SettingsView = ({ wsUrl, setWsUrl, wsStatus, refreshHistory }) => {
               <label className="block text-brand-h3 text-xs mb-1">URL do WebSocket</label>
               <input 
                 type="text" 
-                className="w-full bg-app-surface border border-border-rule rounded-md px-3 py-2 text-brand-h1 text-sm focus:outline-none focus:border-brand-purple"
+                className="w-full bg-app-surface border border-border-rule rounded-xl px-3 py-2 text-brand-h1 text-sm focus:outline-none focus:border-brand-purple"
                 value={inputUrl}
                 onChange={e => setInputUrl(e.target.value)}
                 placeholder="ws://localhost:8000/ws/dashboard"
@@ -285,7 +304,7 @@ const SettingsView = ({ wsUrl, setWsUrl, wsStatus, refreshHistory }) => {
             </div>
             <button 
               onClick={handleSaveWs}
-              className="bg-brand-purple hover:bg-brand-purple-light text-white font-medium text-sm px-6 py-2.5 rounded-md transition-colors whitespace-nowrap"
+              className="w-48 h-[42px] flex items-center justify-center bg-brand-purple hover:bg-brand-purple-light text-white font-medium text-sm rounded-xl transition-colors whitespace-nowrap"
             >
               Salvar Conexão
             </button>
@@ -303,20 +322,80 @@ const SettingsView = ({ wsUrl, setWsUrl, wsStatus, refreshHistory }) => {
         </div>
 
         <div className="bg-app-bg rounded-xl border border-border-rule p-6 shadow-card">
+          <h2 className="text-xl font-bold text-brand-h1 mb-4">Calibração da Bateria</h2>
+          <p className="text-brand-h3 text-sm mb-4">Ajuste os valores mínimo e máximo de tensão (Volts) da bateria do seu robô para que o dashboard calcule corretamente a porcentagem de carga.</p>
+          <div className="flex flex-col sm:flex-row gap-4 items-end">
+            <div className="flex-1 w-full">
+              <label className="block text-brand-h3 text-xs mb-1">Tensão Mínima (V) - 0%</label>
+              <input 
+                type="number" step="0.1"
+                className="w-full bg-app-surface border border-border-rule rounded-xl px-3 py-2 text-brand-h1 text-sm focus:outline-none focus:border-brand-purple"
+                value={battMin}
+                onChange={e => setBattMin(e.target.value)}
+                placeholder="6.0"
+              />
+            </div>
+            <div className="flex-1 w-full">
+              <label className="block text-brand-h3 text-xs mb-1">Tensão Máxima (V) - 100%</label>
+              <input 
+                type="number" step="0.1"
+                className="w-full bg-app-surface border border-border-rule rounded-xl px-3 py-2 text-brand-h1 text-sm focus:outline-none focus:border-brand-purple"
+                value={battMax}
+                onChange={e => setBattMax(e.target.value)}
+                placeholder="8.4"
+              />
+            </div>
+            <button 
+              onClick={handleSaveBattery}
+              className="w-48 h-[42px] flex items-center justify-center bg-brand-purple hover:bg-brand-purple-light text-white font-medium text-sm rounded-xl transition-colors whitespace-nowrap"
+            >
+              Salvar Calibração
+            </button>
+          </div>
+        </div>
+
+        <div className="bg-app-bg rounded-xl border border-border-rule p-6 shadow-card">
+          <h2 className="text-xl font-bold text-brand-h1 mb-4">Alertas de Conexão</h2>
+          <p className="text-brand-h3 text-sm mb-4">Configure o limite de latência aceitável para o indicador de ping emitir avisos (Padrão RNF: 500ms).</p>
+          <div className="flex flex-col sm:flex-row gap-4 items-end">
+            <div className="flex-1 w-full">
+              <label className="block text-brand-h3 text-xs mb-1">Sensibilidade do Ping (ms)</label>
+              <CustomSelect
+                className="w-full bg-app-surface border border-border-rule rounded-[16px] px-3 py-2 text-brand-h1 text-sm focus:outline-none focus:border-brand-purple"
+                value={latencyLimit.toString()}
+                onChange={(val) => setLatencyLimit(val)}
+                options={[
+                  { value: "300", label: "Rigoroso (300ms)" },
+                  { value: "500", label: "Padrão (500ms)" },
+                  { value: "1000", label: "Tolerante (1000ms)" },
+                  { value: "2000", label: "Muito Tolerante (2000ms)" }
+                ]}
+              />
+            </div>
+            <button 
+              onClick={handleSaveLatency}
+              className="w-48 h-[42px] flex items-center justify-center bg-brand-purple hover:bg-brand-purple-light text-white font-medium text-sm rounded-xl transition-colors whitespace-nowrap"
+            >
+              Salvar Alerta
+            </button>
+          </div>
+        </div>
+
+        <div className="bg-app-bg rounded-xl border border-border-rule p-6 shadow-card">
           <h2 className="text-xl font-bold text-brand-h1 mb-4">Gerenciamento de Dados</h2>
           <p className="text-brand-h3 text-sm mb-6">Exporte as corridas consolidadas para planilhas ou apague o histórico de testes para iniciar uma nova sessão limpa na competição.</p>
           
           <div className="flex flex-col sm:flex-row gap-4">
             <button 
               onClick={handleExportCsv}
-              className="flex-1 bg-app-surface hover:bg-app-hover border border-border-rule text-brand-h1 font-medium text-sm px-6 py-3 rounded-md transition-colors flex items-center justify-center gap-2"
+              className="flex-1 bg-app-surface hover:bg-app-hover border border-border-rule text-brand-h1 font-medium text-sm px-6 py-3 rounded-xl transition-colors flex items-center justify-center gap-2"
             >
               <Download size={16} />
               Exportar Histórico (CSV)
             </button>
             <button 
               onClick={() => { setShowDeleteModal(true); setDeleteInput(''); }}
-              className="flex-1 bg-app-surface hover:bg-brand-danger/20 border border-brand-danger/30 text-brand-danger font-medium text-sm px-6 py-3 rounded-md transition-colors flex items-center justify-center gap-2"
+              className="flex-1 bg-app-surface hover:bg-brand-danger/20 border border-brand-danger/30 text-brand-danger font-medium text-sm px-6 py-3 rounded-xl transition-colors flex items-center justify-center gap-2"
             >
               <XCircle size={16} />
               Limpar Banco de Dados
@@ -346,7 +425,7 @@ const SettingsView = ({ wsUrl, setWsUrl, wsStatus, refreshHistory }) => {
 
             <input 
               type="text" 
-              className="w-full bg-app-surface border border-brand-danger/50 rounded-md px-3 py-2 text-brand-h1 text-sm focus:outline-none focus:border-brand-danger mb-6 font-mono text-center"
+              className="w-full bg-app-surface border border-brand-danger/50 rounded-xl px-3 py-2 text-brand-h1 text-sm focus:outline-none focus:border-brand-danger mb-6 font-mono text-center"
               value={deleteInput}
               onChange={e => setDeleteInput(e.target.value)}
               placeholder="deletar"
@@ -355,14 +434,14 @@ const SettingsView = ({ wsUrl, setWsUrl, wsStatus, refreshHistory }) => {
             <div className="flex gap-4">
               <button 
                 onClick={() => setShowDeleteModal(false)}
-                className="flex-1 bg-app-surface hover:bg-app-hover border border-border-rule text-brand-h1 font-medium text-sm px-4 py-2 rounded-md transition-colors"
+                className="flex-1 bg-app-surface hover:bg-app-hover border border-border-rule text-brand-h1 font-medium text-sm px-4 py-2 rounded-xl transition-colors"
               >
                 Cancelar
               </button>
               <button 
                 onClick={handleClearDatabase}
                 disabled={deleteInput !== 'deletar'}
-                className="flex-1 bg-brand-danger hover:bg-red-600 disabled:opacity-50 disabled:cursor-not-allowed text-white font-medium text-sm px-4 py-2 rounded-md transition-colors"
+                className="flex-1 bg-brand-danger hover:bg-red-600 disabled:opacity-50 disabled:cursor-not-allowed text-white font-medium text-sm px-4 py-2 rounded-xl transition-colors"
               >
                 Sim, Apagar Histórico
               </button>
@@ -387,7 +466,7 @@ const SettingsView = ({ wsUrl, setWsUrl, wsStatus, refreshHistory }) => {
             <p className="text-brand-h3 text-sm mb-6">{feedbackMessage.text}</p>
             <button 
               onClick={() => setFeedbackMessage(null)}
-              className="w-full bg-brand-purple hover:bg-brand-purple-light text-white font-medium text-sm px-4 py-2.5 rounded-md transition-colors"
+              className="w-full bg-brand-purple hover:bg-brand-purple-light text-white font-medium text-sm px-4 py-2.5 rounded-xl transition-colors"
             >
               Entendi
             </button>
@@ -951,7 +1030,8 @@ const TelemetrySidebar = ({ sim, wsStatus, batteryPct, latencyMs, packetsRx, liv
   else if (statusText === 'Centro Alcançado!' || statusText === 'Objetivo localizado!') phaseText = 'Resolvido';
 
   const isConnected = wsStatus === 'Conectado';
-  const latencyOver = latencyMs != null && latencyMs > 500;
+  const latencyThreshold = parseInt(localStorage.getItem('LATENCY_THRESHOLD') || '500', 10);
+  const latencyOver = latencyMs != null && latencyMs > latencyThreshold;
   const batteryDisplay = batteryPct != null ? `${batteryPct}%` : '—';
   const batteryWidth = batteryPct != null ? Math.max(0, Math.min(100, batteryPct)) : 0;
 
@@ -973,13 +1053,13 @@ const TelemetrySidebar = ({ sim, wsStatus, batteryPct, latencyMs, packetsRx, liv
           <ConnRow
             icon={<Play size={16} />}
             label="Estado"
-            value={<span className={`inline-flex items-center justify-center h-6 px-3 min-w-[96px] rounded-md border text-[11px] font-semibold leading-none ${estadoClass}`}>{statusText}</span>}
+            value={<span className={`inline-flex items-center justify-center h-6 w-[130px] rounded-md border text-[11px] font-semibold leading-none ${estadoClass}`}>{statusText}</span>}
           />
           <ConnRow
             icon={<Wifi size={16} />}
             label="Conexão"
             value={
-              <span className={`inline-flex items-center justify-center h-6 w-24 rounded-md border text-[11px] font-semibold leading-none ${
+              <span className={`inline-flex items-center justify-center h-6 w-[130px] rounded-md border text-[11px] font-semibold leading-none ${
                 isConnected
                   ? 'text-white bg-brand-green border-transparent'
                   : 'text-white bg-brand-danger border-transparent'
@@ -992,7 +1072,7 @@ const TelemetrySidebar = ({ sim, wsStatus, batteryPct, latencyMs, packetsRx, liv
             icon={<Bot size={16} />}
             label="Modo"
             value={
-              <span className={`inline-flex items-center justify-center h-6 w-24 rounded-md border text-[11px] font-semibold leading-none ${
+              <span className={`inline-flex items-center justify-center h-6 w-[130px] rounded-md border text-[11px] font-semibold leading-none ${
                 isReal
                   ? 'text-white bg-brand-green border-transparent'
                   : 'text-white bg-brand-purple border-transparent'
