@@ -360,13 +360,12 @@ const App = () => {
     ? batteryVoltsToPercent(liveTelemetry.battery_voltage_v)
     : null;
 
-  // Modo de operação
+  const [mockMode, setMockMode] = useState('simulator');
+
+  // Modo de operação (Controlado pelo Mock Switch)
   const dataMode = useMemo(() => {
-    if (liveTelemetry?.source === 'real' && latencyMs != null && latencyMs < 10000) {
-      return 'real';
-    }
-    return 'simulator';
-  }, [liveTelemetry, latencyMs]);
+    return mockMode;
+  }, [mockMode]);
 
   // Status da corrida
   const runStatus = useMemo(() => {
@@ -420,7 +419,7 @@ const App = () => {
           ) : (
             <>
               <section className="flex-grow bg-app-surface border-r border-border-rule p-5 flex flex-col relative overflow-hidden min-h-0">
-                <MazeCanvas sim={sim} liveRobot={liveRobot} liveExplored={liveExplored} dataMode={dataMode} />
+                <MazeCanvas sim={sim} liveRobot={liveRobot} liveExplored={liveExplored} dataMode={dataMode} mockMode={mockMode} setMockMode={setMockMode} />
               </section>
               <aside className="w-full lg:w-[372px] flex flex-col gap-2 overflow-y-auto shrink-0 my-4 mr-4 pr-1 custom-scrollbar">
                 <TelemetrySidebar
@@ -484,8 +483,6 @@ const Header = ({ activeTab, setActiveTab, wsStatus, sim }) => {
           </button>
         ))}
       </nav>
-
-
     </header>
   );
 };
@@ -502,7 +499,7 @@ const GlobalChip = ({ children, className = '', ...props }) => (
 /* ============================================================
    CANVAS DO LABIRINTO
    ============================================================ */
-const MazeCanvas = ({ sim, liveRobot, liveExplored, dataMode }) => {
+const MazeCanvas = ({ sim, liveRobot, liveExplored, dataMode, mockMode, setMockMode }) => {
   const { memory, isRunning, setIsRunning, speed, setSpeed, showTruth, setShowTruth, resetSimulation, gridSize, changeGridSize } = sim;
   const mem = memory;
   const robotShown = liveRobot ?? mem.robot;
@@ -565,6 +562,15 @@ const MazeCanvas = ({ sim, liveRobot, liveExplored, dataMode }) => {
                 />
               </div>
             </div>
+
+            <div className="w-px h-5 bg-border-rule" />
+
+            {/* Alternador Modo */}
+            <label className="flex items-center gap-2 h-full cursor-pointer group" title="Mock de Modo (Simulador vs Corrida)">
+              <input type="checkbox" className="sr-only" checked={mockMode === 'real'} onChange={(e) => setMockMode(e.target.checked ? 'real' : 'simulator')} aria-label="Alternar Modo de Operação" />
+              <div className={`toggle-switch ${mockMode === 'real' ? 'active' : ''}`} />
+              <span className="text-label w-[70px]">{mockMode === 'real' ? 'Corrida' : 'Simulador'}</span>
+            </label>
 
             <div className="w-px h-5 bg-border-rule" />
 
@@ -663,19 +669,14 @@ const TelemetrySidebar = ({ sim, wsStatus, batteryPct, latencyMs, packetsRx, liv
   const isReal = dataMode === 'real';
 
   // Estilo do estado
-  let stateColor = 'var(--text-2)';
-  let stateGlow = 'transparent';
-  let isRunningState = false;
-  if (statusText === 'Mapeando...' || statusText === 'Explorando') {
-    stateColor = 'var(--primary-2)';
-    stateGlow = 'var(--primary-glow)';
-    isRunningState = true;
+  let estadoClass = 'text-brand-h2 bg-app-raised border-border-rule';
+
+  if (statusText === 'Mapeando...' || statusText === 'Explorando' || statusText === 'Voltando') {
+    estadoClass = 'text-white bg-brand-purple border-transparent';
   } else if (statusText === 'Centro Alcançado!' || statusText === 'Objetivo localizado!') {
-    stateColor = 'var(--success)';
-    stateGlow = 'var(--success-glow)';
+    estadoClass = 'text-white bg-brand-green border-transparent';
   } else if (statusText === 'Preso!' || statusText === 'Erro!') {
-    stateColor = 'var(--danger)';
-    stateGlow = 'rgba(208, 96, 64, 0.4)';
+    estadoClass = 'text-white bg-brand-danger border-transparent';
   }
 
   // Valores de telemetria
@@ -728,7 +729,7 @@ const TelemetrySidebar = ({ sim, wsStatus, batteryPct, latencyMs, packetsRx, liv
           <ConnRow
             icon={<Play size={16} />}
             label="Estado"
-            value={<span className="text-brand-h1 font-bold text-sm">{statusText}</span>}
+            value={<span className={`inline-flex items-center justify-center h-6 px-3 min-w-[96px] rounded-md border text-[11px] font-semibold leading-none ${estadoClass}`}>{statusText}</span>}
           />
           <ConnRow
             icon={<Wifi size={16} />}
@@ -737,7 +738,7 @@ const TelemetrySidebar = ({ sim, wsStatus, batteryPct, latencyMs, packetsRx, liv
               <span className={`inline-flex items-center justify-center h-6 w-24 rounded-md border text-[11px] font-semibold leading-none ${
                 isConnected
                   ? 'text-white bg-brand-green border-transparent'
-                  : 'text-brand-h2 bg-app-raised border-border-rule'
+                  : 'text-white bg-brand-danger border-transparent'
               }`}>
                 {isConnected ? 'Conectado' : 'Desconectado'}
               </span>
@@ -752,7 +753,7 @@ const TelemetrySidebar = ({ sim, wsStatus, batteryPct, latencyMs, packetsRx, liv
                   ? 'text-white bg-brand-green border-transparent'
                   : 'text-white bg-brand-purple border-transparent'
               }`}>
-                {isReal ? 'Real' : 'Simulador'}
+                {isReal ? 'Corrida' : 'Simulador'}
               </span>
             }
           />
@@ -1088,7 +1089,7 @@ const HistoryView = ({ historyData, filter, setFilter, loading, error, onRefresh
                   ) : (
                     <span className="badge w-[100px] bg-brand-green text-white" title="Corrida do robô físico">
                       <Bot size={14} />
-                      <span>Real</span>
+                      <span>Corrida</span>
                     </span>
                   )}
                 </td>
@@ -1098,9 +1099,6 @@ const HistoryView = ({ historyData, filter, setFilter, loading, error, onRefresh
                 <td className="p-4 text-brand-h1 font-mono text-sm h-14">
                   <div className="flex items-center gap-2 h-full">
                     <span>{run.time}</span>
-                    {bestRun && run.id === bestRun.id && (
-                      <span className="bg-yellow-500/20 text-brand-amber text-[10px] font-bold px-2 py-0.5 rounded uppercase tracking-wider border border-yellow-500/30">🏆 Record</span>
-                    )}
                   </div>
                 </td>
                 <td className="p-4 text-brand-h2 text-sm">{run.speed}</td>
@@ -1117,7 +1115,11 @@ const HistoryView = ({ historyData, filter, setFilter, loading, error, onRefresh
                   </div>
                 </td>
                 <td className="p-4">
-                  <div className={`badge w-fit ${run.status === 'Centro Alcançado!' ? 'bg-brand-green/15 text-brand-green-text border border-brand-green/30' : 'bg-brand-danger/15 text-brand-danger-text border border-brand-danger/30'}`}>
+                  <div className={`inline-flex items-center justify-center h-6 px-3 rounded-md border text-[11px] font-semibold leading-none gap-1.5 w-max ${
+                    run.status === 'Centro Alcançado!' 
+                      ? 'text-white bg-brand-green border-transparent' 
+                      : 'text-white bg-brand-danger border-transparent'
+                  }`}>
                     {run.status === 'Centro Alcançado!' ? <CheckCircle2 size={14}/> : <XCircle size={14}/>}
                     <span>{run.status}</span>
                   </div>

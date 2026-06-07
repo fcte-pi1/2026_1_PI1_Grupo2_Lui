@@ -84,9 +84,26 @@ describe('controles do mapa', () => {
     const sizeSelect = screen.getByDisplayValue(/Matriz 16x16/i);
     fireEvent.change(sizeSelect, { target: { value: '4' } });
     expect(screen.getByDisplayValue(/Matriz 4x4/i)).toBeInTheDocument();
-    fireEvent.click(screen.getByRole('checkbox'));
+    const checkboxes = screen.getAllByRole('checkbox', { hidden: true });
+    fireEvent.click(checkboxes[1]); // Clica no Raio-X
     fireEvent.click(screen.getByRole('button', { name: /Novo/i }));
     fireEvent.click(screen.getByRole('button', { name: /Reiniciar/i }));
+  });
+
+  test('botão Raio-X só fica habilitado no modo Simulador e desabilita no modo Corrida', () => {
+    render(<App />);
+    
+    // O checkbox deve estar no DOM e habilitado (pois o modo padrão do mock é simulador)
+    // Buscamos pelo label raiz ou pelo próprio checkbox caso tenhamos adicionado aria-label (podemos pegar pelo label contendo 'Raio-X')
+    const xrayCheckbox = screen.getAllByRole('checkbox', { hidden: true })[1]; // O Raio-X é o segundo checkbox
+    expect(xrayCheckbox).not.toBeDisabled();
+    
+    // Muda o mockMode para "Corrida" através do switch
+    const modeSwitch = screen.getByRole('checkbox', { name: /Alternar Modo de Operação/i, hidden: true });
+    fireEvent.click(modeSwitch);
+    
+    // O Raio-X deve ter ficado desabilitado
+    expect(xrayCheckbox).toBeDisabled();
   });
 });
 
@@ -94,6 +111,8 @@ describe('telemetria em tempo real', () => {
   // Pacote real atualiza os campos (bateria, modo, latência e status).
   test('pacote real atualiza campos e latência', () => {
     render(<App />);
+    const modeSwitch = screen.getByRole('checkbox', { name: /Alternar Modo de Operação/i, hidden: true });
+    fireEvent.click(modeSwitch);
     emit({
       source: 'real',
       timestamp: new Date().toISOString(),
@@ -104,7 +123,7 @@ describe('telemetria em tempo real', () => {
       race_status: 'running',
       event: 'start_race',
     });
-    expect(screen.getAllByText(/Real/i).length).toBeGreaterThan(0);
+    expect(screen.getAllByText(/Corrida/i).length).toBeGreaterThan(0);
     expect(screen.getByText(/ms$/)).toBeInTheDocument();
     expect(screen.getByText(/Mapeando\.\.\./i)).toBeInTheDocument();
   });
@@ -112,6 +131,8 @@ describe('telemetria em tempo real', () => {
   // Pacote final com sucesso mostra "Centro Alcançado!".
   test('pacote final de sucesso mostra "Centro Alcançado!"', () => {
     render(<App />);
+    const modeSwitch = screen.getByRole('checkbox', { name: /Alternar Modo de Operação/i, hidden: true });
+    fireEvent.click(modeSwitch);
     emit({
       source: 'real',
       timestamp: new Date().toISOString(),
@@ -125,6 +146,8 @@ describe('telemetria em tempo real', () => {
   // Mesmo com latência alta (pacote antigo) o valor continua sendo exibido.
   test('latência alta ainda é renderizada', () => {
     render(<App />);
+    const modeSwitch = screen.getByRole('checkbox', { name: /Alternar Modo de Operação/i, hidden: true });
+    fireEvent.click(modeSwitch);
     emit({
       source: 'real',
       timestamp: new Date(Date.now() - 1500).toISOString(),
