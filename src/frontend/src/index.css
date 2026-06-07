@@ -1,133 +1,534 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap');
 
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-@layer utilities {
-    .bg-panel {
-        @apply bg-app-surface border-2 border-border-rule shadow-sm rounded-[2rem];
-    }
-    .text-label {
-        @apply text-brand-h3 text-[11px] font-medium uppercase tracking-wider;
-    }
-    .text-value {
-        @apply text-brand-h1 text-3xl font-semibold tracking-tight;
-    }
+/* ============================================================
+   TOKENS DE DESIGN (Custom Properties do CSS)
+   Sistema global: espaçamento, raio, altura, ícone, gap,
+   tipografia e contraste. Identidade preservada: dark + roxo.
+   ============================================================ */
+:root {
+  /* ---- Camadas de superfície ---- */
+  --bg-app:        #0e0b1d;
+  --surface-1:     #100c27;   /* painéis */
+  --surface-2:     #151034;   /* cartões, botões */
+  --surface-3:     #1c1642;   /* hover */
+  --surface-inset: #0d0a1c;   /* trilhos, containers de pill */
+
+  /* ---- Marca ---- */
+  --primary:      #391872;    /* preenchimento primário */
+  --primary-2:    #5a3d99;    /* preenchimento secundário / paredes */
+  --primary-dim:  #281052;
+  --primary-glow: rgba(57, 24, 114, 0.40);
+  --accent:       #b9a3e8;    /* roxo claro p/ TEXTO (alto contraste) */
+  --accent-2:     #9b7fd4;
+
+  --success:      #1e9d74;    /* verde — brilho ajustado p/ contraste */
+  --success-dim:  #103d30;
+  --success-glow: rgba(30, 157, 116, 0.30);
+  --success-text: #4fd1a5;    /* verde p/ texto sobre fundo escuro */
+
+  --danger:       #d06a4a;
+  --danger-text:  #e88a6a;
+  --warn:         #d6b54a;
+  --warn-text:    #e6c860;
+  --info:         #90b0d1;
+
+  /* ---- Texto (contraste revisado p/ dark) ---- */
+  --text-1: #f5f1fb;   /* títulos / valores */
+  --text-2: #ddd6ec;   /* corpo / labels de controle (mais claro) */
+  --text-3: #b3abc7;   /* secundário (legível, nunca apagado) */
+  --text-4: #948cab;   /* terciário / captions discretas */
+
+  /* ---- Bordas ---- */
+  --border:        #342965;   /* forte */
+  --border-soft:   #241c52;   /* sutil (opaca p/ consistência) */
+  --border-rule:   #1c1642;   /* divisórias */
+  --border-strong: #4a3885;   /* destaque / hover */
+
+  /* ---- Espaçamento (escala global) ---- */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+
+  /* ---- Raios reutilizáveis ---- */
+  --radius-sm:   8px;
+  --radius-md:   12px;
+  --radius-lg:   16px;
+  --radius-xl:   22px;
+  --radius-pill: 999px;
+  /* compat. antigo */
+  --r-sm: var(--radius-sm);
+  --r-md: var(--radius-md);
+  --r-lg: var(--radius-lg);
+  --r-xl: var(--radius-xl);
+
+  /* ---- Alturas de controle compartilhadas ---- */
+  --control-h-sm: 32px;
+  --control-h-md: 40px;
+  --control-h-lg: 48px;
+
+  /* ---- Tamanhos de ícone ---- */
+  --icon-sm: 14px;
+  --icon-md: 16px;
+  --icon-lg: 20px;
+
+  /* ---- Gaps (ícone↔texto) proporcionais ---- */
+  --gap-xs: 4px;
+  --gap-sm: 6px;
+  --gap-md: 8px;
+  --gap-lg: 12px;
+
+  /* ---- Espaçamentos compostos ---- */
+  --toolbar-gap:  12px;
+  --card-padding: 20px;
+  --section-gap:  16px;
+
+  /* ---- Sistema de Pill ----
+     Container: altura 40, padding 4, borda 1 → item interno 32.
+     Raio interno = raio externo - padding (20 - 4 = 16). */
+  --pill-container-p: 4px;
+  --pill-gap:         4px;
+  --pill-px:          14px;
+  --pill-h:           var(--control-h-sm);   /* 32px */
+  --pill-container-h: var(--control-h-md);   /* 40px */
+  --pill-radius-outer: 20px;
+  --pill-radius-inner: calc(var(--pill-radius-outer) - var(--pill-container-p)); /* 16px */
+
+  /* ---- Badge / chip de status ---- */
+  --badge-h:        24px;
+  --badge-px:       10px;
+  --badge-radius:   var(--radius-md);
+
+  /* ---- Sombras ---- */
+  --shadow-card: 0 1px 0 rgba(255,255,255,0.04) inset, 0 8px 24px -12px rgba(0,0,0,0.7);
+  --shadow-pop:  0 1px 0 rgba(255,255,255,0.06) inset, 0 18px 40px -16px rgba(0,0,0,0.85);
+
+  /* ---- Tipografia ---- */
+  --font-ui:   "Inter", system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, monospace;
+
+  /* Tamanhos por categoria */
+  --fs-page-title:    20px;   /* título de página */
+  --fs-section-title: 11px;   /* título de seção (uppercase) */
+  --fs-control-label: 11px;   /* label de controle (uppercase) */
+  --fs-button:        14px;   /* texto de botão */
+  --fs-nav:           14px;   /* texto de navegação */
+  --fs-chip:          13px;   /* texto de chip */
+  --fs-value:         28px;   /* valor numérico grande */
+  --fs-unit:          14px;   /* unidade de medida */
+  --fs-caption:       11px;   /* legenda */
+  --fs-data:          12px;   /* dados técnicos / coordenadas */
+
+  /* ---- Variáveis do labirinto ---- */
+  --wall-color: rgba(255,255,255,0.06);
+  --truth-wall-color: rgba(140,98,230,0.25);
+  --bg-unexplored: rgba(10,8,21,0.95);
+  --bg-explored: rgba(16,12,39,0.7);
+  --bg-center: #1e9d74;
+}
+
+/* ============================================================
+   BASE — box-sizing global p/ não quebrar largura/altura
+   ============================================================ */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+::selection {
+  background: var(--primary-glow);
 }
 
 body {
-    margin: 0;
-    font-family: 'Inter', sans-serif;
-    -webkit-font-smoothing: antialiased;
-    -moz-osx-font-smoothing: grayscale;
-    background-color: #030014;
+  margin: 0;
+  font-family: var(--font-ui);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  background: var(--bg-app);
+  color: var(--text-1);
 }
 
-/* Custom Scrollbar */
+/* ============================================================
+   UTILITÁRIOS DO DESIGN SYSTEM (sistema de design)
+   ============================================================ */
+@layer utilities {
+  .bg-panel {
+    @apply bg-app-surface border border-border-rule rounded-xl;
+  }
+
+  /* ---- Pill: container arredondado com filho arredondado ---- */
+  .pill-container {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--pill-gap);
+    padding: var(--pill-container-p);
+    height: var(--pill-container-h);
+    box-sizing: border-box;
+    border-radius: var(--pill-radius-outer);
+    background-color: var(--surface-inset);
+    border: 1px solid var(--border);
+    overflow: hidden;
+  }
+  .pill-item {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--gap-md);
+    height: var(--pill-h);
+    padding: 0 var(--pill-px);
+    box-sizing: border-box;
+    border-radius: var(--pill-radius-inner);
+    line-height: 1;
+  }
+
+  /* ---- Control: base p/ qualquer controle de mesma linha ---- */
+  .control-md {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--gap-md);
+    height: var(--control-h-md);
+    box-sizing: border-box;
+    line-height: 1;
+  }
+
+  /* ---- Badge / chip de status (altura óptica única) ---- */
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--gap-sm);
+    height: var(--badge-h);
+    padding: 0 var(--badge-px);
+    box-sizing: border-box;
+    border-radius: var(--badge-radius);
+    line-height: 1;
+    font-weight: 700;
+    font-size: 11px;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    white-space: nowrap;
+  }
+
+  /* ---- Tipografia por categoria ---- */
+  .text-page-title {
+    color: var(--text-1);
+    font-family: var(--font-ui);
+    font-size: var(--fs-page-title);
+    font-weight: 600;
+    letter-spacing: -0.01em;
+    line-height: 1.2;
+  }
+  .text-section {
+    color: var(--text-2);
+    font-family: var(--font-ui);
+    font-size: var(--fs-section-title);
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+  }
+  .text-label {
+    color: var(--text-2);
+    font-family: var(--font-ui);
+    font-size: var(--fs-control-label);
+    font-weight: 500;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+  }
+  .text-btn {
+    font-family: var(--font-ui);
+    font-size: var(--fs-button);
+    font-weight: 600;
+    line-height: 1;
+  }
+  .text-nav {
+    font-family: var(--font-ui);
+    font-size: var(--fs-nav);
+    font-weight: 500;
+    line-height: 1;
+  }
+  .text-chip {
+    font-family: var(--font-ui);
+    font-size: var(--fs-chip);
+    font-weight: 500;
+    line-height: 1;
+  }
+  .text-value {
+    color: var(--text-1);
+    font-family: var(--font-mono);
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: 0;
+  }
+  .text-unit {
+    color: var(--text-2);
+    font-family: var(--font-ui);
+    font-size: var(--fs-unit);
+    font-weight: 500;
+  }
+  .text-caption {
+    color: var(--text-3);
+    font-family: var(--font-ui);
+    font-size: var(--fs-caption);
+    font-weight: 500;
+  }
+  .text-data {
+    color: var(--text-2);
+    font-family: var(--font-mono);
+    font-size: var(--fs-data);
+    font-weight: 500;
+    font-variant-numeric: tabular-nums;
+  }
+}
+
+/* ============================================================
+   BARRA DE ROLAGEM
+   ============================================================ */
 ::-webkit-scrollbar {
-    width: 6px;
-    height: 6px;
+  width: 8px;
+  height: 8px;
 }
 ::-webkit-scrollbar-track {
-    background: transparent;
+  background: transparent;
 }
 ::-webkit-scrollbar-thumb {
-    background: rgba(255, 255, 255, 0.1);
-    border-radius: 10px;
+  background: var(--surface-3);
+  border-radius: var(--radius-pill);
 }
 ::-webkit-scrollbar-thumb:hover {
-    background: rgba(139, 92, 246, 0.36);
+  background: var(--primary-dim);
 }
 
-:root {
-    --wall-color: rgba(255,255,255,0.06); /* Thin subtle grid line */
-    --truth-wall-color: rgba(255,255,255,0.15); /* Visible walls */
-    --bg-unexplored: transparent;
-    --bg-explored: #110E20; /* raised */
-    --bg-center: #10B981; /* brand-green */
-}
-
+/* ============================================================
+   CONTAINER DO LABIRINTO E CÉLULAS
+   ============================================================ */
 #maze-container {
-    display: grid;
-    gap: 0px;
-    width: 100cqmin;
-    height: 100cqmin;
-    margin: 0 auto;
-    background-color: transparent;
-    border: 1px solid var(--wall-color);
-    box-sizing: border-box;
+  display: grid;
+  gap: 0px;
+  width: 100cqmin;
+  height: 100cqmin;
+  margin: 0 auto;
+  background-color: transparent;
+  border: 2.5px solid var(--primary-2);
+  border-radius: var(--radius-sm);
+  box-sizing: border-box;
+  overflow: hidden;
 }
 
 .cell {
-    position: relative;
-    background-color: var(--bg-unexplored);
-    border: 1px solid var(--wall-color);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 0.6rem;
-    color: rgba(255,255,255,0.4);
-    user-select: none;
-    transition: background-color 0.2s;
+  position: relative;
+  background-color: var(--bg-unexplored);
+  border: 1px solid var(--wall-color);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.55rem;
+  font-family: var(--font-mono);
+  font-weight: 600;
+  color: rgba(170, 158, 200, 0.85);
+  user-select: none;
+  transition: background-color 0.2s;
 }
 
-.cell.explored { background-color: var(--bg-explored); }
-.cell.goal { background-color: var(--bg-center); color: #07050F; font-weight: bold; }
+.cell.explored {
+  background-color: var(--bg-explored);
+}
 
+.cell.goal {
+  background-color: var(--bg-center);
+  color: #07150e;
+  font-weight: 700;
+  font-family: var(--font-ui);
+  font-size: 0.65rem;
+}
+
+/* Paredes reais (Raio-X) */
 .show-truth .cell.truth-wall-n { border-top: 2px solid var(--truth-wall-color); }
 .show-truth .cell.truth-wall-e { border-right: 2px solid var(--truth-wall-color); }
 .show-truth .cell.truth-wall-s { border-bottom: 2px solid var(--truth-wall-color); }
 .show-truth .cell.truth-wall-w { border-left: 2px solid var(--truth-wall-color); }
 
-.cell.known-wall-n { border-top: 2px solid white !important; }
-.cell.known-wall-e { border-right: 2px solid white !important; }
-.cell.known-wall-s { border-bottom: 2px solid white !important; }
-.cell.known-wall-w { border-left: 2px solid white !important; }
+/* Paredes conhecidas — forte */
+.cell.known-wall-n { border-top: 2.5px solid var(--primary-2) !important; }
+.cell.known-wall-e { border-right: 2.5px solid var(--primary-2) !important; }
+.cell.known-wall-s { border-bottom: 2.5px solid var(--primary-2) !important; }
+.cell.known-wall-w { border-left: 2.5px solid var(--primary-2) !important; }
 
-/* Distances (Cores baseadas no Flood Fill) */
-.cell[data-color="g"] { background-color: #064e3b; } 
-.cell[data-color="y"] { background-color: #713f12; }
-.cell[data-color="r"] { background-color: #7f1d1d; } 
+/* Distance heatmap */
+.cell[data-color="g"] { background-color: rgba(58, 128, 96, 0.45); }
+.cell[data-color="y"] { background-color: rgba(140, 116, 40, 0.35); }
+.cell[data-color="r"] { background-color: rgba(160, 60, 50, 0.35); }
 
+/* ============================================================
+   ROBÔ
+   ============================================================ */
 #robot {
-    position: absolute;
-    inset: 0;
-    margin: auto;
-    width: 100%;
-    height: 100%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: all 0.1s linear;
-    z-index: 10;
+  position: absolute;
+  inset: 0;
+  margin: auto;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10;
 }
 
 #robot::after {
-    content: '';
-    position: absolute;
-    width: 0;
-    height: 0;
-    border-left: 6px solid transparent;
-    border-right: 6px solid transparent;
-    border-bottom: 12px solid #A78BFA;
-    transform: translateY(-2px);
-    z-index: 2;
+  content: '';
+  position: absolute;
+  width: 0;
+  height: 0;
+  border-left: 6px solid transparent;
+  border-right: 6px solid transparent;
+  border-bottom: 12px solid var(--primary-2);
+  transform: translateY(-2px);
+  z-index: 2;
 }
 
 #robot::before {
-    content: '';
-    position: absolute;
-    width: 0;
-    height: 0;
-    border-left: 7px solid transparent;
-    border-right: 7px solid transparent;
-    border-bottom: 14px solid white;
-    transform: translateY(-2px);
-    z-index: 1;
+  content: '';
+  position: absolute;
+  width: 0;
+  height: 0;
+  border-left: 7px solid transparent;
+  border-right: 7px solid transparent;
+  border-bottom: 14px solid white;
+  transform: translateY(-2px);
+  z-index: 1;
 }
 
 .dir-0 { transform: rotate(0deg); }
 .dir-1 { transform: rotate(90deg); }
 .dir-2 { transform: rotate(180deg); }
 .dir-3 { transform: rotate(270deg); }
+
+/* ============================================================
+   CONTROLE DESLIZANTE (RANGE)
+   ============================================================ */
+input[type=range] {
+  -webkit-appearance: none;
+  appearance: none;
+  height: 5px;
+  border-radius: var(--radius-pill);
+  background: linear-gradient(90deg, var(--primary-2) var(--fill, 55%), var(--surface-3) var(--fill, 55%));
+  cursor: pointer;
+  outline: none;
+}
+
+input[type=range]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 0 0 4px var(--primary-glow), 0 2px 6px rgba(0,0,0,0.5);
+  cursor: grab;
+}
+
+input[type=range]::-moz-range-thumb {
+  width: 16px;
+  height: 16px;
+  border: none;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 0 0 4px var(--primary-glow);
+}
+
+/* Foco visível (acessibilidade) sem cortar pelo overflow do container */
+input[type=range]:focus-visible::-webkit-slider-thumb {
+  box-shadow: 0 0 0 4px var(--primary-glow), 0 0 0 2px var(--accent);
+}
+
+/* ============================================================
+   INTERRUPTOR (TOGGLE)
+   ============================================================ */
+.toggle-switch {
+  width: 42px;
+  height: 24px;
+  border-radius: var(--radius-pill);
+  background: var(--surface-3);
+  border: 1px solid var(--border);
+  position: relative;
+  transition: 0.18s;
+  cursor: pointer;
+  flex: none;
+}
+
+.toggle-switch::after {
+  content: "";
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--text-2);
+  transition: 0.18s;
+}
+
+.toggle-switch.active {
+  background: var(--primary);
+  border-color: var(--primary);
+}
+
+.toggle-switch.active::after {
+  left: 21px;
+  background: #fff;
+}
+
+/* ============================================================
+   PONTO DE STATUS
+   ============================================================ */
+.status-dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  flex: none;
+  position: relative;
+}
+
+.status-dot.on {
+  background: var(--success);
+}
+
+.status-dot.off {
+  background: var(--text-3);
+}
+
+/* ============================================================
+   BARRA DE PROGRESSO
+   ============================================================ */
+.progress-bar {
+  height: 7px;
+  border-radius: var(--radius-pill);
+  background: var(--surface-inset);
+  overflow: hidden;
+  border: 1px solid var(--border-soft);
+}
+
+.progress-bar > span {
+  display: block;
+  height: 100%;
+  border-radius: var(--radius-pill);
+  background: var(--primary-2);
+  transition: width 0.4s;
+  box-shadow: 0 0 12px var(--primary-glow);
+}
+
+/* ============================================================
+   MOVIMENTO REDUZIDO
+   ============================================================ */
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation: none !important;
+    transition-duration: 0s !important;
+  }
+}

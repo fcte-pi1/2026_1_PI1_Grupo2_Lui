@@ -70,7 +70,7 @@ describe('navegação e render base', () => {
   test('aba Mapa mostra o canvas e os controles', () => {
     render(<App />);
     expect(screen.getByText(/Mapa do Labirinto/i)).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /Iniciar/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /^Iniciar$/i })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /Novo/i })).toBeInTheDocument();
   });
 });
@@ -79,7 +79,7 @@ describe('controles do mapa', () => {
   // Iniciar/Pausar, tamanho da malha, raio-X e botões reagem aos cliques.
   test('Iniciar/Pausar, tamanho, raio-X e reset respondem', () => {
     render(<App />);
-    fireEvent.click(screen.getByRole('button', { name: /Iniciar/i }));
+    fireEvent.click(screen.getByRole('button', { name: /^Iniciar$/i }));
     expect(screen.getByRole('button', { name: /Pausar/i })).toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: /Pausar/i }));
     const sizeSelect = screen.getByDisplayValue(/Matriz 16x16/i);
@@ -87,7 +87,7 @@ describe('controles do mapa', () => {
     expect(screen.getByDisplayValue(/Matriz 4x4/i)).toBeInTheDocument();
     fireEvent.click(screen.getByRole('checkbox'));
     fireEvent.click(screen.getByRole('button', { name: /Novo/i }));
-    fireEvent.click(screen.getByRole('button', { name: /Robô/i }));
+    fireEvent.click(screen.getByRole('button', { name: /Reiniciar/i }));
   });
 });
 

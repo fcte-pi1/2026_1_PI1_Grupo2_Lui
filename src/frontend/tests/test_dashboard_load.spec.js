@@ -23,12 +23,12 @@ test.describe('Dashboard Load Test', () => {
     await expect(page.getByText('Mapa do Labirinto')).toBeVisible();
 
     // 2. Verificar Telemetria
-    // O texto "Conectividade" ou "Pacotes RX" identifica o painel de telemetria
-    await expect(page.getByText('Conectividade')).toBeVisible();
+    // O título "Telemetria" identifica o painel de telemetria
+    await expect(page.getByRole('heading', { name: 'Telemetria', exact: true })).toBeVisible();
 
     // 3. Verificar Status
-    // A barra inferior que exibe o status atual do robô/simulador
-    await expect(page.getByText('Status', { exact: true })).toBeVisible();
+    // O título "Status do Robô" identifica o painel de status
+    await expect(page.getByRole('heading', { name: 'Status do Robô', exact: true })).toBeVisible();
 
     // 4. Verificar Histórico
     // Clicar na aba de histórico e validar se a view correspondente aparece
