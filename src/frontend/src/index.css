@@ -174,7 +174,6 @@ body {
     border-radius: var(--pill-radius-outer);
     background-color: var(--surface-inset);
     border: 1px solid var(--border);
-    overflow: hidden;
   }
   .pill-item {
     display: inline-flex;

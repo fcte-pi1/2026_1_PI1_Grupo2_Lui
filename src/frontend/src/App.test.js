@@ -81,9 +81,14 @@ describe('controles do mapa', () => {
     fireEvent.click(screen.getByRole('button', { name: /^Iniciar$/i }));
     expect(screen.getByRole('button', { name: /Pausar/i })).toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: /Pausar/i }));
-    const sizeSelect = screen.getByDisplayValue(/Matriz 16x16/i);
-    fireEvent.change(sizeSelect, { target: { value: '4' } });
-    expect(screen.getByDisplayValue(/Matriz 4x4/i)).toBeInTheDocument();
+    // Interage com o CustomSelect de tamanho da matriz
+    const sizeTrigger = screen.getByText(/16x16/i);
+    fireEvent.click(sizeTrigger); // Abre o dropdown
+    const option4x4 = screen.getByText(/4x4/i); // Pega a opção revelada
+    fireEvent.click(option4x4); // Seleciona a opção
+    
+    // Agora o texto truncado na label do seletor deve ser 4x4
+    expect(screen.getAllByText(/4x4/i).length).toBeGreaterThan(0);
     const checkboxes = screen.getAllByRole('checkbox', { hidden: true });
     fireEvent.click(checkboxes[1]); // Clica no Raio-X
     fireEvent.click(screen.getByRole('button', { name: /Novo/i }));
@@ -177,7 +182,9 @@ describe('histórico: tabela, filtro e CSV', () => {
     await openHistorico();
     await screen.findAllByTestId('corrida-item');
     const filtro = screen.getByTestId('filtro-labirinto');
-    fireEvent.change(filtro, { target: { value: '4x4' } });
+    fireEvent.click(filtro);
+    const option4x4 = screen.getByText(/Pista 4x4/i);
+    fireEvent.click(option4x4);
     await waitFor(() => {
       const urls = global.fetch.mock.calls.map(c => String(c[0]));
       expect(urls.some(u => u.includes('maze_type=4x4'))).toBe(true);

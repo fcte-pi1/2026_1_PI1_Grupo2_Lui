@@ -243,9 +243,9 @@ describe('estrutura do DOM renderizado', () => {
     }
   });
 
-  test('o seletor de matriz é um controle único rotulado (Matriz NxN)', () => {
+  test('o seletor de matriz é um controle único rotulado', () => {
     render(<App />);
-    expect(screen.getByDisplayValue(/Matriz 16x16/i)).toBeInTheDocument();
+    expect(screen.getByText(/16x16/i)).toBeInTheDocument();
   });
 
   test('primeiro/último item de grupo não usam margens manuais', () => {
@@ -254,6 +254,33 @@ describe('estrutura do DOM renderizado', () => {
     items.forEach((it) => {
       const s = it.getAttribute('style') || '';
       expect(s).not.toMatch(/margin-left|margin-right|margin-top/);
+    });
+  });
+});
+
+// 8. Estabilidade de layout (prevenção de shifts) e dropdowns
+describe('estabilidade de layout e componentes customizados', () => {
+  test('botões com texto dinâmico (Iniciar/Pausar, Atualizar) possuem largura fixa (w-[...])', () => {
+    // Validar que esses componentes críticos usam fixed widths no JSX para não empurrar elementos irmãos
+    expect(APP_SRC).toMatch(/w-\[100px\][\s\S]*?Iniciar/);
+    expect(APP_SRC).toMatch(/w-\[130px\][\s\S]*?Atualizar/);
+    expect(APP_SRC).toMatch(/w-\[75px\][\s\S]*?Corrida' : 'Simulador'/);
+  });
+
+  test('container de pílulas não oculta dropdowns com overflow:hidden', () => {
+    // A classe .pill-container não deve ter overflow: hidden, pois isso corta as listas flutuantes (absolute) do CustomSelect
+    const match = CSS.match(/\.pill-container\s*\{([^}]*)\}/);
+    expect(match).toBeTruthy();
+    expect(match[1]).not.toMatch(/overflow:\s*hidden/);
+  });
+
+  test('CustomSelects adotam o mesmo border-radius circular das pílulas', () => {
+    // Para manter simetria com as pílulas (.pill-item) que têm raio interno de 16px, 
+    // o CustomSelect usa explicitamente rounded-[16px]
+    const selectMatches = APP_SRC.match(/<CustomSelect[\s\S]*?className="([^"]+)"/g);
+    expect(selectMatches.length).toBeGreaterThanOrEqual(2);
+    selectMatches.forEach(match => {
+      expect(match).toMatch(/rounded-\[16px\]/);
     });
   });
 });

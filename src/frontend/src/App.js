@@ -487,6 +487,52 @@ const Header = ({ activeTab, setActiveTab, wsStatus, sim }) => {
   );
 };
 
+const CustomSelect = ({ value, onChange, options, className = "", dropdownWidth = "w-full", "data-testid": dataTestId }) => {
+  const [isOpen, setIsOpen] = useState(false);
+  const dropdownRef = useRef(null);
+
+  useEffect(() => {
+    const handleClick = (e) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target)) {
+        setIsOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClick);
+    return () => document.removeEventListener('mousedown', handleClick);
+  }, []);
+
+  const selectedLabel = options.find(o => o.value === value)?.label || value;
+
+  return (
+    <div data-testid={dataTestId} className={`relative flex items-center justify-between cursor-pointer group ${className}`} ref={dropdownRef} onClick={() => setIsOpen(!isOpen)}>
+      <span className="truncate pr-2 select-none pointer-events-none">{selectedLabel}</span>
+      <ChevronDown size={14} className={`pointer-events-none transition-transform duration-200 text-brand-h3 group-hover:text-brand-h1 ${isOpen ? 'rotate-180' : ''}`} />
+
+      {isOpen && (
+        <div className={`absolute top-[calc(100%+8px)] left-1/2 -translate-x-1/2 ${dropdownWidth} min-w-[160px] bg-app-surface border border-border-rule rounded-xl shadow-[0_8px_30px_rgb(0,0,0,0.5)] overflow-hidden z-[100] animate-in fade-in zoom-in-95 duration-200 origin-top`}>
+          {options.map((opt) => (
+            <div
+              key={opt.value}
+              className={`px-4 py-2.5 text-sm font-medium transition-colors select-none ${
+                value === opt.value
+                  ? 'bg-brand-purple/15 text-brand-purple-light'
+                  : 'text-brand-h1 hover:bg-white/[0.04]'
+              }`}
+              onClick={(e) => {
+                e.stopPropagation();
+                onChange(opt.value);
+                setIsOpen(false);
+              }}
+            >
+              {opt.label}
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+};
+
 const GlobalChip = ({ children, className = '', ...props }) => (
   <div
     className={`flex items-center justify-center gap-2 h-10 px-4 rounded-xl bg-app-raised border border-border-rule text-sm text-brand-h2 font-medium box-border ${className}`}
@@ -530,21 +576,21 @@ const MazeCanvas = ({ sim, liveRobot, liveExplored, dataMode, mockMode, setMockM
       <div className="flex flex-col xl:flex-row justify-between items-center mb-4 z-10 gap-4 shrink-0 w-full">
         {/* Grupo de controles: seletor + velocidade + raio-x */}
         <div className="flex items-center gap-4 h-10 px-4 rounded-xl bg-app-inset border border-border-rule box-border">
-            {/* Matrix selector — rótulo embutido para formar um controle único */}
-            <div className="relative flex items-center h-full">
-              <select
+            {/* Matrix selector */}
+            <div className="flex items-center gap-2">
+              <span className="text-label">Matriz</span>
+              <CustomSelect
                 aria-label="Tamanho da matriz"
-                className="appearance-none bg-transparent text-brand-h1 font-sans font-semibold text-sm h-full flex items-center focus:outline-none cursor-pointer pr-6 box-border leading-none"
+                className="h-[28px] bg-app-raised border border-border-subtle hover:bg-app-hover hover:border-border-accent rounded-[16px] transition-all px-3 text-brand-h1 font-sans font-semibold text-sm"
                 value={gridSize}
-                onChange={(e) => changeGridSize(parseInt(e.target.value))}
-              >
-                <option value="4" className="bg-app-raised">Matriz 4x4</option>
-                <option value="8" className="bg-app-raised">Matriz 8x8</option>
-                <option value="16" className="bg-app-raised">Matriz 16x16</option>
-              </select>
-              <div className="pointer-events-none absolute right-0 top-1/2 -translate-y-1/2 text-brand-h3 flex items-center justify-center">
-                <ChevronDown size={16} />
-              </div>
+                onChange={(val) => changeGridSize(parseInt(val))}
+                dropdownWidth="w-auto"
+                options={[
+                  { value: 4, label: '4x4' },
+                  { value: 8, label: '8x8' },
+                  { value: 16, label: '16x16' }
+                ]}
+              />
             </div>
 
             <div className="w-px h-5 bg-border-rule" />
@@ -569,7 +615,7 @@ const MazeCanvas = ({ sim, liveRobot, liveExplored, dataMode, mockMode, setMockM
             <label className="flex items-center gap-2 h-full cursor-pointer group" title="Mock de Modo (Simulador vs Corrida)">
               <input type="checkbox" className="sr-only" checked={mockMode === 'real'} onChange={(e) => setMockMode(e.target.checked ? 'real' : 'simulator')} aria-label="Alternar Modo de Operação" />
               <div className={`toggle-switch ${mockMode === 'real' ? 'active' : ''}`} />
-              <span className="text-label w-[70px]">{mockMode === 'real' ? 'Corrida' : 'Simulador'}</span>
+              <span className="text-label w-[75px] text-left">{mockMode === 'real' ? 'Corrida' : 'Simulador'}</span>
             </label>
 
             <div className="w-px h-5 bg-border-rule" />
@@ -587,7 +633,7 @@ const MazeCanvas = ({ sim, liveRobot, liveExplored, dataMode, mockMode, setMockM
             <button
               data-testid="pill-item"
               onClick={() => setIsRunning(!isRunning)}
-              className={`group pill-item gap-2 font-semibold text-sm transition-all ${
+              className={`group pill-item gap-2 font-semibold text-sm transition-all w-[100px] ${
                 isRunning
                   ? 'bg-app-raised border border-border-subtle text-brand-h2 hover:text-brand-h1 hover:border-border-accent'
                   : 'text-white border border-transparent bg-brand-purple'
@@ -993,23 +1039,19 @@ const HistoryView = ({ historyData, filter, setFilter, loading, error, onRefresh
         </div>
 
         <div data-testid="pill-container" className="pill-container">
-          <div className="relative flex items-center h-[var(--pill-h)]">
-            <select
-              data-testid="filtro-labirinto"
-              className="appearance-none bg-app-raised text-brand-h1 h-full pl-3 pr-8 rounded-lg focus:outline-none font-medium text-sm flex items-center border border-border-rule cursor-pointer box-border"
-              value={filter}
-              onChange={(e) => setFilter(e.target.value)}
-            >
-              <option value="Todos">Todos os Labirintos</option>
-              <option value="4x4">Pista 4x4</option>
-              <option value="8x8">Pista 8x8</option>
-              <option value="16x16">Pista 16x16</option>
-            </select>
-            <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-brand-h3">
-              <ChevronDown size={16} />
-            </div>
-          </div>
-          <button data-testid="pill-item" onClick={onRefresh} title="Recarregar do backend" className="group pill-item gap-2 bg-app-raised border border-border-rule hover:border-border-accent text-brand-h1 font-medium transition-all text-sm">
+          <CustomSelect
+            data-testid="filtro-labirinto"
+            className="h-[var(--pill-h)] bg-app-raised text-brand-h1 px-4 rounded-[16px] font-medium text-sm border border-border-rule hover:bg-app-hover hover:border-border-accent transition-all min-w-[180px]"
+            value={filter}
+            onChange={(val) => setFilter(val)}
+            options={[
+              { value: 'Todos', label: 'Todos os Labirintos' },
+              { value: '4x4', label: 'Pista 4x4' },
+              { value: '8x8', label: 'Pista 8x8' },
+              { value: '16x16', label: 'Pista 16x16' }
+            ]}
+          />
+          <button data-testid="pill-item" onClick={onRefresh} title="Recarregar do backend" className="group pill-item gap-2 bg-app-raised border border-border-rule hover:border-border-accent text-brand-h1 font-medium transition-all text-sm w-[130px]">
             <RefreshCw size={16} className={`transition-transform duration-300 group-hover:rotate-180 group-active:scale-90 ${loading ? 'animate-spin' : ''}`} /><span>{loading ? 'Carregando…' : 'Atualizar'}</span>
           </button>
           {subTab === 'tabela' && (
