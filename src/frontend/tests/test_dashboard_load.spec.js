@@ -19,8 +19,7 @@ test.describe('Dashboard Load Test', () => {
     await page.goto('/');
 
     // 1. Verificar Mapa
-    // O texto "Mapa do Labirinto" identifica a área do mapa principal
-    await expect(page.getByText('Mapa do Labirinto')).toBeVisible();
+    await expect(page.locator('#maze-container')).toBeVisible();
 
     // 2. Verificar Telemetria
     // O título "Telemetria" identifica o painel de telemetria
