@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
-import { Cpu, Wifi, Play, Pause, Bot, RotateCw, ChevronDown, Battery, Clock, Footprints, Gauge, RefreshCw, Zap, Timer, Download, CheckCircle2, XCircle, Calendar, Square, Trophy, Table, ChevronRight } from 'lucide-react';
+import { Cpu, Wifi, Play, Pause, Bot, RotateCw, ChevronDown, Battery, Clock, Footprints, Gauge, RefreshCw, Zap, Timer, Download, CheckCircle2, XCircle, Calendar, Square, Trophy, Table, ChevronRight, Activity } from 'lucide-react';
 import { useMazeSimulator } from './useMazeSimulator';
 import { CELL_MM, DX as DXR, DY as DYR, mmToCell } from './utils/maze';
 import { useWebSocket } from './useWebSocket';
@@ -1087,6 +1087,15 @@ const TelemetrySidebar = ({ sim, wsStatus, batteryPct, latencyMs, packetsRx, liv
             value={
               <span className={`font-mono font-semibold text-sm ${latencyOver ? 'text-brand-danger-text' : 'text-brand-h1'}`}>
                 {latencyMs != null ? latencyMs : '—'} <span className="text-brand-h3 text-xs">ms</span>
+              </span>
+            }
+          />
+          <ConnRow
+            icon={<Activity size={16} />}
+            label="Pacotes"
+            value={
+              <span className="font-mono font-semibold text-sm text-brand-h1">
+                {packetsRx}
               </span>
             }
           />
