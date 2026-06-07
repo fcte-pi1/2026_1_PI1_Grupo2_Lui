@@ -69,7 +69,6 @@ describe('navegação e render base', () => {
   // A aba Mapa exibe o canvas do labirinto e os controles do simulador.
   test('aba Mapa mostra o canvas e os controles', () => {
     render(<App />);
-    expect(screen.getByText(/Mapa do Labirinto/i)).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /^Iniciar$/i })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /Novo/i })).toBeInTheDocument();
   });

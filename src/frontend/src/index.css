@@ -43,10 +43,10 @@
   --text-4: #948cab;   /* terciário / captions discretas */
 
   /* ---- Bordas ---- */
-  --border:        #342965;   /* forte */
-  --border-soft:   #241c52;   /* sutil (opaca p/ consistência) */
-  --border-rule:   #1c1642;   /* divisórias */
-  --border-strong: #4a3885;   /* destaque / hover */
+  --border:        #34296599;   /* forte */
+  --border-soft:   #34296599;   /* sutil */
+  --border-rule:   #34296599;   /* divisórias */
+  --border-strong: #4a3885cc;   /* destaque / hover */
 
   /* ---- Espaçamento (escala global) ---- */
   --space-1: 4px;

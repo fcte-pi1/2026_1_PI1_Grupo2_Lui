@@ -89,13 +89,13 @@ module.exports = {
           'danger-text': '#e88a6a',
         },
         border: {
-          ghost:   '#0e0b1d',
-          subtle:  '#342965',       /* --border */
-          rule:    '#1c1642',       /* --border-rule */
-          soft:    '#241c52',       /* --border-soft */
-          dim:     '#161132',
-          accent:  '#4a3885',       /* --border-strong */
-          hover:   '#4a3885',
+          ghost:   'transparent',
+          subtle:  '#34296599',       /* --border */
+          rule:    '#34296599',       /* --border-rule */
+          soft:    '#34296599',       /* --border-soft */
+          dim:     '#34296599',
+          accent:  '#4a3885cc',       /* --border-strong */
+          hover:   '#4a3885cc',
         },
       },
       boxShadow: {

@@ -402,25 +402,27 @@ const App = () => {
   }, [dataMode, liveTelemetry, sim.gridSize]);
 
   return (
-    <div className="font-sans h-screen p-4 flex flex-col overflow-hidden">
-      <div className="w-full h-full flex flex-col overflow-hidden relative gap-4">
-        <Header activeTab={activeTab} setActiveTab={setActiveTab} wsStatus={wsStatus} sim={sim} />
+    <div className="font-sans h-screen flex flex-col overflow-hidden">
+      <Header activeTab={activeTab} setActiveTab={setActiveTab} wsStatus={wsStatus} sim={sim} />
+      <div className="w-full flex-grow flex flex-col overflow-hidden relative">
         <main className="flex-grow flex flex-col lg:flex-row gap-4 h-full min-h-0 overflow-hidden">
           {activeTab === 'Histórico' ? (
-            <HistoryView
-              historyData={combinedHistory}
-              filter={historyFilter}
-              setFilter={setHistoryFilter}
-              loading={historyLoading}
-              error={historyError}
-              onRefresh={() => refreshHistory(historyFilter)}
-            />
+            <div className="w-full h-full flex flex-col overflow-hidden min-h-0">
+              <HistoryView
+                historyData={combinedHistory}
+                filter={historyFilter}
+                setFilter={setHistoryFilter}
+                loading={historyLoading}
+                error={historyError}
+                onRefresh={() => refreshHistory(historyFilter)}
+              />
+            </div>
           ) : (
             <>
-              <section className="flex-grow bg-panel p-5 flex flex-col relative overflow-hidden min-h-0">
+              <section className="flex-grow bg-app-surface border-r border-border-rule p-5 flex flex-col relative overflow-hidden min-h-0">
                 <MazeCanvas sim={sim} liveRobot={liveRobot} liveExplored={liveExplored} dataMode={dataMode} />
               </section>
-              <aside className="w-full lg:w-[372px] flex flex-col gap-3 overflow-y-auto shrink-0 pr-1 custom-scrollbar">
+              <aside className="w-full lg:w-[372px] flex flex-col gap-2 overflow-y-auto shrink-0 my-4 mr-4 pr-1 custom-scrollbar">
                 <TelemetrySidebar
                   sim={sim}
                   wsStatus={wsStatus}
@@ -448,7 +450,7 @@ const Header = ({ activeTab, setActiveTab, wsStatus, sim }) => {
   const isConnected = wsStatus === 'Conectado';
 
   return (
-    <header className="relative flex items-center justify-center h-16 px-5 bg-panel shrink-0 border-b border-border-rule" data-screen-label="Header">
+    <header className="relative flex items-center justify-center h-16 px-5 shrink-0 w-full border-b border-border-subtle bg-[#080614]" data-screen-label="Header">
       {/* Marca */}
       <div className="absolute left-5 flex items-center gap-3">
         <div className="w-10 h-10 rounded-xl grid place-items-center text-white bg-brand-purple shrink-0">
@@ -528,13 +530,9 @@ const MazeCanvas = ({ sim, liveRobot, liveExplored, dataMode }) => {
   return (
     <>
       {/* Barra de ferramentas */}
-      <div className="flex flex-col xl:flex-row justify-between items-start xl:items-center mb-4 z-10 gap-4 xl:gap-0 shrink-0">
-        <div>
-          <h2 className="text-xl font-semibold text-brand-h1 tracking-tight">Mapa do Labirinto</h2>
-        </div>
-        <div className="flex items-center gap-3">
-          {/* Grupo de controles: seletor + velocidade + raio-x */}
-          <div className="flex items-center gap-4 h-10 px-4 rounded-xl bg-app-inset border border-border-rule box-border">
+      <div className="flex flex-col xl:flex-row justify-between items-center mb-4 z-10 gap-4 shrink-0 w-full">
+        {/* Grupo de controles: seletor + velocidade + raio-x */}
+        <div className="flex items-center gap-4 h-10 px-4 rounded-xl bg-app-inset border border-border-rule box-border">
             {/* Matrix selector — rótulo embutido para formar um controle único */}
             <div className="relative flex items-center h-full">
               <select
@@ -610,7 +608,6 @@ const MazeCanvas = ({ sim, liveRobot, liveExplored, dataMode }) => {
               <RotateCw size={16} className="transition-transform duration-300 group-hover:rotate-180 group-active:scale-90" /><span>Novo</span>
             </button>
           </div>
-        </div>
       </div>
 
       {/* Grade do labirinto */}
@@ -652,17 +649,6 @@ const MazeCanvas = ({ sim, liveRobot, liveExplored, dataMode }) => {
           })}
         </div>
 
-        {/* Sobreposição de legenda */}
-        <div className="absolute left-4 bottom-3 flex gap-3 items-center text-[11px] text-brand-h3 pointer-events-none">
-          <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded-sm" style={{ background: 'var(--success)' }} />Centro</span>
-          <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded-sm" style={{ background: 'var(--primary)' }} />Trajeto</span>
-          <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded-sm border border-border-subtle" style={{ background: 'var(--surface-3)' }} />Inexplorado</span>
-        </div>
-
-        {/* Sobreposição de coordenadas */}
-        <div className="absolute right-4 bottom-3 font-mono text-[11px] text-brand-h3 pointer-events-none">
-          pos {cellName(robotShown?.x ?? 0, robotShown?.y ?? 0)} · dir {['↑','→','↓','←'][robotShown?.dir ?? 0]}
-        </div>
       </div>
     </>
   );
@@ -734,7 +720,7 @@ const TelemetrySidebar = ({ sim, wsStatus, batteryPct, latencyMs, packetsRx, liv
     <>
       {/* Status do Robô */}
       <div className="flex flex-col">
-        <div className="flex items-center gap-2 px-1 pb-2">
+        <div className="flex items-center gap-2 px-1 pb-1">
           <h3 className="text-label">Status do Robô</h3>
           <span className="flex-1 h-px bg-border-rule" />
         </div>
@@ -800,7 +786,7 @@ const TelemetrySidebar = ({ sim, wsStatus, batteryPct, latencyMs, packetsRx, liv
 
       {/* Telemetria */}
       <div className="flex flex-col">
-        <div className="flex items-center gap-2 px-1 pb-2">
+        <div className="flex items-center gap-2 px-1 pb-1">
           <h3 className="text-label">Telemetria</h3>
           <span className="flex-1 h-px bg-border-rule" />
         </div>
@@ -814,17 +800,17 @@ const TelemetrySidebar = ({ sim, wsStatus, batteryPct, latencyMs, packetsRx, liv
 
       {/* Algoritmo */}
       <div className="flex flex-col">
-        <div className="flex items-center gap-2 px-1 pb-2">
+        <div className="flex items-center gap-2 px-1 pb-1">
           <h3 className="text-label">Algoritmo</h3>
           <span className="flex-1 h-px bg-border-rule" />
         </div>
-        <div className="bg-panel p-4 flex flex-col gap-3">
+        <div className="bg-panel p-3 flex flex-col gap-2">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl grid place-items-center text-white flex-none bg-brand-purple">
-              <Zap size={20} />
+            <div className="w-8 h-8 rounded-lg grid place-items-center text-white flex-none bg-brand-purple">
+              <Zap size={16} />
             </div>
             <div>
-              <div className="text-lg font-bold tracking-tight text-brand-h1">Flood-Fill</div>
+              <div className="text-base font-bold tracking-tight text-brand-h1">Flood-Fill</div>
               <div className="text-[11px] text-brand-h3 uppercase tracking-wider font-semibold mt-0.5">Resolução por inundação</div>
             </div>
           </div>
@@ -840,9 +826,9 @@ const TelemetrySidebar = ({ sim, wsStatus, batteryPct, latencyMs, packetsRx, liv
 };
 
 const ConnRow = ({ icon, label, value, last = false }) => (
-  <div className={`flex items-center justify-between h-14 px-4 ${last ? '' : 'border-b border-border-rule'}`}>
+  <div className={`flex items-center justify-between h-11 px-3 ${last ? '' : 'border-b border-border-rule'}`}>
     <div className="flex items-center gap-3">
-      <div className="w-8 h-8 rounded-lg grid place-items-center bg-app-raised border border-border-rule text-brand-h2 flex-none">
+      <div className="w-7 h-7 rounded-lg grid place-items-center bg-app-raised border border-border-rule text-brand-h2 flex-none">
         {icon}
       </div>
       <span className="text-brand-h2 text-sm font-medium">{label}</span>
@@ -852,12 +838,12 @@ const ConnRow = ({ icon, label, value, last = false }) => (
 );
 
 const MetricCard = ({ label, value, unit, icon, accent = false }) => (
-  <div className="bg-panel p-4 rounded-xl transition-all hover:border-border-accent hover:bg-app-hover group">
+  <div className="bg-panel p-3 rounded-xl transition-all hover:border-border-accent hover:bg-app-hover group">
     <div className="flex items-center justify-between">
       <span className="text-label">{label}</span>
       <span className="text-brand-h3 group-hover:text-brand-h2 transition-colors">{icon}</span>
     </div>
-    <div className={`mt-3 font-mono text-3xl font-bold tracking-tight leading-none tabular-nums ${accent ? 'text-brand-purple-light' : 'text-brand-h1'}`}>
+    <div className={`mt-1.5 font-mono text-2xl font-bold tracking-tight leading-none tabular-nums ${accent ? 'text-brand-purple-light' : 'text-brand-h1'}`}>
       {value}
       {unit && <span className="text-sm text-brand-h2 font-medium font-sans ml-1">{unit}</span>}
     </div>
@@ -865,7 +851,7 @@ const MetricCard = ({ label, value, unit, icon, accent = false }) => (
 );
 
 const AlgoStat = ({ label, value }) => (
-  <div className="flex-1 bg-app-inset border border-border-rule rounded-lg p-3">
+  <div className="flex-1 bg-app-inset border border-border-rule rounded-lg p-2">
     <div className="text-label">{label}</div>
     <div className="font-mono text-base font-semibold text-brand-h1 mt-1 tabular-nums">{value}</div>
   </div>
@@ -976,8 +962,35 @@ const HistoryView = ({ historyData, filter, setFilter, loading, error, onRefresh
   };
 
   return (
-    <div data-testid="historico-view" className="flex-1 bg-panel w-full h-full overflow-y-auto p-6 box-border">
-      <div className="flex justify-end items-center mb-8">
+    <div data-testid="historico-view" className="flex-1 bg-app-surface w-full h-full overflow-y-auto p-6 box-border">
+      <div className="flex justify-between items-center mb-6">
+        <div data-testid="pill-container" className="pill-container">
+          <button
+            data-testid="pill-item"
+            onClick={() => setSubTab('tabela')}
+            className={`group pill-item gap-2 font-medium text-sm transition-all ${
+              subTab === 'tabela'
+                ? 'text-white bg-brand-purple'
+                : 'text-brand-h3 hover:text-brand-h1 hover:bg-white/[0.03]'
+            }`}
+          >
+            <Footprints size={16} className="transition-transform group-hover:rotate-12 group-active:scale-90" />
+            <span>Tabela</span>
+          </button>
+          <button
+            data-testid="pill-item"
+            onClick={() => setSubTab('ranking')}
+            className={`group pill-item gap-2 font-medium text-sm transition-all ${
+              subTab === 'ranking'
+                ? 'text-white bg-brand-purple'
+                : 'text-brand-h3 hover:text-brand-h1 hover:bg-white/[0.03]'
+            }`}
+          >
+            <Zap size={16} className="transition-transform group-hover:scale-110 group-active:scale-90" />
+            <span>Ranking</span>
+          </button>
+        </div>
+
         <div data-testid="pill-container" className="pill-container">
           <div className="relative flex items-center h-[var(--pill-h)]">
             <select
@@ -1008,33 +1021,6 @@ const HistoryView = ({ historyData, filter, setFilter, loading, error, onRefresh
             </button>
           )}
         </div>
-      </div>
-
-      <div data-testid="pill-container" className="pill-container self-start mb-6">
-        <button
-          data-testid="pill-item"
-          onClick={() => setSubTab('tabela')}
-          className={`group pill-item gap-2 font-medium text-sm transition-all ${
-            subTab === 'tabela'
-              ? 'text-white bg-brand-purple'
-              : 'text-brand-h3 hover:text-brand-h1 hover:bg-white/[0.03]'
-          }`}
-        >
-          <Footprints size={16} className="transition-transform group-hover:rotate-12 group-active:scale-90" />
-          <span>Tabela</span>
-        </button>
-        <button
-          data-testid="pill-item"
-          onClick={() => setSubTab('ranking')}
-          className={`group pill-item gap-2 font-medium text-sm transition-all ${
-            subTab === 'ranking'
-              ? 'text-white bg-brand-purple'
-              : 'text-brand-h3 hover:text-brand-h1 hover:bg-white/[0.03]'
-          }`}
-        >
-          <Zap size={16} className="transition-transform group-hover:scale-110 group-active:scale-90" />
-          <span>Ranking</span>
-        </button>
       </div>
 
       {error && (
