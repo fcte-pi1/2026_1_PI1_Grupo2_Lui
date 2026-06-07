@@ -144,3 +144,17 @@ export function parseTimeToSeconds(timeStr) {
   if (parts.length < 2) return Infinity;
   return parseInt(parts[0], 10) * 60 + parseFloat(parts[1]);
 }
+
+/**
+ * DELETE /historico — apaga todo o histórico de corridas do banco de dados.
+ */
+export async function deleteHistorico() {
+  const response = await fetch(`${API_BASE}/historico`, {
+    method: 'DELETE',
+  });
+  if (!response.ok) {
+    const text = await response.text().catch(() => '');
+    throw new Error(`DELETE /historico falhou: ${response.status} ${text}`);
+  }
+  return response.json();
+}

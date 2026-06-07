@@ -3,7 +3,7 @@ import { Cpu, Wifi, Play, Pause, Bot, RotateCw, ChevronDown, Battery, Clock, Foo
 import { useMazeSimulator } from './useMazeSimulator';
 import { CELL_MM, DX as DXR, DY as DYR, mmToCell } from './utils/maze';
 import { useWebSocket } from './useWebSocket';
-import { getHistorico, postTelemetria, batteryVoltsToPercent, getCorrida, parseTimeToSeconds } from './services/api';
+import { getHistorico, postTelemetria, batteryVoltsToPercent, getCorrida, parseTimeToSeconds, deleteHistorico } from './services/api';
 
 const ReplayCanvas = ({ pathMm, mazeSize, knownWalls }) => {
   const total = pathMm?.length ?? 0;
@@ -209,10 +209,201 @@ const MiniMap = ({ snapshot }) => {
   );
 };
 
+const SettingsView = ({ wsUrl, setWsUrl, wsStatus, refreshHistory }) => {
+  const [inputUrl, setInputUrl] = useState(wsUrl);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [deleteInput, setDeleteInput] = useState('');
+  const [feedbackMessage, setFeedbackMessage] = useState(null);
+
+  const handleSaveWs = () => {
+    localStorage.setItem('WS_URL', inputUrl);
+    setWsUrl(inputUrl);
+  };
+
+  const handleExportCsv = async () => {
+    try {
+      const data = await getHistorico('Todos');
+      if (!data || data.length === 0) {
+        setFeedbackMessage({ title: 'Aviso', text: 'Não há dados para exportar.', type: 'warning' });
+        return;
+      }
+      
+      const headers = ['ID', 'Data', 'Origem', 'Labirinto', 'Status', 'Passos', 'Tempo', 'Velocidade', 'Bateria'];
+      const rows = data.map(r => [
+        r.id, r.date, r.source, r.maze, r.status, r.steps, r.time, r.speed, r.battery
+      ]);
+      
+      const csvContent = [
+        headers.join(','),
+        ...rows.map(e => e.join(','))
+      ].join('\n');
+      
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.setAttribute('href', url);
+      link.setAttribute('download', 'micromouse_historico.csv');
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    } catch (e) {
+      setFeedbackMessage({ title: 'Erro', text: 'Erro ao exportar CSV: ' + e.message, type: 'error' });
+    }
+  };
+
+  const handleClearDatabase = async () => {
+    try {
+      await deleteHistorico();
+      setFeedbackMessage({ title: 'Sucesso', text: 'Banco de dados apagado com sucesso!', type: 'success' });
+      refreshHistory('Todos');
+      setShowDeleteModal(false);
+      setDeleteInput('');
+    } catch (e) {
+      setFeedbackMessage({ title: 'Erro', text: 'Erro ao apagar banco: ' + e.message, type: 'error' });
+      setShowDeleteModal(false);
+      setDeleteInput('');
+    }
+  };
+
+  return (
+    <div className="flex-1 bg-app-surface w-full h-full overflow-y-auto p-6 box-border">
+      <div className="max-w-3xl mx-auto space-y-6">
+        
+        <div className="bg-app-bg rounded-xl border border-border-rule p-6 shadow-card">
+          <h2 className="text-xl font-bold text-brand-h1 mb-4">Conexão WebSocket</h2>
+          <p className="text-brand-h3 text-sm mb-4">Configure o endereço IP ou a URL do servidor de telemetria do robô.</p>
+          <div className="flex flex-col sm:flex-row gap-4 items-end">
+            <div className="flex-1 w-full">
+              <label className="block text-brand-h3 text-xs mb-1">URL do WebSocket</label>
+              <input 
+                type="text" 
+                className="w-full bg-app-surface border border-border-rule rounded-md px-3 py-2 text-brand-h1 text-sm focus:outline-none focus:border-brand-purple"
+                value={inputUrl}
+                onChange={e => setInputUrl(e.target.value)}
+                placeholder="ws://localhost:8000/ws/dashboard"
+              />
+            </div>
+            <button 
+              onClick={handleSaveWs}
+              className="bg-brand-purple hover:bg-brand-purple-light text-white font-medium text-sm px-6 py-2.5 rounded-md transition-colors whitespace-nowrap"
+            >
+              Salvar Conexão
+            </button>
+          </div>
+          <div className="mt-4 flex items-center gap-2">
+            <span className="text-brand-h3 text-xs">Status atual:</span>
+            <span className={`text-xs font-bold ${
+              wsStatus === 'Conectado' ? 'text-brand-green' : 
+              wsStatus === 'Conectando...' || wsStatus === 'Reconectando...' ? 'text-brand-accent' : 
+              'text-brand-danger'
+            }`}>
+              {wsStatus}
+            </span>
+          </div>
+        </div>
+
+        <div className="bg-app-bg rounded-xl border border-border-rule p-6 shadow-card">
+          <h2 className="text-xl font-bold text-brand-h1 mb-4">Gerenciamento de Dados</h2>
+          <p className="text-brand-h3 text-sm mb-6">Exporte as corridas consolidadas para planilhas ou apague o histórico de testes para iniciar uma nova sessão limpa na competição.</p>
+          
+          <div className="flex flex-col sm:flex-row gap-4">
+            <button 
+              onClick={handleExportCsv}
+              className="flex-1 bg-app-surface hover:bg-app-hover border border-border-rule text-brand-h1 font-medium text-sm px-6 py-3 rounded-md transition-colors flex items-center justify-center gap-2"
+            >
+              <Download size={16} />
+              Exportar Histórico (CSV)
+            </button>
+            <button 
+              onClick={() => { setShowDeleteModal(true); setDeleteInput(''); }}
+              className="flex-1 bg-app-surface hover:bg-brand-danger/20 border border-brand-danger/30 text-brand-danger font-medium text-sm px-6 py-3 rounded-md transition-colors flex items-center justify-center gap-2"
+            >
+              <XCircle size={16} />
+              Limpar Banco de Dados
+            </button>
+          </div>
+        </div>
+
+      </div>
+
+      {showDeleteModal && (
+        <div className="absolute inset-0 z-50 bg-app-bg/80 backdrop-blur-sm flex items-center justify-center p-6" onClick={() => setShowDeleteModal(false)}>
+          <div className="bg-panel w-full max-w-md shadow-pop flex flex-col p-6 rounded-xl border border-brand-danger/30" onClick={e => e.stopPropagation()}>
+            <div className="flex justify-between items-start mb-4">
+              <h3 className="text-xl font-bold text-brand-danger flex items-center gap-2">
+                <XCircle size={24} />
+                Atenção!
+              </h3>
+            </div>
+            
+            <p className="text-brand-h1 text-sm mb-4">
+              Você está prestes a apagar permanentemente todo o histórico de corridas. 
+              Essa ação não pode ser desfeita.
+            </p>
+            <p className="text-brand-h3 text-sm mb-6">
+              Para confirmar, digite a palavra <strong className="text-brand-h1 font-mono">deletar</strong> no campo abaixo:
+            </p>
+
+            <input 
+              type="text" 
+              className="w-full bg-app-surface border border-brand-danger/50 rounded-md px-3 py-2 text-brand-h1 text-sm focus:outline-none focus:border-brand-danger mb-6 font-mono text-center"
+              value={deleteInput}
+              onChange={e => setDeleteInput(e.target.value)}
+              placeholder="deletar"
+            />
+
+            <div className="flex gap-4">
+              <button 
+                onClick={() => setShowDeleteModal(false)}
+                className="flex-1 bg-app-surface hover:bg-app-hover border border-border-rule text-brand-h1 font-medium text-sm px-4 py-2 rounded-md transition-colors"
+              >
+                Cancelar
+              </button>
+              <button 
+                onClick={handleClearDatabase}
+                disabled={deleteInput !== 'deletar'}
+                className="flex-1 bg-brand-danger hover:bg-red-600 disabled:opacity-50 disabled:cursor-not-allowed text-white font-medium text-sm px-4 py-2 rounded-md transition-colors"
+              >
+                Sim, Apagar Histórico
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {feedbackMessage && (
+        <div className="absolute inset-0 z-50 bg-app-bg/80 backdrop-blur-sm flex items-center justify-center p-6" onClick={() => setFeedbackMessage(null)}>
+          <div className="bg-panel w-full max-w-sm shadow-pop flex flex-col p-6 rounded-xl border border-border-rule text-center" onClick={e => e.stopPropagation()}>
+            <div className="mb-4 flex justify-center">
+              {feedbackMessage.type === 'success' ? (
+                <div className="w-12 h-12 bg-brand-green/20 rounded-full flex items-center justify-center text-brand-green"><CheckCircle2 size={24}/></div>
+              ) : feedbackMessage.type === 'error' ? (
+                <div className="w-12 h-12 bg-brand-danger/20 rounded-full flex items-center justify-center text-brand-danger"><XCircle size={24}/></div>
+              ) : (
+                <div className="w-12 h-12 bg-brand-accent/20 rounded-full flex items-center justify-center text-brand-accent"><CheckCircle2 size={24}/></div>
+              )}
+            </div>
+            <h3 className="text-xl font-bold text-brand-h1 mb-2">{feedbackMessage.title}</h3>
+            <p className="text-brand-h3 text-sm mb-6">{feedbackMessage.text}</p>
+            <button 
+              onClick={() => setFeedbackMessage(null)}
+              className="w-full bg-brand-purple hover:bg-brand-purple-light text-white font-medium text-sm px-4 py-2.5 rounded-md transition-colors"
+            >
+              Entendi
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
 const App = () => {
   const [activeTab, setActiveTab] = useState('Mapa');
   const sim = useMazeSimulator();
-  const { status: wsStatus, lastMessage } = useWebSocket();
+  
+  const [wsUrl, setWsUrl] = useState(() => localStorage.getItem('WS_URL') || 'ws://localhost:8000/ws/dashboard');
+  const { status: wsStatus, lastMessage } = useWebSocket(wsUrl);
 
   // ── Telemetria viva derivada do WebSocket ─────────────────────────────
   const [liveTelemetry, setLiveTelemetry] = useState(null);
@@ -416,6 +607,13 @@ const App = () => {
                 onRefresh={() => refreshHistory(historyFilter)}
               />
             </div>
+          ) : activeTab === 'Configurações' ? (
+            <SettingsView 
+                wsUrl={wsUrl} 
+                setWsUrl={setWsUrl} 
+                wsStatus={wsStatus} 
+                refreshHistory={refreshHistory} 
+            />
           ) : (
             <>
               <section className="flex-grow bg-app-surface border-r border-border-rule p-5 flex flex-col relative overflow-hidden min-h-0">
