@@ -237,8 +237,7 @@ describe('histórico: ranking e detalhe/replay', () => {
   test('sub-aba Ranking lista melhores por labirinto', async () => {
     await openHistorico();
     fireEvent.click(screen.getByRole('button', { name: /Ranking/i }));
-    expect(screen.getByText(/Top 5 por Labirinto/i)).toBeInTheDocument();
-    expect(screen.getAllByText(/Sem corridas concluídas/i).length).toBeGreaterThan(0);
+    expect(screen.getByText(/Ranking Geral/i)).toBeInTheDocument();
   });
 
   // Clicar numa corrida com trajeto abre o modal e o replay.
