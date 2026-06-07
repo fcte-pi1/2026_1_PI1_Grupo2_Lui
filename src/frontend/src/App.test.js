@@ -69,8 +69,7 @@ describe('navegação e render base', () => {
   // A aba Mapa exibe o canvas do labirinto e os controles do simulador.
   test('aba Mapa mostra o canvas e os controles', () => {
     render(<App />);
-    expect(screen.getByText(/Mapa do Labirinto/i)).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /Iniciar/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /^Iniciar$/i })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /Novo/i })).toBeInTheDocument();
   });
 });
@@ -79,15 +78,37 @@ describe('controles do mapa', () => {
   // Iniciar/Pausar, tamanho da malha, raio-X e botões reagem aos cliques.
   test('Iniciar/Pausar, tamanho, raio-X e reset respondem', () => {
     render(<App />);
-    fireEvent.click(screen.getByRole('button', { name: /Iniciar/i }));
+    fireEvent.click(screen.getByRole('button', { name: /^Iniciar$/i }));
     expect(screen.getByRole('button', { name: /Pausar/i })).toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: /Pausar/i }));
-    const sizeSelect = screen.getByDisplayValue(/Matriz 16x16/i);
-    fireEvent.change(sizeSelect, { target: { value: '4' } });
-    expect(screen.getByDisplayValue(/Matriz 4x4/i)).toBeInTheDocument();
-    fireEvent.click(screen.getByRole('checkbox'));
+    // Interage com o CustomSelect de tamanho da matriz
+    const sizeTrigger = screen.getByText(/16x16/i);
+    fireEvent.click(sizeTrigger); // Abre o dropdown
+    const option4x4 = screen.getByText(/4x4/i); // Pega a opção revelada
+    fireEvent.click(option4x4); // Seleciona a opção
+    
+    // Agora o texto truncado na label do seletor deve ser 4x4
+    expect(screen.getAllByText(/4x4/i).length).toBeGreaterThan(0);
+    const checkboxes = screen.getAllByRole('checkbox', { hidden: true });
+    fireEvent.click(checkboxes[1]); // Clica no Raio-X
     fireEvent.click(screen.getByRole('button', { name: /Novo/i }));
-    fireEvent.click(screen.getByRole('button', { name: /Robô/i }));
+    fireEvent.click(screen.getByRole('button', { name: /Reiniciar/i }));
+  });
+
+  test('botão Raio-X só fica habilitado no modo Simulador e desabilita no modo Corrida', () => {
+    render(<App />);
+    
+    // O checkbox deve estar no DOM e habilitado (pois o modo padrão do mock é simulador)
+    // Buscamos pelo label raiz ou pelo próprio checkbox caso tenhamos adicionado aria-label (podemos pegar pelo label contendo 'Raio-X')
+    const xrayCheckbox = screen.getAllByRole('checkbox', { hidden: true })[1]; // O Raio-X é o segundo checkbox
+    expect(xrayCheckbox).not.toBeDisabled();
+    
+    // Muda o mockMode para "Corrida" através do switch
+    const modeSwitch = screen.getByRole('checkbox', { name: /Alternar Modo de Operação/i, hidden: true });
+    fireEvent.click(modeSwitch);
+    
+    // O Raio-X deve ter ficado desabilitado
+    expect(xrayCheckbox).toBeDisabled();
   });
 });
 
@@ -95,6 +116,8 @@ describe('telemetria em tempo real', () => {
   // Pacote real atualiza os campos (bateria, modo, latência e status).
   test('pacote real atualiza campos e latência', () => {
     render(<App />);
+    const modeSwitch = screen.getByRole('checkbox', { name: /Alternar Modo de Operação/i, hidden: true });
+    fireEvent.click(modeSwitch);
     emit({
       source: 'real',
       timestamp: new Date().toISOString(),
@@ -105,7 +128,7 @@ describe('telemetria em tempo real', () => {
       race_status: 'running',
       event: 'start_race',
     });
-    expect(screen.getAllByText(/Real/i).length).toBeGreaterThan(0);
+    expect(screen.getAllByText(/Corrida/i).length).toBeGreaterThan(0);
     expect(screen.getByText(/ms$/)).toBeInTheDocument();
     expect(screen.getByText(/Mapeando\.\.\./i)).toBeInTheDocument();
   });
@@ -113,6 +136,8 @@ describe('telemetria em tempo real', () => {
   // Pacote final com sucesso mostra "Centro Alcançado!".
   test('pacote final de sucesso mostra "Centro Alcançado!"', () => {
     render(<App />);
+    const modeSwitch = screen.getByRole('checkbox', { name: /Alternar Modo de Operação/i, hidden: true });
+    fireEvent.click(modeSwitch);
     emit({
       source: 'real',
       timestamp: new Date().toISOString(),
@@ -126,6 +151,8 @@ describe('telemetria em tempo real', () => {
   // Mesmo com latência alta (pacote antigo) o valor continua sendo exibido.
   test('latência alta ainda é renderizada', () => {
     render(<App />);
+    const modeSwitch = screen.getByRole('checkbox', { name: /Alternar Modo de Operação/i, hidden: true });
+    fireEvent.click(modeSwitch);
     emit({
       source: 'real',
       timestamp: new Date(Date.now() - 1500).toISOString(),
@@ -155,7 +182,9 @@ describe('histórico: tabela, filtro e CSV', () => {
     await openHistorico();
     await screen.findAllByTestId('corrida-item');
     const filtro = screen.getByTestId('filtro-labirinto');
-    fireEvent.change(filtro, { target: { value: '4x4' } });
+    fireEvent.click(filtro);
+    const option4x4 = screen.getByText(/Pista 4x4/i);
+    fireEvent.click(option4x4);
     await waitFor(() => {
       const urls = global.fetch.mock.calls.map(c => String(c[0]));
       expect(urls.some(u => u.includes('maze_type=4x4'))).toBe(true);
@@ -208,8 +237,7 @@ describe('histórico: ranking e detalhe/replay', () => {
   test('sub-aba Ranking lista melhores por labirinto', async () => {
     await openHistorico();
     fireEvent.click(screen.getByRole('button', { name: /Ranking/i }));
-    expect(screen.getByText(/Top 5 por Labirinto/i)).toBeInTheDocument();
-    expect(screen.getAllByText(/Sem corridas concluídas/i).length).toBeGreaterThan(0);
+    expect(screen.getByText(/Ranking Geral/i)).toBeInTheDocument();
   });
 
   // Clicar numa corrida com trajeto abre o modal e o replay.

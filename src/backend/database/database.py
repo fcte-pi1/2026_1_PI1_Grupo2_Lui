@@ -121,3 +121,9 @@ def buscar_corrida(corrida_id):
             (corrida_id,),
         ).fetchone()
     return _row_to_record(row) if row else None
+
+
+def limpar_banco():
+    with managed_connection() as conn:
+        conn.execute("DELETE FROM corridas")
+        conn.commit()

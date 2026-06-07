@@ -4,7 +4,7 @@ from typing import Optional
 from fastapi import FastAPI, Query, HTTPException, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
 
-from database.database import init_db, salvar_corrida, listar_corridas, buscar_corrida
+from database.database import init_db, salvar_corrida, listar_corridas, buscar_corrida, limpar_banco
 from memory.session_buffer import (
     start_session, update_session, get_session,
     clear_session, calculate_avg_speed
@@ -130,6 +130,16 @@ def obter_corrida(corrida_id: int):
     if corrida is None:
         raise HTTPException(status_code=404, detail="Corrida não encontrada")
     return {"status": "sucesso", "data": corrida}
+
+
+@app.delete("/historico", status_code=200)
+def apagar_historico():
+    try:
+        limpar_banco()
+        return {"status": "sucesso", "mensagem": "Histórico apagado com sucesso"}
+    except Exception as e:
+        logger.error(f"Erro ao limpar banco: {e}")
+        raise HTTPException(status_code=500, detail="Erro ao limpar histórico")
 
 
 if __name__ == "__main__":

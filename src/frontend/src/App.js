@@ -1,9 +1,9 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
-import { Cpu, Wifi, Play, Pause, Bot, RotateCw, ChevronDown, Battery, Clock, Footprints, Gauge, RefreshCw, Zap, Usb, Timer, Radio, Download, CheckCircle2, XCircle, Calendar } from 'lucide-react';
+import { Cpu, Wifi, Play, Pause, Bot, RotateCw, ChevronDown, Battery, Clock, Footprints, Gauge, RefreshCw, Zap, Timer, Download, CheckCircle2, XCircle, Calendar, Square, Trophy, Table, ChevronRight, Activity } from 'lucide-react';
 import { useMazeSimulator } from './useMazeSimulator';
 import { CELL_MM, DX as DXR, DY as DYR, mmToCell } from './utils/maze';
 import { useWebSocket } from './useWebSocket';
-import { getHistorico, postTelemetria, batteryVoltsToPercent, getCorrida, parseTimeToSeconds } from './services/api';
+import { getHistorico, postTelemetria, batteryVoltsToPercent, getCorrida, parseTimeToSeconds, deleteHistorico } from './services/api';
 
 const ReplayCanvas = ({ pathMm, mazeSize, knownWalls }) => {
   const total = pathMm?.length ?? 0;
@@ -59,9 +59,6 @@ const ReplayCanvas = ({ pathMm, mazeSize, knownWalls }) => {
   };
 
   // Direção do robô: deduzida do movimento entre células consecutivas
-  // (N=0, E=1, S=2, W=3). Se idx atual repete a célula anterior, anda
-  // para trás no path até achar um movimento real para preservar a
-  // orientação. Inicial = Norte.
   let robotDir = 0;
   for (let i = idx; i > 0; i--) {
     const prev = pathMm[i - 1], curP = pathMm[i];
@@ -83,13 +80,13 @@ const ReplayCanvas = ({ pathMm, mazeSize, knownWalls }) => {
   ];
 
   return (
-    <div className="bg-app-bg rounded-xl border border-border-rule p-3 h-full flex flex-col">
-      <div className="text-brand-h3 text-[10px] uppercase tracking-widest font-semibold mb-2 flex items-center justify-between">
+    <div className="bg-app-bg rounded-xl border border-border-rule p-3 h-full flex flex-col shadow-card">
+      <div className="text-label mb-2 flex items-center justify-between">
         <span>Replay do Trajeto</span>
-        <span className="text-brand-h1 font-mono normal-case">{idx + 1}/{total}</span>
+        <span className="text-brand-h1 font-mono normal-case text-xs">{idx + 1}/{total}</span>
       </div>
       <div
-        className="aspect-square w-full max-w-[260px] mx-auto border border-border-rule bg-app-bg"
+        className="aspect-square w-full max-w-[260px] mx-auto border-2 border-brand-purple-light rounded-md overflow-hidden bg-app-bg"
         style={{
           display: 'grid',
           gridTemplateColumns: `repeat(${mazeSize}, minmax(0, 1fr))`,
@@ -102,11 +99,11 @@ const ReplayCanvas = ({ pathMm, mazeSize, knownWalls }) => {
           const isVisited = visited.has(`${cx},${cy}`);
           const isGoal = goals.some(g => g.x === cx && g.y === cy);
           const isRobot = cx === rx && cy === ry;
-          let bg = 'transparent';
-          if (isVisited) bg = 'rgba(167,139,250,0.18)';
-          if (isGoal) bg = '#10B981';
+          let bg = 'var(--bg-unexplored)';
+          if (isVisited) bg = 'var(--bg-explored)';
+          if (isGoal) bg = 'var(--bg-center)';
           const faint = '1px solid rgba(255,255,255,0.06)';
-          const wall  = '2px solid rgba(255,255,255,0.85)';
+          const wall  = '2.5px solid var(--primary-2)';
           return (
             <div key={i} style={{
               backgroundColor: bg,
@@ -122,9 +119,8 @@ const ReplayCanvas = ({ pathMm, mazeSize, knownWalls }) => {
                   width: 0, height: 0,
                   borderLeft: '4px solid transparent',
                   borderRight: '4px solid transparent',
-                  borderBottom: '8px solid #A78BFA',
+                  borderBottom: '8px solid var(--primary-2)',
                   transform: `rotate(${robotDir * 90}deg)`,
-                  transition: 'transform 120ms ease-out',
                 }} />
               )}
             </div>
@@ -135,27 +131,29 @@ const ReplayCanvas = ({ pathMm, mazeSize, knownWalls }) => {
         <input
           type="range" min={0} max={Math.max(0, total - 1)} value={idx}
           onChange={(e) => { setPlaying(false); setIdx(parseInt(e.target.value, 10)); }}
-          className="w-full h-1.5 bg-border-ghost rounded-lg appearance-none cursor-pointer accent-brand-purple"
+          className="w-full"
         />
         <div className="flex items-center justify-between">
-          <div className="flex space-x-1.5">
-            <button onClick={() => setPlaying(p => !p)} className="bg-app-raised border-2 border-border-dim text-brand-h1 px-3 py-1 rounded-full text-[11px] font-semibold flex items-center space-x-1">
+          <div className="flex gap-1.5">
+            <button onClick={() => setPlaying(p => !p)} className="bg-app-raised border border-border-rule text-brand-h1 px-3 py-1 rounded-lg text-xs font-semibold flex items-center gap-1 transition-all hover:bg-app-hover hover:border-border-accent">
               {playing ? <><Pause size={11}/><span>Pausar</span></> : <><Play size={11}/><span>Reproduzir</span></>}
             </button>
-            <button onClick={() => { setIdx(0); setPlaying(true); }} className="bg-app-raised border-2 border-border-dim text-brand-h1 px-3 py-1 rounded-full text-[11px] font-semibold flex items-center space-x-1">
+            <button onClick={() => { setIdx(0); setPlaying(true); }} className="bg-app-raised border border-border-rule text-brand-h1 px-3 py-1 rounded-lg text-xs font-semibold flex items-center gap-1 transition-all hover:bg-app-hover hover:border-border-accent">
               <RotateCw size={11}/><span>Reiniciar</span>
             </button>
           </div>
-          <select
+          <CustomSelect
             value={speedMs}
-            onChange={(e) => setSpeedMs(parseInt(e.target.value, 10))}
-            className="bg-app-raised border-2 border-border-dim text-brand-h2 text-[11px] font-medium px-2 py-1 rounded-full focus:outline-none cursor-pointer"
-          >
-            <option value={400}>0.5×</option>
-            <option value={150}>1×</option>
-            <option value={75}>2×</option>
-            <option value={30}>5×</option>
-          </select>
+            onChange={(val) => setSpeedMs(parseInt(val, 10))}
+            options={[
+              { value: 400, label: '0.5×' },
+              { value: 150, label: '1×' },
+              { value: 75, label: '2×' },
+              { value: 30, label: '5×' }
+            ]}
+            className="bg-app-raised border border-border-rule text-brand-h2 text-xs font-medium px-2 py-1 rounded-[16px] cursor-pointer min-w-[70px]"
+            dropdownWidth="w-auto"
+          />
         </div>
       </div>
     </div>
@@ -166,10 +164,10 @@ const MiniMap = ({ snapshot }) => {
   const { gridSize, knownWalls, explored, goals, robot } = snapshot;
 
   return (
-    <div className="w-full h-full flex flex-col items-center justify-center p-2 bg-app-bg relative rounded-xl border border-border-rule">
-        <h4 className="absolute top-3 left-0 right-0 text-center text-brand-h3 text-xs uppercase tracking-widest font-semibold z-10 pointer-events-none drop-shadow-md">Trajeto Mapeado</h4>
+    <div className="w-full h-full flex flex-col items-center justify-center p-2 bg-app-bg relative rounded-xl border border-border-rule shadow-card">
+        <h4 className="absolute top-3 left-0 right-0 text-center text-label z-10 pointer-events-none drop-shadow-md">Trajeto Mapeado</h4>
         <div
-          className="aspect-square w-full max-w-[200px] border border-border-rule box-border bg-app-bg mt-6"
+          className="aspect-square w-full max-w-[200px] border-2 border-brand-purple-light rounded-md overflow-hidden box-border bg-app-bg mt-6"
           style={{
             display: 'grid',
             gridTemplateColumns: `repeat(${gridSize}, minmax(0, 1fr))`,
@@ -181,17 +179,17 @@ const MiniMap = ({ snapshot }) => {
               const x = i % gridSize;
 
               let style = {
-                borderTop: knownWalls[x][y][0] ? '1px solid white' : '1px solid rgba(255,255,255,0.06)',
-                borderRight: knownWalls[x][y][1] ? '1px solid white' : '1px solid rgba(255,255,255,0.06)',
-                borderBottom: knownWalls[x][y][2] ? '1px solid white' : '1px solid rgba(255,255,255,0.06)',
-                borderLeft: knownWalls[x][y][3] ? '1px solid white' : '1px solid rgba(255,255,255,0.06)',
-                backgroundColor: 'transparent',
+                borderTop: knownWalls[x][y][0] ? '2px solid var(--primary-2)' : '1px solid rgba(255,255,255,0.06)',
+                borderRight: knownWalls[x][y][1] ? '2px solid var(--primary-2)' : '1px solid rgba(255,255,255,0.06)',
+                borderBottom: knownWalls[x][y][2] ? '2px solid var(--primary-2)' : '1px solid rgba(255,255,255,0.06)',
+                borderLeft: knownWalls[x][y][3] ? '2px solid var(--primary-2)' : '1px solid rgba(255,255,255,0.06)',
+                backgroundColor: 'var(--bg-unexplored)',
                 boxSizing: 'border-box'
               };
 
-              if (explored[x][y]) style.backgroundColor = '#110E20';
+              if (explored[x][y]) style.backgroundColor = 'var(--bg-explored)';
               const isGoal = goals.some(g => g.x === x && g.y === y);
-              if (isGoal) style.backgroundColor = '#10B981';
+              if (isGoal) style.backgroundColor = 'var(--bg-center)';
               const isRobot = robot && robot.x === x && robot.y === y;
 
               return (
@@ -201,8 +199,8 @@ const MiniMap = ({ snapshot }) => {
                            width: 0, height: 0,
                            borderLeft: '3px solid transparent',
                            borderRight: '3px solid transparent',
-                           borderBottom: '6px solid #A78BFA',
-                           transform: `rotate(${robot.direction * 90}deg)`
+                           borderBottom: '6px solid var(--primary-2)',
+                           transform: `rotate(${robot.direction * 90}deg)`,
                         }} />
                     )}
                  </div>
@@ -213,15 +211,280 @@ const MiniMap = ({ snapshot }) => {
   );
 };
 
+const SettingsView = ({ wsUrl, setWsUrl, wsStatus, refreshHistory }) => {
+  const [inputUrl, setInputUrl] = useState(wsUrl);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [deleteInput, setDeleteInput] = useState('');
+  const [feedbackMessage, setFeedbackMessage] = useState(null);
+
+  const [battMin, setBattMin] = useState(() => localStorage.getItem('BATT_VMIN') || '6.0');
+  const [battMax, setBattMax] = useState(() => localStorage.getItem('BATT_VMAX') || '8.4');
+  const [latencyLimit, setLatencyLimit] = useState(() => localStorage.getItem('LATENCY_THRESHOLD') || '500');
+
+  const handleSaveWs = () => {
+    localStorage.setItem('WS_URL', inputUrl);
+    setWsUrl(inputUrl);
+    setFeedbackMessage({ title: 'Sucesso', text: 'URL do WebSocket salva com sucesso!', type: 'success' });
+  };
+
+  const handleSaveBattery = () => {
+    localStorage.setItem('BATT_VMIN', battMin);
+    localStorage.setItem('BATT_VMAX', battMax);
+    refreshHistory('Todos'); // Atualiza a tabela para recalcular as %
+    setFeedbackMessage({ title: 'Sucesso', text: 'Calibração de bateria salva! Os percentuais foram recalculados.', type: 'success' });
+  };
+
+  const handleSaveLatency = () => {
+    localStorage.setItem('LATENCY_THRESHOLD', latencyLimit);
+    setFeedbackMessage({ title: 'Sucesso', text: 'Sensibilidade de conexão atualizada.', type: 'success' });
+  };
+
+  const handleExportCsv = async () => {
+    try {
+      const data = await getHistorico('Todos');
+      if (!data || data.length === 0) {
+        setFeedbackMessage({ title: 'Aviso', text: 'Não há dados para exportar.', type: 'warning' });
+        return;
+      }
+      
+      const headers = ['ID', 'Data', 'Origem', 'Labirinto', 'Status', 'Passos', 'Tempo', 'Velocidade', 'Bateria'];
+      const rows = data.map(r => [
+        r.id, r.date, r.source, r.maze, r.status, r.steps, r.time, r.speed, r.battery
+      ]);
+      
+      const csvContent = [
+        headers.join(','),
+        ...rows.map(e => e.join(','))
+      ].join('\n');
+      
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.setAttribute('href', url);
+      link.setAttribute('download', 'micromouse_historico.csv');
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    } catch (e) {
+      setFeedbackMessage({ title: 'Erro', text: 'Erro ao exportar CSV: ' + e.message, type: 'error' });
+    }
+  };
+
+  const handleClearDatabase = async () => {
+    try {
+      await deleteHistorico();
+      setFeedbackMessage({ title: 'Sucesso', text: 'Banco de dados apagado com sucesso!', type: 'success' });
+      refreshHistory('Todos');
+      setShowDeleteModal(false);
+      setDeleteInput('');
+    } catch (e) {
+      setFeedbackMessage({ title: 'Erro', text: 'Erro ao apagar banco: ' + e.message, type: 'error' });
+      setShowDeleteModal(false);
+      setDeleteInput('');
+    }
+  };
+
+  return (
+    <div className="flex-1 bg-app-surface w-full h-full overflow-y-auto p-6 box-border">
+      <div className="max-w-3xl mx-auto space-y-6">
+        
+        <div className="bg-app-bg rounded-xl border border-border-rule p-6 shadow-card">
+          <h2 className="text-xl font-bold text-brand-h1 mb-4">Conexão WebSocket</h2>
+          <p className="text-brand-h3 text-sm mb-4">Configure o endereço IP ou a URL do servidor de telemetria do robô.</p>
+          <div className="flex flex-col sm:flex-row gap-4 items-end">
+            <div className="flex-1 w-full">
+              <label className="block text-brand-h3 text-xs mb-1">URL do WebSocket</label>
+              <input 
+                type="text" 
+                className="w-full bg-app-surface border border-border-rule rounded-xl px-3 py-2 text-brand-h1 text-sm focus:outline-none focus:border-brand-purple"
+                value={inputUrl}
+                onChange={e => setInputUrl(e.target.value)}
+                placeholder="ws://localhost:8000/ws/dashboard"
+              />
+            </div>
+            <button 
+              onClick={handleSaveWs}
+              className="w-48 h-[42px] flex items-center justify-center bg-brand-purple hover:bg-brand-purple-light text-white font-medium text-sm rounded-xl transition-colors whitespace-nowrap"
+            >
+              Salvar Conexão
+            </button>
+          </div>
+          <div className="mt-4 flex items-center gap-2">
+            <span className="text-brand-h3 text-xs">Status atual:</span>
+            <span className={`text-xs font-bold ${
+              wsStatus === 'Conectado' ? 'text-brand-green' : 
+              wsStatus === 'Conectando...' || wsStatus === 'Reconectando...' ? 'text-brand-accent' : 
+              'text-brand-danger'
+            }`}>
+              {wsStatus}
+            </span>
+          </div>
+        </div>
+
+        <div className="bg-app-bg rounded-xl border border-border-rule p-6 shadow-card">
+          <h2 className="text-xl font-bold text-brand-h1 mb-4">Calibração da Bateria</h2>
+          <p className="text-brand-h3 text-sm mb-4">Ajuste os valores mínimo e máximo de tensão (Volts) da bateria do seu robô para que o dashboard calcule corretamente a porcentagem de carga.</p>
+          <div className="flex flex-col sm:flex-row gap-4 items-end">
+            <div className="flex-1 w-full">
+              <label className="block text-brand-h3 text-xs mb-1">Tensão Mínima (V) - 0%</label>
+              <input 
+                type="number" step="0.1"
+                className="w-full bg-app-surface border border-border-rule rounded-xl px-3 py-2 text-brand-h1 text-sm focus:outline-none focus:border-brand-purple"
+                value={battMin}
+                onChange={e => setBattMin(e.target.value)}
+                placeholder="6.0"
+              />
+            </div>
+            <div className="flex-1 w-full">
+              <label className="block text-brand-h3 text-xs mb-1">Tensão Máxima (V) - 100%</label>
+              <input 
+                type="number" step="0.1"
+                className="w-full bg-app-surface border border-border-rule rounded-xl px-3 py-2 text-brand-h1 text-sm focus:outline-none focus:border-brand-purple"
+                value={battMax}
+                onChange={e => setBattMax(e.target.value)}
+                placeholder="8.4"
+              />
+            </div>
+            <button 
+              onClick={handleSaveBattery}
+              className="w-48 h-[42px] flex items-center justify-center bg-brand-purple hover:bg-brand-purple-light text-white font-medium text-sm rounded-xl transition-colors whitespace-nowrap"
+            >
+              Salvar Calibração
+            </button>
+          </div>
+        </div>
+
+        <div className="bg-app-bg rounded-xl border border-border-rule p-6 shadow-card">
+          <h2 className="text-xl font-bold text-brand-h1 mb-4">Alertas de Conexão</h2>
+          <p className="text-brand-h3 text-sm mb-4">Configure o limite de latência aceitável para o indicador de ping emitir avisos (Padrão RNF: 500ms).</p>
+          <div className="flex flex-col sm:flex-row gap-4 items-end">
+            <div className="flex-1 w-full">
+              <label className="block text-brand-h3 text-xs mb-1">Sensibilidade do Ping (ms)</label>
+              <CustomSelect
+                className="w-full bg-app-surface border border-border-rule rounded-[16px] px-3 py-2 text-brand-h1 text-sm focus:outline-none focus:border-brand-purple"
+                value={latencyLimit.toString()}
+                onChange={(val) => setLatencyLimit(val)}
+                options={[
+                  { value: "300", label: "Rigoroso (300ms)" },
+                  { value: "500", label: "Padrão (500ms)" },
+                  { value: "1000", label: "Tolerante (1000ms)" },
+                  { value: "2000", label: "Muito Tolerante (2000ms)" }
+                ]}
+              />
+            </div>
+            <button 
+              onClick={handleSaveLatency}
+              className="w-48 h-[42px] flex items-center justify-center bg-brand-purple hover:bg-brand-purple-light text-white font-medium text-sm rounded-xl transition-colors whitespace-nowrap"
+            >
+              Salvar Alerta
+            </button>
+          </div>
+        </div>
+
+        <div className="bg-app-bg rounded-xl border border-border-rule p-6 shadow-card">
+          <h2 className="text-xl font-bold text-brand-h1 mb-4">Gerenciamento de Dados</h2>
+          <p className="text-brand-h3 text-sm mb-6">Exporte as corridas consolidadas para planilhas ou apague o histórico de testes para iniciar uma nova sessão limpa na competição.</p>
+          
+          <div className="flex flex-col sm:flex-row gap-4">
+            <button 
+              onClick={handleExportCsv}
+              className="flex-1 bg-app-surface hover:bg-app-hover border border-border-rule text-brand-h1 font-medium text-sm px-6 py-3 rounded-xl transition-colors flex items-center justify-center gap-2"
+            >
+              <Download size={16} />
+              Exportar Histórico (CSV)
+            </button>
+            <button 
+              onClick={() => { setShowDeleteModal(true); setDeleteInput(''); }}
+              className="flex-1 bg-app-surface hover:bg-brand-danger/20 border border-brand-danger/30 text-brand-danger font-medium text-sm px-6 py-3 rounded-xl transition-colors flex items-center justify-center gap-2"
+            >
+              <XCircle size={16} />
+              Limpar Banco de Dados
+            </button>
+          </div>
+        </div>
+
+      </div>
+
+      {showDeleteModal && (
+        <div className="absolute inset-0 z-50 bg-app-bg/80 backdrop-blur-sm flex items-center justify-center p-6" onClick={() => setShowDeleteModal(false)}>
+          <div className="bg-panel w-full max-w-md shadow-pop flex flex-col p-6 rounded-xl border border-brand-danger/30" onClick={e => e.stopPropagation()}>
+            <div className="flex justify-between items-start mb-4">
+              <h3 className="text-xl font-bold text-brand-danger flex items-center gap-2">
+                <XCircle size={24} />
+                Atenção!
+              </h3>
+            </div>
+            
+            <p className="text-brand-h1 text-sm mb-4">
+              Você está prestes a apagar permanentemente todo o histórico de corridas. 
+              Essa ação não pode ser desfeita.
+            </p>
+            <p className="text-brand-h3 text-sm mb-6">
+              Para confirmar, digite a palavra <strong className="text-brand-h1 font-mono">deletar</strong> no campo abaixo:
+            </p>
+
+            <input 
+              type="text" 
+              className="w-full bg-app-surface border border-brand-danger/50 rounded-xl px-3 py-2 text-brand-h1 text-sm focus:outline-none focus:border-brand-danger mb-6 font-mono text-center"
+              value={deleteInput}
+              onChange={e => setDeleteInput(e.target.value)}
+              placeholder="deletar"
+            />
+
+            <div className="flex gap-4">
+              <button 
+                onClick={() => setShowDeleteModal(false)}
+                className="flex-1 bg-app-surface hover:bg-app-hover border border-border-rule text-brand-h1 font-medium text-sm px-4 py-2 rounded-xl transition-colors"
+              >
+                Cancelar
+              </button>
+              <button 
+                onClick={handleClearDatabase}
+                disabled={deleteInput !== 'deletar'}
+                className="flex-1 bg-brand-danger hover:bg-red-600 disabled:opacity-50 disabled:cursor-not-allowed text-white font-medium text-sm px-4 py-2 rounded-xl transition-colors"
+              >
+                Sim, Apagar Histórico
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {feedbackMessage && (
+        <div className="absolute inset-0 z-50 bg-app-bg/80 backdrop-blur-sm flex items-center justify-center p-6" onClick={() => setFeedbackMessage(null)}>
+          <div className="bg-panel w-full max-w-sm shadow-pop flex flex-col p-6 rounded-xl border border-border-rule text-center" onClick={e => e.stopPropagation()}>
+            <div className="mb-4 flex justify-center">
+              {feedbackMessage.type === 'success' ? (
+                <div className="w-12 h-12 bg-brand-green/20 rounded-full flex items-center justify-center text-brand-green"><CheckCircle2 size={24}/></div>
+              ) : feedbackMessage.type === 'error' ? (
+                <div className="w-12 h-12 bg-brand-danger/20 rounded-full flex items-center justify-center text-brand-danger"><XCircle size={24}/></div>
+              ) : (
+                <div className="w-12 h-12 bg-brand-accent/20 rounded-full flex items-center justify-center text-brand-accent"><CheckCircle2 size={24}/></div>
+              )}
+            </div>
+            <h3 className="text-xl font-bold text-brand-h1 mb-2">{feedbackMessage.title}</h3>
+            <p className="text-brand-h3 text-sm mb-6">{feedbackMessage.text}</p>
+            <button 
+              onClick={() => setFeedbackMessage(null)}
+              className="w-full bg-brand-purple hover:bg-brand-purple-light text-white font-medium text-sm px-4 py-2.5 rounded-xl transition-colors"
+            >
+              Entendi
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
 const App = () => {
   const [activeTab, setActiveTab] = useState('Mapa');
   const sim = useMazeSimulator();
-  const { status: wsStatus, lastMessage } = useWebSocket();
+  
+  const [wsUrl, setWsUrl] = useState(() => localStorage.getItem('WS_URL') || 'ws://localhost:8000/ws/dashboard');
+  const { status: wsStatus, lastMessage } = useWebSocket(wsUrl);
 
   // ── Telemetria viva derivada do WebSocket ─────────────────────────────
-  // Quando o firmware (ou o fake_robot.py) enviar pacotes, esses valores
-  // substituem os literais hardcoded. Antes do primeiro pacote, ficam null
-  // e a UI cai no fallback do simulador.
   const [liveTelemetry, setLiveTelemetry] = useState(null);
   const [latencyMs, setLatencyMs] = useState(null);
   const [packetsRx, setPacketsRx] = useState(0);
@@ -259,8 +522,6 @@ const App = () => {
     }
   }, []);
 
-  // Carrega o histórico ao abrir a aba, ao trocar de filtro e quando
-  // uma corrida nova é persistida (detectada por lastMessage.race_status==finished).
   useEffect(() => {
     if (activeTab === 'Histórico') {
       refreshHistory(historyFilter);
@@ -269,14 +530,12 @@ const App = () => {
 
   useEffect(() => {
     if (lastMessage && lastMessage.race_status === 'finished') {
-      // Pequeno atraso para garantir que o backend já confirmou o INSERT.
       const t = setTimeout(() => refreshHistory(historyFilter), 200);
       return () => clearTimeout(t);
     }
   }, [lastMessage, historyFilter, refreshHistory]);
 
   // Sessão do simulador → POSTa em /telemetria com source='simulator'.
-  // Fallback: se o backend estiver fora, mantém em simHistory (memória local).
   const lastSimRunRef = useRef(null);
   useEffect(() => {
     const status = sim.memory.status;
@@ -297,8 +556,6 @@ const App = () => {
       ? mem.pathHistory
       : [robotPathPoint];
 
-    // Mapa preciso: simulador conhece truthWalls. Converte {0..3:bool} para
-    // o formato do contrato: walls[x][y] = [N, E, S, W].
     const size = sim.gridSize;
     const walls = (mem.truthWalls && mem.truthWalls.length === size)
       ? Array.from({ length: size }, (_, x) =>
@@ -331,7 +588,6 @@ const App = () => {
 
     postTelemetria(payload)
       .then(() => {
-        // Backend persistiu; refresca histórico para puxar a nova corrida.
         if (activeTab === 'Histórico') refreshHistory(historyFilter);
       })
       .catch((err) => {
@@ -369,23 +625,19 @@ const App = () => {
     return [...simFiltered, ...apiHistory];
   }, [simHistory, apiHistory, historyFilter]);
 
-  // Bateria exibida no widget: % da telemetria real, ou fallback do simulador.
+  // Bateria exibida no widget
   const batteryPct = liveTelemetry?.battery_voltage_v != null
     ? batteryVoltsToPercent(liveTelemetry.battery_voltage_v)
     : null;
 
-  // Modo de operação: determinado pela origem do último pacote recebido.
-  // Pacote 'real' (firmware) tem prioridade até ficar antigo (>10s); caso
-  // contrário, o sistema está mostrando o simulador local.
-  const dataMode = useMemo(() => {
-    if (liveTelemetry?.source === 'real' && latencyMs != null && latencyMs < 10000) {
-      return 'real';
-    }
-    return 'simulator';
-  }, [liveTelemetry, latencyMs]);
+  const [mockMode, setMockMode] = useState('simulator');
 
-  // Status da corrida traduzido para a UI a partir dos eventos do WS em modo
-  // real; fallback para o status do simulador.
+  // Modo de operação (Controlado pelo Mock Switch)
+  const dataMode = useMemo(() => {
+    return mockMode;
+  }, [mockMode]);
+
+  // Status da corrida
   const runStatus = useMemo(() => {
     if (dataMode === 'real' && liveTelemetry) {
       if (liveTelemetry.event === 'objective_found') return 'Objetivo localizado!';
@@ -400,10 +652,6 @@ const App = () => {
     return sim.memory.status;
   }, [dataMode, liveTelemetry, sim.memory.status]);
 
-  // Conversão mm → célula para o canvas e o replay. Coordenadas vêm como
-  // (cell + 0.5) * CELL_MM mm, então mmToCell() devolve a célula (importado de maze.js).
-
-  // Em modo Real, o robô e as células visitadas vêm da telemetria.
   const liveRobot = useMemo(() => {
     if (dataMode !== 'real' || !liveTelemetry?.current_position) return null;
     const p = liveTelemetry.current_position;
@@ -423,25 +671,34 @@ const App = () => {
   }, [dataMode, liveTelemetry, sim.gridSize]);
 
   return (
-    <div className="bg-app-bg font-sans h-screen p-2 sm:p-6 flex items-center justify-center overflow-hidden">
-      <div className="w-full h-full max-h-screen flex flex-col overflow-hidden relative">
-        <Header activeTab={activeTab} setActiveTab={setActiveTab} />
-        <main className="flex-grow flex flex-col lg:flex-row gap-6 h-full pb-2 min-h-0 overflow-hidden">
+    <div className="font-sans h-screen flex flex-col overflow-hidden">
+      <Header activeTab={activeTab} setActiveTab={setActiveTab} wsStatus={wsStatus} sim={sim} />
+      <div className="w-full flex-grow flex flex-col overflow-hidden relative">
+        <main className="flex-grow flex flex-col lg:flex-row gap-4 h-full min-h-0 overflow-hidden">
           {activeTab === 'Histórico' ? (
-            <HistoryView
-              historyData={combinedHistory}
-              filter={historyFilter}
-              setFilter={setHistoryFilter}
-              loading={historyLoading}
-              error={historyError}
-              onRefresh={() => refreshHistory(historyFilter)}
+            <div className="w-full h-full flex flex-col overflow-hidden min-h-0">
+              <HistoryView
+                historyData={combinedHistory}
+                filter={historyFilter}
+                setFilter={setHistoryFilter}
+                loading={historyLoading}
+                error={historyError}
+                onRefresh={() => refreshHistory(historyFilter)}
+              />
+            </div>
+          ) : activeTab === 'Configurações' ? (
+            <SettingsView 
+                wsUrl={wsUrl} 
+                setWsUrl={setWsUrl} 
+                wsStatus={wsStatus} 
+                refreshHistory={refreshHistory} 
             />
           ) : (
             <>
-              <section className="flex-grow bg-panel p-6 flex flex-col relative overflow-hidden min-h-0">
-                <MazeCanvas sim={sim} liveRobot={liveRobot} liveExplored={liveExplored} dataMode={dataMode} />
+              <section className="flex-grow bg-app-surface border-r border-border-rule p-5 flex flex-col relative overflow-hidden min-h-0">
+                <MazeCanvas sim={sim} liveRobot={liveRobot} liveExplored={liveExplored} dataMode={dataMode} mockMode={mockMode} setMockMode={setMockMode} />
               </section>
-              <aside className="w-full lg:w-[360px] flex flex-col space-y-3 overflow-hidden shrink-0">
+              <aside className="w-full lg:w-[372px] flex flex-col gap-2 overflow-y-auto shrink-0 my-4 mr-4 pr-1 custom-scrollbar">
                 <TelemetrySidebar
                   sim={sim}
                   wsStatus={wsStatus}
@@ -461,49 +718,120 @@ const App = () => {
   );
 };
 
-const Header = ({ activeTab, setActiveTab }) => {
+/* ============================================================
+   CABEÇALHO
+   ============================================================ */
+const Header = ({ activeTab, setActiveTab, wsStatus, sim }) => {
   const tabs = ['Mapa', 'Telemetria', 'Histórico', 'Configurações'];
+  const isConnected = wsStatus === 'Conectado';
+
   return (
-    <header className="flex items-center justify-between mb-8 shrink-0">
-      <div className="flex items-center space-x-2">
-        <Cpu className="text-brand-purple-glow" size={24} />
-        <span className="text-2xl font-bold text-brand-h1 tracking-tighter">micromouse<span className="text-brand-purple">.</span></span>
+    <header className="relative flex items-center justify-center h-16 px-5 shrink-0 w-full border-b border-border-subtle bg-[#080614]" data-screen-label="Header">
+      {/* Marca */}
+      <div className="absolute left-5 flex items-center gap-3">
+        <div className="w-10 h-10 rounded-xl grid place-items-center text-white bg-brand-purple shrink-0">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <rect x="4" y="4" width="16" height="16" rx="2" />
+            <path d="M9 2v2M15 2v2M9 20v2M15 20v2M2 9h2M2 15h2M20 9h2M20 15h2" />
+            <circle cx="12" cy="12" r="3" />
+          </svg>
+        </div>
+        <div className="font-bold text-lg tracking-tight text-brand-h1 leading-none flex items-center">
+          micro<span className="text-brand-purple-light">mouse</span><span className="text-brand-h3">.</span>
+          <span className="sr-only">micromouse</span>
+        </div>
       </div>
-      <nav className="hidden md:flex items-center space-x-1 bg-app-header p-1 rounded-full border-2 border-border-rule shadow-sm">
+
+      {/* Pílulas de navegação */}
+      <nav data-testid="pill-container" className="hidden md:flex pill-container">
         {tabs.map((tab) => (
           <button
             key={tab}
+            data-testid="pill-item"
             onClick={() => setActiveTab(tab)}
-            className={`px-8 py-3 rounded-full font-medium text-sm transition-all ${
+            className={`pill-item font-medium text-sm transition-all ${
               activeTab === tab
-                ? 'bg-brand-purple text-white shadow-[0_0_15px_rgba(124,58,237,0.3)]'
-                : 'text-brand-h3 hover:text-brand-h1 hover:bg-border-ghost'
+                ? 'text-white bg-brand-purple'
+                : 'text-brand-h3 hover:text-brand-h1 hover:bg-white/[0.03]'
             }`}
+            {...(activeTab === tab ? { 'aria-current': 'page' } : {})}
           >
             {tab}
           </button>
         ))}
       </nav>
-      <button className="flex items-center space-x-2 bg-app-raised border-2 border-border-dim hover:border-border-accent text-brand-h1 font-medium px-6 py-2.5 rounded-full transition-all text-sm">
-        <Wifi className="text-brand-green" size={14} />
-        <span>Conectar</span>
-      </button>
     </header>
   );
 };
 
-const MazeCanvas = ({ sim, liveRobot, liveExplored, dataMode }) => {
+const CustomSelect = ({ value, onChange, options, className = "", dropdownWidth = "w-full", "data-testid": dataTestId }) => {
+  const [isOpen, setIsOpen] = useState(false);
+  const dropdownRef = useRef(null);
+
+  useEffect(() => {
+    const handleClick = (e) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target)) {
+        setIsOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClick);
+    return () => document.removeEventListener('mousedown', handleClick);
+  }, []);
+
+  const selectedLabel = options.find(o => o.value === value)?.label || value;
+
+  return (
+    <div data-testid={dataTestId} className={`relative flex items-center justify-between cursor-pointer group ${className}`} ref={dropdownRef} onClick={() => setIsOpen(!isOpen)}>
+      <span className="truncate pr-2 select-none pointer-events-none">{selectedLabel}</span>
+      <ChevronDown size={14} className={`pointer-events-none transition-transform duration-200 text-brand-h3 group-hover:text-brand-h1 ${isOpen ? 'rotate-180' : ''}`} />
+
+      {isOpen && (
+        <div className={`absolute top-[calc(100%+8px)] left-1/2 -translate-x-1/2 ${dropdownWidth} min-w-[160px] bg-app-surface border border-border-rule rounded-xl shadow-[0_8px_30px_rgb(0,0,0,0.5)] overflow-hidden z-[100] animate-in fade-in zoom-in-95 duration-200 origin-top`}>
+          {options.map((opt) => (
+            <div
+              key={opt.value}
+              className={`px-4 py-2.5 text-sm font-medium transition-colors select-none ${
+                value === opt.value
+                  ? 'bg-brand-purple/15 text-brand-purple-light'
+                  : 'text-brand-h1 hover:bg-white/[0.04]'
+              }`}
+              onClick={(e) => {
+                e.stopPropagation();
+                onChange(opt.value);
+                setIsOpen(false);
+              }}
+            >
+              {opt.label}
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+};
+
+const GlobalChip = ({ children, className = '', ...props }) => (
+  <div
+    className={`flex items-center justify-center gap-2 h-10 px-4 rounded-xl bg-app-raised border border-border-rule text-sm text-brand-h2 font-medium box-border ${className}`}
+    {...props}
+  >
+    {children}
+  </div>
+);
+
+/* ============================================================
+   CANVAS DO LABIRINTO
+   ============================================================ */
+const MazeCanvas = ({ sim, liveRobot, liveExplored, dataMode, mockMode, setMockMode }) => {
   const { memory, isRunning, setIsRunning, speed, setSpeed, showTruth, setShowTruth, resetSimulation, gridSize, changeGridSize } = sim;
   const mem = memory;
-  // Em modo Real, sobrescreve robô e explored com dados do WS; o resto
-  // (paredes, distâncias) continua vindo do simulador (não há fonte real).
   const robotShown = liveRobot ?? mem.robot;
   const exploredShown = liveExplored ?? mem.explored;
   const isRealMode = dataMode === 'real';
 
   if (!mem.truthWalls || mem.truthWalls.length === 0) {
     return (
-      <div className="flex-grow flex items-center justify-center relative p-4 bg-app-raised rounded-3xl border-2 border-border-subtle overflow-hidden">
+      <div className="flex-grow flex items-center justify-center relative p-4 bg-app-bg rounded-xl border border-border-rule overflow-hidden">
         <div className="text-brand-h3 font-medium text-sm">Carregando simulador...</div>
       </div>
     );
@@ -516,59 +844,107 @@ const MazeCanvas = ({ sim, liveRobot, liveExplored, dataMode }) => {
 
   const GOALS = mem.goals || [];
 
+  const COL = 'ABCDEFGHIJKLMNOP';
+  const cellName = (x, y) => COL[x] + (gridSize - y);
+
   return (
     <>
-      <div className="flex flex-col xl:flex-row justify-between items-start xl:items-center mb-6 z-10 space-y-4 xl:space-y-0 shrink-0">
-        <div>
-          <h2 className="text-2xl font-semibold text-brand-h1 tracking-tight">Mapa do Labirinto</h2>
-        </div>
-        <div className="flex items-center space-x-6 bg-app-bg p-2 px-4 rounded-full border-2 border-border-rule shadow-inner">
-          <div className="relative">
-            <select
-              className="appearance-none bg-transparent text-brand-h2 py-1 pl-3 pr-8 focus:outline-none font-medium text-xs cursor-pointer"
-              value={gridSize}
-              onChange={(e) => changeGridSize(parseInt(e.target.value))}
+      {/* Barra de ferramentas */}
+      <div className="flex flex-col xl:flex-row justify-between items-center mb-4 z-10 gap-4 shrink-0 w-full">
+        {/* Grupo de controles: seletor + velocidade + raio-x */}
+        <div className="flex items-center gap-4 h-10 px-4 rounded-xl bg-app-inset border border-border-rule box-border">
+            {/* Matrix selector */}
+            <div className="flex items-center gap-2">
+              <span className="text-label">Matriz</span>
+              <CustomSelect
+                aria-label="Tamanho da matriz"
+                className="h-[28px] bg-app-raised border border-border-subtle hover:bg-app-hover hover:border-border-accent rounded-[16px] transition-all px-3 text-brand-h1 font-sans font-semibold text-sm"
+                value={gridSize}
+                onChange={(val) => changeGridSize(parseInt(val))}
+                dropdownWidth="w-auto"
+                options={[
+                  { value: 4, label: '4x4' },
+                  { value: 8, label: '8x8' },
+                  { value: 16, label: '16x16' }
+                ]}
+              />
+            </div>
+
+            <div className="w-px h-5 bg-border-rule" />
+
+            {/* Controle de velocidade */}
+            <div className="flex items-center gap-3 h-full">
+              <span className="text-label">Velocidade</span>
+              <div className="flex items-center h-full">
+                <input
+                  type="range" min="10" max="500"
+                  value={510 - speed}
+                  onChange={(e) => setSpeed(510 - parseInt(e.target.value))}
+                  className="w-24"
+                  style={{ '--fill': `${((510 - speed - 10) / 490) * 100}%` }}
+                />
+              </div>
+            </div>
+
+            <div className="w-px h-5 bg-border-rule" />
+
+            {/* Alternador Modo */}
+            <label className="flex items-center gap-2 h-full cursor-pointer group" title="Mock de Modo (Simulador vs Corrida)">
+              <input type="checkbox" className="sr-only" checked={mockMode === 'real'} onChange={(e) => setMockMode(e.target.checked ? 'real' : 'simulator')} aria-label="Alternar Modo de Operação" />
+              <div className={`toggle-switch ${mockMode === 'real' ? 'active' : ''}`} />
+              <span className="text-label w-[75px] text-left">{mockMode === 'real' ? 'Corrida' : 'Simulador'}</span>
+            </label>
+
+            <div className="w-px h-5 bg-border-rule" />
+
+            {/* Alternador Raio-X */}
+            <label className={`flex items-center gap-2 h-full ${isRealMode ? 'opacity-40 cursor-not-allowed' : 'cursor-pointer'}`} title={isRealMode ? 'Raio-X só disponível no modo Simulador' : ''}>
+              <input type="checkbox" className="sr-only" checked={showTruth && !isRealMode} disabled={isRealMode} onChange={(e) => setShowTruth(e.target.checked)} />
+              <div className={`toggle-switch ${showTruth && !isRealMode ? 'active' : ''}`} />
+              <span className="text-label">Raio-X</span>
+            </label>
+          </div>
+
+          {/* Botões de ação */}
+          <div data-testid="pill-container" className="pill-container">
+            <button
+              data-testid="pill-item"
+              onClick={() => setIsRunning(!isRunning)}
+              className={`group pill-item gap-2 font-semibold text-sm transition-all w-[100px] ${
+                isRunning
+                  ? 'bg-app-raised border border-border-subtle text-brand-h2 hover:text-brand-h1 hover:border-border-accent'
+                  : 'text-white border border-transparent bg-brand-purple'
+              }`}
             >
-              <option value={4}  className="bg-app-raised">Matriz 4x4</option>
-              <option value={8}  className="bg-app-raised">Matriz 8x8</option>
-              <option value={16} className="bg-app-raised">Matriz 16x16</option>
-            </select>
-            <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-brand-h3">
-              <ChevronDown size={14} />
-            </div>
+              {isRunning ? (
+                <><Square size={16} className="transition-transform group-active:scale-90" /><span>Pausar</span></>
+              ) : (
+                <><Play size={16} className="transition-transform group-hover:scale-110 group-active:scale-90" /><span>Iniciar</span></>
+              )}
+            </button>
+            <button
+              data-testid="pill-item"
+              onClick={() => resetSimulation(false)}
+              className="group pill-item gap-2 font-semibold text-sm bg-app-raised border border-border-subtle text-brand-h1 transition-all hover:bg-app-hover hover:border-border-accent"
+            >
+              <Bot size={16} className="transition-transform group-hover:-translate-y-0.5 group-active:scale-90" /><span>Reiniciar</span>
+            </button>
+            <button
+              data-testid="pill-item"
+              onClick={() => resetSimulation(true)}
+              className="group pill-item gap-2 font-semibold text-sm bg-app-raised border border-border-subtle text-brand-h1 transition-all hover:bg-app-hover hover:border-border-accent"
+            >
+              <RotateCw size={16} className="transition-transform duration-300 group-hover:rotate-180 group-active:scale-90" /><span>Novo</span>
+            </button>
           </div>
-          <div className="w-px h-6 bg-border-rule"></div>
-          <div className="flex items-center space-x-3">
-            <span className="text-brand-h3 text-[11px] font-medium uppercase tracking-wider">Velocidade</span>
-            <input type="range" min="10" max="500" value={510 - speed} onChange={(e) => setSpeed(510 - parseInt(e.target.value))} className="w-24 h-1.5 bg-border-ghost rounded-lg appearance-none cursor-pointer accent-brand-purple" />
-          </div>
-          <div className="w-px h-6 bg-border-rule"></div>
-          <label className={`flex items-center space-x-2 ${isRealMode ? 'opacity-40 cursor-not-allowed' : 'cursor-pointer'}`} title={isRealMode ? 'Raio-X só disponível no modo Simulador' : ''}>
-            <div className="relative">
-              <input type="checkbox" className="sr-only peer" checked={showTruth && !isRealMode} disabled={isRealMode} onChange={(e) => setShowTruth(e.target.checked)} />
-              <div className="w-9 h-5 bg-border-ghost peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-brand-purple-glow after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-brand-h3 after:border-border-subtle after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-brand-purple peer-checked:after:bg-white border-2 border-border-rule"></div>
-            </div>
-            <span className="text-brand-h3 text-[11px] font-medium uppercase tracking-wider">Raio-X</span>
-          </label>
-        </div>
-        <div className="flex space-x-3">
-          <button onClick={() => setIsRunning(!isRunning)} className="flex items-center space-x-2 bg-app-raised border-2 border-border-dim hover:border-border-accent text-brand-h1 font-medium px-6 py-2 rounded-full transition-all text-sm">
-            {isRunning ? <><Pause className="text-brand-amber" size={14} fill="currentColor"/><span>Pausar</span></> : <><Play className="text-brand-green" size={14} fill="currentColor"/><span>Iniciar</span></>}
-          </button>
-          <button onClick={() => resetSimulation(false)} className="bg-app-bg hover:bg-border-ghost text-brand-h1 px-4 py-2 rounded-full text-sm font-medium flex items-center space-x-2 border-2 border-border-dim transition-all">
-            <Bot size={14} /><span>Robô</span>
-          </button>
-          <button onClick={() => resetSimulation(true)} className="bg-app-bg hover:bg-border-ghost text-brand-h1 px-4 py-2 rounded-full text-sm font-medium flex items-center space-x-2 border-2 border-border-dim transition-all">
-            <RotateCw size={14} /><span>Novo</span>
-          </button>
-        </div>
       </div>
-      <div className="flex-1 flex items-center justify-center relative p-4 bg-app-bg rounded-3xl border-2 border-border-rule overflow-hidden min-h-0" style={{ containerType: 'size' }}>
+
+      {/* Grade do labirinto */}
+      <div className="flex-1 flex items-center justify-center relative p-4 bg-app-bg rounded-xl border border-border-rule overflow-hidden min-h-0" style={{ containerType: 'size' }}>
         <div id="maze-container" className={showTruth ? "show-truth" : ""} style={{ gridTemplateColumns: `repeat(${gridSize}, minmax(0, 1fr))`, gridTemplateRows: `repeat(${gridSize}, minmax(0, 1fr))` }}>
           {Array.from({ length: gridSize * gridSize }).map((_, i) => {
             const y = Math.floor(i / gridSize), x = i % gridSize;
             let classes = ["cell"];
-            // "Raio-X" só faz sentido em modo Simulador (no Real não há truthWalls).
             if (showTruth && !isRealMode) {
               if (mem.truthWalls[x][y][0]) classes.push("truth-wall-n");
               if (mem.truthWalls[x][y][1]) classes.push("truth-wall-e");
@@ -589,7 +965,6 @@ const MazeCanvas = ({ sim, liveRobot, liveExplored, dataMode }) => {
             if (isGoal) classes.push("goal");
             const d = mem.distances[x][y];
             let dataColor = null;
-            // Gradiente de distância só faz sentido com simulador (depende do flood-fill).
             if (!isRealMode && cellExplored && d !== 0 && d !== 255)
               dataColor = d <= maxD / 3 ? "g" : d <= 2 * maxD / 3 ? "y" : "r";
             const hasRobot = robotShown && robotShown.x === x && robotShown.y === y;
@@ -602,210 +977,369 @@ const MazeCanvas = ({ sim, liveRobot, liveExplored, dataMode }) => {
             );
           })}
         </div>
+
       </div>
     </>
   );
 };
 
+/* ============================================================
+   PAINEL DE TELEMETRIA
+   ============================================================ */
 const TelemetrySidebar = ({ sim, wsStatus, batteryPct, latencyMs, packetsRx, liveTelemetry, dataMode, runStatus }) => {
   const mem = sim.memory;
   const statusText = runStatus ?? mem.status;
-  let statusColor = "bg-brand-cyan";
-  if (statusText === "Centro Alcançado!" || statusText === "Objetivo localizado!") statusColor = "bg-brand-green";
-  else if (statusText === "Preso!" || statusText === "Erro!") statusColor = "bg-red-500";
-  else if (statusText === "Mapeando...") statusColor = "bg-brand-amber";
-  else if (statusText === "Pausado")     statusColor = "bg-brand-purple";
+  const isReal = dataMode === 'real';
 
-  // Tempo/velocidade: prefere telemetria real se disponível, senão usa simulador.
-  const timeSec  = liveTelemetry?.elapsed_time_ms != null
+  // Estilo do estado
+  let estadoClass = 'text-brand-h2 bg-app-raised border-border-rule';
+
+  if (statusText === 'Mapeando...' || statusText === 'Explorando' || statusText === 'Voltando') {
+    estadoClass = 'text-white bg-brand-purple border-transparent';
+  } else if (statusText === 'Centro Alcançado!' || statusText === 'Objetivo localizado!') {
+    estadoClass = 'text-white bg-brand-green border-transparent';
+  } else if (statusText === 'Preso!' || statusText === 'Erro!') {
+    estadoClass = 'text-white bg-brand-danger border-transparent';
+  }
+
+  // Valores de telemetria
+  const timeSec = (dataMode === 'real' && liveTelemetry?.elapsed_time_ms != null)
     ? (liveTelemetry.elapsed_time_ms / 1000).toFixed(1)
     : (mem.timeMs / 1000).toFixed(1);
-  const avgSpeed = liveTelemetry?.speed_mm_s != null
+  const avgSpeed = (dataMode === 'real' && liveTelemetry?.speed_mm_s != null)
     ? (liveTelemetry.speed_mm_s / 10).toFixed(1)
     : (mem.timeMs > 0 ? ((mem.steps * 18) / (mem.timeMs / 1000)).toFixed(1) : "0.0");
-  const stepsDisplay = liveTelemetry?.step_count ?? mem.steps;
+  const stepsDisplay = (dataMode === 'real' && liveTelemetry?.step_count != null)
+    ? liveTelemetry.step_count
+    : mem.steps;
 
-  // Alerta visual quando latência ultrapassa RNF-01 (500 ms)
-  const latencyOver = latencyMs != null && latencyMs > 500;
+  // Cobertura
+  const explored = mem.explored;
+  let coveredCount = 0;
+  if (explored) {
+    for (let x = 0; x < sim.gridSize; x++)
+      for (let y = 0; y < sim.gridSize; y++)
+        if (explored[x]?.[y]) coveredCount++;
+  }
+  const totalCells = sim.gridSize * sim.gridSize;
+  const coveragePct = Math.round((coveredCount / totalCells) * 100);
 
-  const formatPackets = (n) => {
-    if (n < 1000) return String(n);
-    return `${(n / 1000).toFixed(1)}k`;
-  };
+  // Fase do algoritmo
+  let phaseText = 'Espera';
+  if (statusText === 'Mapeando...' || statusText === 'Explorando') phaseText = 'Busca';
+  else if (statusText === 'Centro Alcançado!' || statusText === 'Objetivo localizado!') phaseText = 'Resolvido';
 
-  const getWSStatusColor = (status) => {
-    switch(status) {
-      case 'Conectado': return { text: 'text-brand-green', bg: 'bg-brand-green/10', border: 'border-brand-green/20', dot: 'bg-brand-green' };
-      case 'Conectando...': return { text: 'text-brand-amber', bg: 'bg-brand-amber/10', border: 'border-brand-amber/20', dot: 'bg-brand-amber' };
-      case 'Reconectando...': return { text: 'text-brand-amber', bg: 'bg-brand-amber/10', border: 'border-brand-amber/20', dot: 'bg-brand-amber' };
-      case 'Desconectado': return { text: 'text-red-500', bg: 'bg-red-500/10', border: 'border-red-500/20', dot: 'bg-red-500' };
-      default: return { text: 'text-brand-green', bg: 'bg-brand-green/10', border: 'border-brand-green/20', dot: 'bg-brand-green' };
-    }
-  };
+  const isConnected = wsStatus === 'Conectado';
+  const latencyThreshold = parseInt(localStorage.getItem('LATENCY_THRESHOLD') || '500', 10);
+  const latencyOver = latencyMs != null && latencyMs > latencyThreshold;
+  const batteryDisplay = batteryPct != null ? `${batteryPct}%` : '—';
+  const batteryWidth = batteryPct != null ? Math.max(0, Math.min(100, batteryPct)) : 0;
 
-  const wsColor = getWSStatusColor(wsStatus);
-
-  const isReal = dataMode === 'real';
-  const modeStyle = isReal
-    ? { text: 'text-brand-green', bg: 'bg-brand-green/10', border: 'border-brand-green/40', dot: 'bg-brand-green' }
-    : { text: 'text-brand-purple-glow', bg: 'bg-brand-purple/15', border: 'border-brand-purple/40', dot: 'bg-brand-purple-glow' };
+  // Distância até o centro
+  const robotX = mem.robot?.x ?? 0;
+  const robotY = mem.robot?.y ?? 0;
+  const distCenter = mem.distances?.[robotX]?.[robotY];
+  const distDisplay = distCenter != null && distCenter !== 255 ? distCenter : '—';
 
   return (
     <>
-      <section className="bg-panel p-3 shrink-0">
-        <div className={`flex items-center justify-between px-3 py-2 rounded-full border-2 ${modeStyle.bg} ${modeStyle.border}`} title={isReal ? 'Dados do robô físico via WebSocket' : 'Simulador local — sem hardware'}>
-          <span className="text-brand-h3 text-[10px] font-bold uppercase tracking-widest">Modo</span>
-          <span className={`${modeStyle.text} text-xs font-bold uppercase tracking-wider flex items-center`}>
-            <span className={`relative flex h-2 w-2 mr-2 rounded-full ${modeStyle.dot}`}>
-              {isReal && <span className={`animate-ping absolute inline-flex h-full w-full rounded-full ${modeStyle.dot} opacity-60`}></span>}
-            </span>
-            {isReal ? 'Real' : 'Simulador'}
-          </span>
+      {/* Status do Robô */}
+      <div className="flex flex-col">
+        <div className="flex items-center gap-2 px-1 pb-1">
+          <h3 className="text-label">Status do Robô</h3>
+          <span className="flex-1 h-px bg-border-rule" />
         </div>
-      </section>
-      <section className="bg-panel p-4 shrink-0">
-        <div className="grid grid-cols-3 gap-2">
-          <BatteryWidget percent={batteryPct} />
-          <MetricCard label="Tempo" value={timeSec} unit="s" icon={<Clock size={14} />} iconColor="text-brand-cyan" />
-          <MetricCard label="Passos" value={stepsDisplay} unit="" icon={<Footprints size={14} />} iconColor="text-brand-purple-glow" />
-          <MetricCard label="Veloc" value={avgSpeed} unit="cm/s" icon={<Gauge size={14} />} iconColor="text-brand-green" />
-          <MetricCard label="Giros" value={mem.turns} unit="" icon={<RefreshCw size={14} />} iconColor="text-brand-amber" />
-          <MetricCard label="Algoritmo" value="Flood-Fill" unit="" icon={<Zap size={14} />} iconColor="text-brand-purple" isString={true} />
+        <div className="bg-panel overflow-hidden">
+          <ConnRow
+            icon={<Play size={16} />}
+            label="Estado"
+            value={<span className={`inline-flex items-center justify-center h-6 w-[130px] rounded-md border text-[11px] font-semibold leading-none ${estadoClass}`}>{statusText}</span>}
+          />
+          <ConnRow
+            icon={<Wifi size={16} />}
+            label="Conexão"
+            value={
+              <span className={`inline-flex items-center justify-center h-6 w-[130px] rounded-md border text-[11px] font-semibold leading-none ${
+                isConnected
+                  ? 'text-white bg-brand-green border-transparent'
+                  : 'text-white bg-brand-danger border-transparent'
+              }`}>
+                {isConnected ? 'Conectado' : 'Desconectado'}
+              </span>
+            }
+          />
+          <ConnRow
+            icon={<Bot size={16} />}
+            label="Modo"
+            value={
+              <span className={`inline-flex items-center justify-center h-6 w-[130px] rounded-md border text-[11px] font-semibold leading-none ${
+                isReal
+                  ? 'text-white bg-brand-green border-transparent'
+                  : 'text-white bg-brand-purple border-transparent'
+              }`}>
+                {isReal ? 'Corrida' : 'Simulador'}
+              </span>
+            }
+          />
+          <ConnRow
+            icon={<Clock size={16} />}
+            label="Latência"
+            value={
+              <span className={`font-mono font-semibold text-sm ${latencyOver ? 'text-brand-danger-text' : 'text-brand-h1'}`}>
+                {latencyMs != null ? latencyMs : '—'} <span className="text-brand-h3 text-xs">ms</span>
+              </span>
+            }
+          />
+          <ConnRow
+            icon={<Activity size={16} />}
+            label="Pacotes"
+            value={
+              <span className="font-mono font-semibold text-sm text-brand-h1">
+                {packetsRx}
+              </span>
+            }
+          />
+          <ConnRow
+            icon={<Battery size={16} />}
+            label="Bateria"
+            last
+            value={
+              <span className="flex items-center gap-2 font-mono font-semibold text-sm text-brand-h1">
+                <span className="w-10 h-2 rounded-full bg-app-inset overflow-hidden border border-border-rule">
+                  <span className="block h-full rounded-full" style={{
+                    width: `${batteryWidth}%`,
+                    backgroundColor: 'var(--success)',
+                  }} />
+                </span>
+                {batteryDisplay}
+              </span>
+            }
+          />
         </div>
-      </section>
-      <section className="bg-panel p-4 shrink-0 flex-1 min-h-0 flex flex-col justify-center">
-        <h3 className="text-lg font-semibold text-brand-h1 mb-3">Conectividade</h3>
-        <div className="space-y-3">
-          <div className="flex justify-between items-center">
-            <span className="text-brand-h3 text-[11px] font-medium uppercase tracking-wider flex items-center"><Usb className="mr-3 text-brand-h3 w-4 h-4" />WebSocket</span>
-            <span className={`${wsColor.text} text-[10px] uppercase tracking-wider font-bold flex items-center ${wsColor.bg} border-2 ${wsColor.border} px-3 py-1.5 rounded-full`}>
-              <span className={`relative flex h-2 w-2 mr-2 rounded-full ${wsColor.dot}`}></span>
-              {wsStatus}
-            </span>
+      </div>
+
+      {/* Telemetria */}
+      <div className="flex flex-col">
+        <div className="flex items-center gap-2 px-1 pb-1">
+          <h3 className="text-label">Telemetria</h3>
+          <span className="flex-1 h-px bg-border-rule" />
+        </div>
+        <div className="grid grid-cols-2 gap-3">
+          <MetricCard label="Velocidade" value={avgSpeed} unit="cm/s" icon={<Gauge size={16} />} accent />
+          <MetricCard label="Tempo" value={timeSec} unit="s" icon={<Timer size={16} />} />
+          <MetricCard label="Passos" value={stepsDisplay} unit="" icon={<Footprints size={16} />} />
+          <MetricCard label="Giros" value={mem.turns} unit="" icon={<RefreshCw size={16} />} />
+        </div>
+      </div>
+
+      {/* Algoritmo */}
+      <div className="flex flex-col">
+        <div className="flex items-center gap-2 px-1 pb-1">
+          <h3 className="text-label">Algoritmo</h3>
+          <span className="flex-1 h-px bg-border-rule" />
+        </div>
+        <div className="bg-panel p-3 flex flex-col gap-2">
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 rounded-lg grid place-items-center text-white flex-none bg-brand-purple">
+              <Zap size={16} />
+            </div>
+            <div>
+              <div className="text-base font-bold tracking-tight text-brand-h1">Flood-Fill</div>
+              <div className="text-[11px] text-brand-h3 uppercase tracking-wider font-semibold mt-0.5">Resolução por inundação</div>
+            </div>
           </div>
-          <div className="border-b border-border-rule"></div>
-          <div className="flex justify-between items-center">
-            <span className="text-brand-h3 text-[11px] font-medium uppercase tracking-wider flex items-center"><Timer className="mr-3 text-brand-h3 w-4 h-4" />Latência</span>
-            <span className={`font-semibold font-mono text-sm ${latencyOver ? 'text-red-500' : 'text-brand-h2'}`} title={latencyOver ? 'Latência acima do limite RNF-01 (500 ms)' : undefined}>
-              {latencyMs != null ? `${latencyMs} ms` : '— ms'}
-            </span>
-          </div>
-          <div className="border-b border-border-rule"></div>
-          <div className="flex justify-between items-center">
-            <span className="text-brand-h3 text-[11px] font-medium uppercase tracking-wider flex items-center"><Radio className="mr-3 text-brand-h3 w-4 h-4" />Pacotes RX</span>
-            <span className="text-brand-h2 font-semibold font-mono text-sm">{formatPackets(packetsRx)}</span>
+          <div className="flex gap-2">
+            <AlgoStat label="Fase" value={phaseText} />
+            <AlgoStat label="Dist. centro" value={distDisplay} />
+            <AlgoStat label="Cobertura" value={`${coveragePct}%`} />
           </div>
         </div>
-      </section>
-      <section className="bg-panel p-3 flex justify-between items-center mt-auto border-t-[4px] border-t-brand-purple shrink-0">
-        <span className="text-[11px] font-medium uppercase tracking-wider text-brand-h3">Status</span>
-        <div className="flex items-center space-x-2 bg-app-bg border-2 border-border-ghost py-1.5 px-3 rounded-full">
-          <span className={`relative flex h-2.5 w-2.5 rounded-full ${statusColor}`}></span>
-          <span className="text-brand-h1 text-[13px] font-bold">{statusText}</span>
-        </div>
-      </section>
+      </div>
     </>
   );
 };
 
-const MetricCard = ({ label, value, unit, icon, iconColor, isString = false }) => (
-  <div className="bg-app-bg border-2 border-border-rule p-3 rounded-[1rem] flex flex-col relative transition-all duration-300">
-    <div className="flex justify-between items-start mb-1">
-      <span className="text-label truncate">{label}</span>
-      <div className={`${iconColor}`}>{icon}</div>
+const ConnRow = ({ icon, label, value, last = false }) => (
+  <div className={`flex items-center justify-between h-11 px-3 ${last ? '' : 'border-b border-border-rule'}`}>
+    <div className="flex items-center gap-3">
+      <div className="w-7 h-7 rounded-lg grid place-items-center bg-app-raised border border-border-rule text-brand-h2 flex-none">
+        {icon}
+      </div>
+      <span className="text-brand-h2 text-sm font-medium">{label}</span>
     </div>
-    <span className={isString ? "text-brand-h1 text-lg font-semibold tracking-tight mt-1" : "text-brand-h1 text-xl font-semibold tracking-tight"}>
-      {value}
-      {unit && <small className="text-[10px] text-brand-h3 font-medium ml-1">{unit}</small>}
-    </span>
+    <div className="ml-auto">{value}</div>
   </div>
 );
 
-const BatteryWidget = ({ percent }) => {
-  const display = percent != null ? `${percent}%` : '—';
-  const widthPct = percent != null ? Math.max(0, Math.min(100, percent)) : 0;
-  const barColor = percent == null ? 'bg-border-ghost' : percent <= 20 ? 'bg-red-500' : percent <= 50 ? 'bg-brand-amber' : 'bg-brand-green';
-  const iconColor = percent == null ? 'text-brand-h3' : percent <= 20 ? 'text-red-500' : percent <= 50 ? 'text-brand-amber' : 'text-brand-green';
-  return (
-    <div className="bg-app-bg border-2 border-border-rule p-3 rounded-[1rem] flex flex-col relative transition-all duration-300">
-      <div className="flex justify-between items-start mb-1">
-        <span className="text-label">Carga</span>
-        <div className={iconColor}><Battery size={14}/></div>
-      </div>
-      <span className="text-brand-h1 text-xl font-semibold tracking-tight">{display}</span>
-      <div className="h-1.5 w-full bg-border-ghost mt-2 rounded-full overflow-hidden border border-border-rule">
-        <div className={`h-full ${barColor} rounded-full transition-all`} style={{ width: `${widthPct}%` }}></div>
-      </div>
+const MetricCard = ({ label, value, unit, icon, accent = false }) => (
+  <div className="bg-panel p-3 rounded-xl transition-all hover:border-border-accent hover:bg-app-hover group">
+    <div className="flex items-center justify-between">
+      <span className="text-label">{label}</span>
+      <span className="text-brand-h3 group-hover:text-brand-h2 transition-colors">{icon}</span>
     </div>
-  );
-};
+    <div className={`mt-1.5 font-mono text-2xl font-bold tracking-tight leading-none tabular-nums ${accent ? 'text-brand-purple-light' : 'text-brand-h1'}`}>
+      {value}
+      {unit && <span className="text-sm text-brand-h2 font-medium font-sans ml-1">{unit}</span>}
+    </div>
+  </div>
+);
 
-const RankingPanel = ({ runs }) => {
+const AlgoStat = ({ label, value }) => (
+  <div className="flex-1 bg-app-inset border border-border-rule rounded-lg p-2">
+    <div className="text-label">{label}</div>
+    <div className="font-mono text-base font-semibold text-brand-h1 mt-1 tabular-nums">{value}</div>
+  </div>
+);
+
+/* ============================================================
+   VISÃO DE HISTÓRICO
+   ============================================================ */
+const RankingPanel = ({ runs, onSelectRun }) => {
+  const [sourceFilter, setSourceFilter] = useState('Todos');
+
   const ranking = useMemo(() => {
-    const sizes = ['4x4', '8x8', '16x16'];
-    const out = {};
-    for (const size of sizes) {
-      out[size] = runs
-        .filter(r => r.maze === size && r.status === 'Centro Alcançado!')
-        .sort((a, b) => parseTimeToSeconds(a.time) - parseTimeToSeconds(b.time))
-        .slice(0, 5);
-    }
-    return out;
-  }, [runs]);
+    return runs
+      .filter(r => r.status === 'Centro Alcançado!')
+      .filter(r => sourceFilter === 'Todos' || r.source === (sourceFilter === 'Físico' ? 'real' : 'simulator'))
+      .sort((a, b) => parseTimeToSeconds(a.time) - parseTimeToSeconds(b.time));
+  }, [runs, sourceFilter]);
+
+  const getPodiumStyle = (idx) => {
+    if (idx === 0) return 'border-l-2 border-l-yellow-400 bg-yellow-500/10 text-yellow-400';
+    if (idx === 1) return 'border-l-2 border-l-slate-400 bg-slate-400/10 text-slate-300';
+    if (idx === 2) return 'border-l-2 border-l-amber-600 bg-amber-600/10 text-amber-500';
+    return 'border-l-2 border-l-transparent text-brand-h3 hover:bg-app-hover';
+  };
+
+  const getPodiumIcon = (idx) => {
+    if (idx === 0) return <div className="w-3 h-3 rounded-full bg-yellow-400/80" />;
+    if (idx === 1) return <div className="w-3 h-3 rounded-full bg-slate-400/80" />;
+    if (idx === 2) return <div className="w-3 h-3 rounded-full bg-amber-600/80" />;
+    return <span className="font-bold text-xs opacity-50 text-brand-h3">{idx + 1}</span>;
+  };
 
   return (
-    <div className="mb-6 shrink-0">
-      <div className="flex items-center space-x-2 mb-3">
-        <Zap size={16} className="text-brand-amber" />
-        <h3 className="text-sm font-semibold text-brand-h2 uppercase tracking-wider">Ranking — Top 5 por Labirinto</h3>
+    <div className="mb-6">
+      <div className="flex justify-between items-center mb-4">
+        <div className="flex items-center gap-2">
+          <h3 className="text-sm font-semibold text-brand-h2 uppercase tracking-wider">Ranking Geral</h3>
+        </div>
+        <div className="pill-container">
+          {['Todos', 'Físico', 'Simulador'].map(f => (
+            <button
+              key={f}
+              onClick={() => setSourceFilter(f)}
+              className={`pill-item font-medium text-xs transition-colors ${
+                sourceFilter === f ? 'bg-brand-purple text-white' : 'text-brand-h3 hover:text-brand-h1 hover:bg-white/[0.03]'
+              }`}
+            >
+              {f}
+            </button>
+          ))}
+        </div>
       </div>
-      <div className="grid grid-cols-3 gap-3">
-        {['4x4', '8x8', '16x16'].map(size => (
-          <div key={size} className="bg-app-bg border-2 border-border-rule rounded-2xl p-3">
-            <div className="text-brand-h3 text-[10px] uppercase tracking-wider font-bold mb-2">{size}</div>
-            {ranking[size].length === 0 ? (
-              <div className="text-brand-h3 text-xs italic py-2">Sem corridas concluídas</div>
-            ) : (
-              <ol className="space-y-1">
-                {ranking[size].map((run, idx) => (
-                  <li key={run.id} className="flex items-center justify-between text-xs">
-                    <div className="flex items-center space-x-2 min-w-0">
-                      <span className={`font-bold w-4 text-center ${idx === 0 ? 'text-brand-amber' : 'text-brand-h3'}`}>{idx + 1}</span>
-                      <span className={`w-1.5 h-1.5 rounded-full ${run.source === 'simulator' ? 'bg-brand-purple-glow' : 'bg-brand-green'}`} title={run.source === 'simulator' ? 'Simulada' : 'Real'}></span>
-                      <span className="text-brand-h1 font-mono truncate">{run.time}</span>
-                    </div>
-                    <span className="text-brand-h3 text-[10px]">{run.steps} pas</span>
-                  </li>
-                ))}
-              </ol>
+      
+      <div className="overflow-hidden rounded-xl border border-border-rule bg-app-bg shadow-card">
+        <table className="w-full text-left border-collapse whitespace-nowrap">
+          <thead className="bg-app-surface border-b border-border-rule">
+            <tr>
+              <th className="p-4 text-label w-16 text-center">Posição</th>
+              <th className="p-4 text-label">Tipo</th>
+              <th className="p-4 text-label">Labirinto</th>
+              <th className="p-4 text-label">Tempo</th>
+              <th className="p-4 text-label">Velocidade</th>
+              <th className="p-4 text-label">Bateria</th>
+              <th className="p-4 text-label">Movimentos</th>
+              <th className="p-4 text-label">Status</th>
+              <th className="p-4 text-label w-10 text-center"></th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-border-rule">
+            {ranking.length > 0 ? ranking.map((run, idx) => (
+              <tr key={run.id} onClick={() => onSelectRun(run)} className={`transition-colors cursor-pointer group ${getPodiumStyle(idx)}`}>
+                <td className="p-4">
+                  <div className="flex justify-center items-center h-full">
+                    {getPodiumIcon(idx)}
+                  </div>
+                </td>
+                <td className="p-4">
+                  {run.source === 'simulator' ? (
+                    <span className="badge w-[100px] bg-brand-purple text-white" title="Corrida gerada no simulador local">
+                      <Cpu size={14} />
+                      <span>Simulada</span>
+                    </span>
+                  ) : (
+                    <span className="badge w-[100px] bg-brand-green text-white" title="Corrida do robô físico">
+                      <Bot size={14} />
+                      <span>Corrida</span>
+                    </span>
+                  )}
+                </td>
+                <td className="p-4 text-brand-h2 font-medium text-sm">
+                  <div className="bg-app-raised inline-block px-3 py-1 rounded-lg border border-border-rule font-mono">{run.maze}</div>
+                </td>
+                <td className={`p-4 font-mono text-sm h-14 ${idx === 0 ? 'text-yellow-400 font-bold' : 'text-brand-h1'}`}>
+                  <div className="flex items-center gap-2 h-full">
+                    <span>{run.time}</span>
+                  </div>
+                </td>
+                <td className="p-4 text-brand-h2 text-sm">{run.speed}</td>
+                <td className="p-4">
+                  <div className="flex items-center gap-2">
+                    <Battery size={16} className="text-brand-green"/>
+                    <span className="text-brand-h1 text-sm">{run.battery}</span>
+                  </div>
+                </td>
+                <td className="p-4">
+                  <div className="flex items-center gap-2">
+                    <Footprints size={16} className="text-brand-purple-light"/>
+                    <span className="text-brand-h1 text-sm">{run.steps}</span>
+                  </div>
+                </td>
+                <td className="p-4">
+                  <div className="inline-flex items-center justify-center h-6 px-3 rounded-md border text-[11px] font-semibold leading-none gap-1.5 w-max text-white bg-brand-green border-transparent">
+                    <CheckCircle2 size={14}/>
+                    <span>{run.status}</span>
+                  </div>
+                </td>
+                <td className="p-4 text-right">
+                  <div className="text-brand-h3 group-hover:text-brand-h1 transition-colors flex items-center justify-end">
+                    <span className="text-xs mr-1 opacity-0 group-hover:opacity-100 transition-opacity">Replay</span>
+                    <ChevronRight size={16} />
+                  </div>
+                </td>
+              </tr>
+            )) : (
+              <tr>
+                <td colSpan="8" data-testid="estado-vazio" className="p-12 text-center text-brand-h3">
+                  Nenhuma corrida concluída encontrada no ranking.
+                </td>
+              </tr>
             )}
-          </div>
-        ))}
+          </tbody>
+        </table>
       </div>
     </div>
   );
 };
 
 const HistoryView = ({ historyData, filter, setFilter, loading, error, onRefresh }) => {
-  const [subTab, setSubTab] = useState('tabela'); // 'tabela' | 'ranking'
+  const [subTab, setSubTab] = useState('tabela');
   const [selectedRun, setSelectedRun] = useState(null);
   const [replayPath, setReplayPath] = useState(null);
   const [replayLoading, setReplayLoading] = useState(false);
   const [replayError, setReplayError] = useState(null);
 
-  // Quando uma corrida do backend é selecionada, busca o path completo.
   useEffect(() => {
     setReplayPath(null);
     setReplayError(null);
     if (!selectedRun) return;
-    // Corridas locais do simulador (fallback) já têm mapSnapshot; pulam o fetch.
     if (selectedRun.mapSnapshot) return;
     const rawPath = selectedRun.raw?.path_traversed;
     if (rawPath && rawPath.length > 0) {
       setReplayPath(rawPath);
       return;
     }
-    // Caso a corrida não tenha trazido o path (lista resumida no futuro), busca por id.
     const numericId = parseInt(String(selectedRun.id).replace(/^db-/, ''), 10);
     if (!Number.isFinite(numericId)) return;
     setReplayLoading(true);
@@ -815,7 +1349,6 @@ const HistoryView = ({ historyData, filter, setFilter, loading, error, onRefresh
       .finally(() => setReplayLoading(false));
   }, [selectedRun]);
 
-  // Lista já vem filtrada (sim+API combinados em App)
   const filteredHistory = historyData;
 
   const successfulRuns = filteredHistory.filter(r => r.status === 'Centro Alcançado!');
@@ -846,168 +1379,170 @@ const HistoryView = ({ historyData, filter, setFilter, loading, error, onRefresh
   };
 
   return (
-    // ── data-testid adicionado aqui ──
-    <div data-testid="historico-view" className="flex-grow bg-panel p-6 flex flex-col relative overflow-hidden min-h-0 w-full rounded-3xl border-2 border-border-subtle">
-      <div className="flex justify-between items-start mb-8 shrink-0">
-        <div>
-          <h2 className="text-4xl font-bold text-brand-h1 tracking-tight">Histórico de Corridas</h2>
+    <div data-testid="historico-view" className="flex-1 bg-app-surface w-full h-full overflow-y-auto p-6 box-border">
+      <div className="flex justify-between items-center mb-6">
+        <div data-testid="pill-container" className="pill-container">
+          <button
+            data-testid="pill-item"
+            onClick={() => setSubTab('tabela')}
+            className={`group pill-item font-medium text-sm transition-all ${
+              subTab === 'tabela'
+                ? 'text-white bg-brand-purple'
+                : 'text-brand-h3 hover:text-brand-h1 hover:bg-white/[0.03]'
+            }`}
+          >
+            Tabela
+          </button>
+          <button
+            data-testid="pill-item"
+            onClick={() => setSubTab('ranking')}
+            className={`group pill-item font-medium text-sm transition-all ${
+              subTab === 'ranking'
+                ? 'text-white bg-brand-purple'
+                : 'text-brand-h3 hover:text-brand-h1 hover:bg-white/[0.03]'
+            }`}
+          >
+            Ranking
+          </button>
         </div>
-        <div className="flex items-center space-x-4 mt-2">
-          <div className="relative">
-            {/* ── data-testid adicionado aqui ── */}
-            <select
-              data-testid="filtro-labirinto"
-              className="appearance-none bg-app-bg text-brand-h2 py-2 pl-4 pr-10 rounded-full focus:outline-none font-medium text-sm border-2 border-border-rule cursor-pointer"
-              value={filter}
-              onChange={(e) => setFilter(e.target.value)}
-            >
-              <option value="Todos">Todos os Labirintos</option>
-              <option value="4x4">Pista 4x4</option>
-              <option value="8x8">Pista 8x8</option>
-              <option value="16x16">Pista 16x16</option>
-            </select>
-            <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-brand-h3">
-              <ChevronDown size={16} />
-            </div>
-          </div>
-          <button onClick={onRefresh} title="Recarregar do backend" className="flex items-center space-x-2 bg-app-bg border-2 border-border-dim hover:border-border-accent text-brand-h1 font-medium px-4 py-2.5 rounded-full transition-all text-sm">
-            <RefreshCw size={14} className={loading ? 'animate-spin' : ''} /><span>{loading ? 'Carregando…' : 'Atualizar'}</span>
+
+        <div data-testid="pill-container" className="pill-container">
+          <CustomSelect
+            data-testid="filtro-labirinto"
+            className="h-[var(--pill-h)] bg-app-raised text-brand-h1 px-4 rounded-[16px] font-medium text-sm border border-border-rule hover:bg-app-hover hover:border-border-accent transition-all min-w-[180px]"
+            value={filter}
+            onChange={(val) => setFilter(val)}
+            options={[
+              { value: 'Todos', label: 'Todos os Labirintos' },
+              { value: '4x4', label: 'Pista 4x4' },
+              { value: '8x8', label: 'Pista 8x8' },
+              { value: '16x16', label: 'Pista 16x16' }
+            ]}
+          />
+          <button data-testid="pill-item" onClick={onRefresh} title="Recarregar do backend" className="group pill-item gap-2 bg-app-raised border border-border-rule hover:border-border-accent text-brand-h1 font-medium transition-all text-sm w-[130px]">
+            <RefreshCw size={16} className={`transition-transform duration-300 group-hover:rotate-180 group-active:scale-90 ${loading ? 'animate-spin' : ''}`} /><span>{loading ? 'Carregando…' : 'Atualizar'}</span>
           </button>
           {subTab === 'tabela' && (
-            <button onClick={exportCSV} className="flex items-center space-x-2 bg-[#6D28D9] hover:bg-brand-purple-glow hover:shadow-[0_0_15px_rgba(124,58,237,0.3)] text-white font-medium px-5 py-2.5 rounded-full transition-all text-sm border-2 border-transparent">
-              <Download size={16} /><span>Exportar CSV</span>
+            <button
+              data-testid="pill-item"
+              onClick={exportCSV}
+              className="group pill-item gap-2 text-white font-medium transition-all text-sm border border-transparent bg-brand-purple"
+            >
+              <Download size={16} className="transition-transform group-hover:-translate-y-0.5 group-active:scale-90" /><span>Exportar CSV</span>
             </button>
           )}
         </div>
       </div>
 
-      {/* Sub-abas: Tabela ↔ Ranking */}
-      <div className="flex items-center space-x-1 bg-app-header p-1 rounded-full border-2 border-border-rule shadow-sm self-start mb-6 shrink-0">
-        <button
-          onClick={() => setSubTab('tabela')}
-          className={`px-6 py-2 rounded-full font-medium text-sm transition-all flex items-center space-x-2 ${
-            subTab === 'tabela'
-              ? 'bg-brand-purple text-white shadow-[0_0_15px_rgba(124,58,237,0.3)]'
-              : 'text-brand-h3 hover:text-brand-h1 hover:bg-border-ghost'
-          }`}
-        >
-          <Footprints size={14} />
-          <span>Tabela</span>
-        </button>
-        <button
-          onClick={() => setSubTab('ranking')}
-          className={`px-6 py-2 rounded-full font-medium text-sm transition-all flex items-center space-x-2 ${
-            subTab === 'ranking'
-              ? 'bg-brand-purple text-white shadow-[0_0_15px_rgba(124,58,237,0.3)]'
-              : 'text-brand-h3 hover:text-brand-h1 hover:bg-border-ghost'
-          }`}
-        >
-          <Zap size={14} />
-          <span>Ranking</span>
-        </button>
-      </div>
-
       {error && (
-        <div className="mb-4 bg-red-500/10 border-2 border-red-500/30 text-red-400 text-sm px-4 py-3 rounded-2xl shrink-0">
+        <div className="mb-4 bg-red-500/10 border border-red-500/30 text-red-400 text-sm px-4 py-3 rounded-xl">
           Falha ao carregar histórico do backend: {error}. Mostrando apenas corridas do simulador.
         </div>
       )}
 
       {subTab === 'tabela' && (
-        <div className="flex items-center flex-wrap gap-x-6 gap-y-2 bg-app-bg border-2 border-border-rule rounded-full px-5 py-2 mb-3 shrink-0 text-sm">
-          <div className="flex items-center space-x-2">
-            <span className="text-[10px] uppercase tracking-wider text-brand-h3 font-semibold">Corridas</span>
+        <div className="flex items-center flex-wrap gap-x-6 gap-y-2 bg-app-bg border border-border-rule rounded-xl px-5 py-2 mb-3 text-sm shadow-card">
+          <div className="flex items-center gap-2">
+            <span className="text-label">Corridas</span>
             <span className="text-brand-h1 font-bold">{totalRuns}</span>
           </div>
-          <div className="w-px h-4 bg-border-rule"></div>
-          <div className="flex items-center space-x-2">
-            <span className="text-[10px] uppercase tracking-wider text-brand-h3 font-semibold">Sucesso</span>
+          <div className="w-px h-4 bg-border-rule" />
+          <div className="flex items-center gap-2">
+            <span className="text-label">Sucesso</span>
             <span className="text-brand-green font-bold">{successRate}%</span>
           </div>
-          <div className="w-px h-4 bg-border-rule"></div>
-          <div className="flex items-center space-x-2">
-            <span className="text-[10px] uppercase tracking-wider text-brand-h3 font-semibold">Melhor Tempo</span>
-            <span className="text-brand-purple-glow font-bold font-mono">{bestTimeStr}</span>
+          <div className="w-px h-4 bg-border-rule" />
+          <div className="flex items-center gap-2">
+            <span className="text-label">Melhor Tempo</span>
+            <span className="text-brand-purple-light font-bold font-mono">{bestTimeStr}</span>
           </div>
-          <div className="w-px h-4 bg-border-rule"></div>
-          <div className="flex items-center space-x-2">
-            <span className="text-[10px] uppercase tracking-wider text-brand-h3 font-semibold">Velocidade Média</span>
+          <div className="w-px h-4 bg-border-rule" />
+          <div className="flex items-center gap-2">
+            <span className="text-label">Velocidade Média</span>
             <span className="text-brand-h1 font-bold">{avgSpeed}</span>
           </div>
         </div>
       )}
 
-      {subTab === 'ranking' && <RankingPanel runs={historyData} />}
+      {subTab === 'ranking' && <RankingPanel runs={historyData} onSelectRun={setSelectedRun} />}
 
       {subTab === 'tabela' && (
-      <div className="overflow-y-auto max-h-[450px] rounded-2xl border-2 border-border-rule bg-app-bg">
-        <table className="w-full text-left border-collapse whitespace-nowrap">
-          <thead className="sticky top-0 bg-app-header border-b-2 border-border-rule z-10 shadow-sm">
-            <tr>
-              <th className="p-4 text-xs font-semibold text-brand-h3 uppercase tracking-wider">Data / Hora</th>
-              <th className="p-4 text-xs font-semibold text-brand-h3 uppercase tracking-wider">Tipo</th>
-              <th className="p-4 text-xs font-semibold text-brand-h3 uppercase tracking-wider">Labirinto</th>
-              <th className="p-4 text-xs font-semibold text-brand-h3 uppercase tracking-wider">Tempo</th>
-              <th className="p-4 text-xs font-semibold text-brand-h3 uppercase tracking-wider">Velocidade</th>
-              <th className="p-4 text-xs font-semibold text-brand-h3 uppercase tracking-wider">Bateria</th>
-              <th className="p-4 text-xs font-semibold text-brand-h3 uppercase tracking-wider">Movimentos</th>
-              <th className="p-4 text-xs font-semibold text-brand-h3 uppercase tracking-wider">Status</th>
-            </tr>
+        <div className="overflow-hidden rounded-xl border border-border-rule bg-app-bg shadow-card">
+          <table className="w-full text-left border-collapse whitespace-nowrap">
+            <thead className="bg-app-surface border-b border-border-rule">
+              <tr>
+                <th className="p-4 text-label">Data / Hora</th>
+                <th className="p-4 text-label">Tipo</th>
+                <th className="p-4 text-label">Labirinto</th>
+                <th className="p-4 text-label">Tempo</th>
+                <th className="p-4 text-label">Velocidade</th>
+                <th className="p-4 text-label">Bateria</th>
+                <th className="p-4 text-label">Movimentos</th>
+                <th className="p-4 text-label">Status</th>
+                <th className="p-4 text-label w-10 text-center"></th>
+              </tr>
           </thead>
           <tbody className="divide-y divide-border-rule">
             {filteredHistory.length > 0 ? filteredHistory.map((run) => (
-              // ── data-testid adicionado aqui ──
               <tr key={run.id} data-testid="corrida-item" onClick={() => setSelectedRun(run)} className="hover:bg-app-hover transition-colors cursor-pointer group">
                 <td className="p-4">
-                  <div className="flex items-center space-x-2">
-                    <Calendar size={14} className="text-brand-h3 group-hover:text-brand-h2 transition-colors"/>
+                  <div className="flex items-center gap-2">
+                    <Calendar size={16} className="text-brand-h3 group-hover:text-brand-h2 transition-colors"/>
                     <span className="text-brand-h1 font-medium text-sm">{run.date}</span>
                   </div>
                 </td>
                 <td className="p-4">
                   {run.source === 'simulator' ? (
-                    <span className="inline-flex items-center space-x-1.5 text-[11px] uppercase tracking-wider font-bold bg-brand-purple/15 text-brand-purple-glow border border-brand-purple/30 px-3 py-1 rounded-full" title="Corrida gerada no simulador local">
-                      <Cpu size={12} />
+                    <span className="badge w-[100px] bg-brand-purple text-white" title="Corrida gerada no simulador local">
+                      <Cpu size={14} />
                       <span>Simulada</span>
                     </span>
                   ) : (
-                    <span className="inline-flex items-center space-x-1.5 text-[11px] uppercase tracking-wider font-bold bg-brand-green/10 text-brand-green border border-brand-green/30 px-3 py-1 rounded-full" title="Corrida do robô físico">
-                      <Bot size={12} />
-                      <span>Real</span>
+                    <span className="badge w-[100px] bg-brand-green text-white" title="Corrida do robô físico">
+                      <Bot size={14} />
+                      <span>Corrida</span>
                     </span>
                   )}
                 </td>
                 <td className="p-4 text-brand-h2 font-medium text-sm">
-                  <div className="bg-app-raised inline-block px-3 py-1 rounded-full border border-border-dim">{run.maze}</div>
+                  <div className="bg-app-raised inline-block px-3 py-1 rounded-lg border border-border-rule font-mono">{run.maze}</div>
                 </td>
-                <td className="p-4 text-brand-h1 font-mono text-sm flex items-center space-x-2 h-14">
-                  <span>{run.time}</span>
-                  {bestRun && run.id === bestRun.id && (
-                    <span className="bg-brand-amber/20 text-brand-amber text-[10px] font-bold px-2 py-0.5 rounded uppercase tracking-wider border border-brand-amber/30">🏆 Record</span>
-                  )}
+                <td className="p-4 text-brand-h1 font-mono text-sm h-14">
+                  <div className="flex items-center gap-2 h-full">
+                    <span>{run.time}</span>
+                  </div>
                 </td>
                 <td className="p-4 text-brand-h2 text-sm">{run.speed}</td>
                 <td className="p-4">
-                  <div className="flex items-center space-x-1">
-                    <Battery size={14} className="text-brand-green"/>
+                  <div className="flex items-center gap-2">
+                    <Battery size={16} className="text-brand-green"/>
                     <span className="text-brand-h1 text-sm">{run.battery}</span>
                   </div>
                 </td>
                 <td className="p-4">
-                  <div className="flex items-center space-x-1">
-                    <Footprints size={14} className="text-brand-purple"/>
+                  <div className="flex items-center gap-2">
+                    <Footprints size={16} className="text-brand-purple-light"/>
                     <span className="text-brand-h1 text-sm">{run.steps}</span>
                   </div>
                 </td>
                 <td className="p-4">
-                  <div className={`flex items-center space-x-1.5 px-3 py-1 rounded-full w-fit ${run.status === 'Centro Alcançado!' ? 'bg-brand-green/10 text-brand-green border border-brand-green/20' : 'bg-red-500/10 text-red-500 border border-red-500/20'}`}>
-                    {run.status === 'Centro Alcançado!' ? <CheckCircle2 size={18}/> : <XCircle size={18}/>}
-                    <span className="text-[11px] font-bold uppercase tracking-wider">{run.status}</span>
+                  <div className={`inline-flex items-center justify-center h-6 px-3 rounded-md border text-[11px] font-semibold leading-none gap-1.5 w-max ${
+                    run.status === 'Centro Alcançado!' 
+                      ? 'text-white bg-brand-green border-transparent' 
+                      : 'text-white bg-brand-danger border-transparent'
+                  }`}>
+                    {run.status === 'Centro Alcançado!' ? <CheckCircle2 size={14}/> : <XCircle size={14}/>}
+                    <span>{run.status}</span>
+                  </div>
+                </td>
+                <td className="p-4 text-right">
+                  <div className="text-brand-h3 group-hover:text-brand-h1 transition-colors flex items-center justify-end">
+                    <span className="text-xs mr-1 opacity-0 group-hover:opacity-100 transition-opacity">Replay</span>
+                    <ChevronRight size={16} />
                   </div>
                 </td>
               </tr>
             )) : (
-              // ── data-testid adicionado aqui ──
               <tr>
                 <td colSpan="8" data-testid="estado-vazio" className="p-12 text-center text-brand-h3">
                   Nenhuma corrida encontrada para o filtro selecionado.
@@ -1021,7 +1556,7 @@ const HistoryView = ({ historyData, filter, setFilter, loading, error, onRefresh
 
       {selectedRun && (
         <div className="absolute inset-0 z-50 bg-app-bg/80 backdrop-blur-sm flex items-center justify-center p-6" onClick={() => setSelectedRun(null)}>
-          <div className="bg-panel w-full max-w-2xl border-2 border-border-subtle shadow-2xl flex flex-col p-6" onClick={e => e.stopPropagation()}>
+          <div className="bg-panel w-full max-w-2xl shadow-pop flex flex-col p-6 rounded-xl" onClick={e => e.stopPropagation()}>
             <div className="flex justify-between items-start mb-6">
               <div>
                 <h3 className="text-2xl font-bold text-brand-h1 mb-1">Detalhes da Corrida</h3>
@@ -1036,11 +1571,11 @@ const HistoryView = ({ historyData, filter, setFilter, loading, error, onRefresh
                 <div className="bg-app-bg p-4 rounded-xl border border-border-rule flex justify-between items-center">
                   <span className="text-brand-h3 text-sm">Tipo</span>
                   {selectedRun.source === 'simulator' ? (
-                    <span className="inline-flex items-center space-x-1.5 text-[11px] uppercase tracking-wider font-bold bg-brand-purple/15 text-brand-purple-glow border border-brand-purple/30 px-3 py-1 rounded-full">
+                    <span className="badge bg-brand-purple/20 text-brand-accent border border-brand-purple/40">
                       <Cpu size={12} /><span>Simulada</span>
                     </span>
                   ) : (
-                    <span className="inline-flex items-center space-x-1.5 text-[11px] uppercase tracking-wider font-bold bg-brand-green/10 text-brand-green border border-brand-green/30 px-3 py-1 rounded-full">
+                    <span className="badge bg-brand-green/15 text-brand-green-text border border-brand-green/30">
                       <Bot size={12} /><span>Real</span>
                     </span>
                   )}
@@ -1051,7 +1586,7 @@ const HistoryView = ({ historyData, filter, setFilter, loading, error, onRefresh
                 </div>
                 <div className="bg-app-bg p-4 rounded-xl border border-border-rule flex justify-between items-center">
                   <span className="text-brand-h3 text-sm">Labirinto</span>
-                  <span className="text-brand-h1 font-bold">{selectedRun.maze}</span>
+                  <span className="text-brand-h1 font-bold font-mono">{selectedRun.maze}</span>
                 </div>
                 <div className="bg-app-bg p-4 rounded-xl border border-border-rule flex justify-between items-center">
                   <span className="text-brand-h3 text-sm">Velocidade Média</span>

@@ -72,7 +72,7 @@ export function useMazeSimulator(initialGridSize = 16) {
             }
         }
 
-        const loops = Math.floor(size * size * 0.15); // Adjust loops based on size
+        const loops = Math.floor(size * size * 0.15); // Ajusta a quantidade de loops conforme o tamanho
         for (let i = 0; i < loops; i++) {
             let rx = Math.floor(Math.random() * (size - 2)) + 1;
             let ry = Math.floor(Math.random() * (size - 2)) + 1;
@@ -200,10 +200,10 @@ export function useMazeSimulator(initialGridSize = 16) {
         let rDir = mem.robot.dir;
 
         const checkOrder = [
-            (rDir + 3) % 4, // Left
-            (rDir + 2) % 4, // Rear
-            (rDir + 1) % 4, // Right
-            rDir            // Front
+            (rDir + 3) % 4, // Esquerda
+            (rDir + 2) % 4, // Trás
+            (rDir + 1) % 4, // Direita
+            rDir            // Frente
         ];
 
         for (let d of checkOrder) {

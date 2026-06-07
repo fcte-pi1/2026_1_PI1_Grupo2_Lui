@@ -33,8 +33,11 @@ test.describe('Telemetria do dashboard', () => {
 
     await page.goto('/');
 
-    // o modo muda para "Real" quando o pacote chega
-    await expect(page.getByText('Real', { exact: true })).toBeVisible({ timeout: 5000 });
+    // Ativa o modo corrida para escutar a telemetria
+    await page.getByLabel('Alternar Modo de Operação').click({ force: true });
+
+    // o modo agora exibe "Corrida" e aceita telemetria
+    await expect(page.getByText('Corrida', { exact: true }).first()).toBeVisible({ timeout: 5000 });
 
     // bateria convertida para 50%
     await expect(page.getByText('50%')).toBeVisible();

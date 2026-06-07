@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 
-const WS_URL = 'ws://localhost:8000/ws/dashboard';
+const DEFAULT_WS_URL = 'ws://localhost:8000/ws/dashboard';
 const RECONNECT_DELAY_MS = 3000;
 
 export const WS_STATUS = {
@@ -10,7 +10,7 @@ export const WS_STATUS = {
   RECONECTANDO:  'Reconectando...',
 };
 
-export function useWebSocket() {
+export function useWebSocket(url = DEFAULT_WS_URL) {
   const [status, setStatus]       = useState(WS_STATUS.CONECTANDO);
   const [lastMessage, setLastMessage] = useState(null);
   const wsRef    = useRef(null);
@@ -21,7 +21,7 @@ export function useWebSocket() {
     if (destroyed.current) return;
 
     setStatus(WS_STATUS.CONECTANDO);
-    const ws = new WebSocket(WS_URL);
+    const ws = new WebSocket(url);
     wsRef.current = ws;
 
     ws.onopen = () => {
@@ -55,10 +55,12 @@ export function useWebSocket() {
     return () => {
       destroyed.current = true;
       clearTimeout(timerRef.current);
-      wsRef.current?.close();
+      if (wsRef.current) {
+        wsRef.current.close();
+      }
       setStatus(WS_STATUS.DESCONECTADO);
     };
-  }, [connect]);
+  }, [connect, url]);
 
   return { status, lastMessage };
 }

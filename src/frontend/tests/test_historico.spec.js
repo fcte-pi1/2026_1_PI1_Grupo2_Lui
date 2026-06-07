@@ -62,7 +62,8 @@ test.describe('Filtros do histórico (API mockada)', () => {
   test('filtro 4x4 exibe apenas corridas 4x4', async ({ page }) => {
     await mockHistorico(page, CORRIDAS_MOCK);
     await abrirHistorico(page);
-    await page.getByTestId('filtro-labirinto').selectOption('4x4');
+    await page.getByTestId('filtro-labirinto').click();
+    await page.getByText('Pista 4x4', { exact: true }).click();
     const itens = page.getByTestId('corrida-item');
     await expect(itens).toHaveCount(1);
     await expect(itens.first()).toContainText('4x4');
@@ -72,7 +73,8 @@ test.describe('Filtros do histórico (API mockada)', () => {
   test('filtro 8x8 exibe apenas corridas 8x8', async ({ page }) => {
     await mockHistorico(page, CORRIDAS_MOCK);
     await abrirHistorico(page);
-    await page.getByTestId('filtro-labirinto').selectOption('8x8');
+    await page.getByTestId('filtro-labirinto').click();
+    await page.getByText('Pista 8x8', { exact: true }).click();
     const itens = page.getByTestId('corrida-item');
     await expect(itens).toHaveCount(1);
     await expect(itens.first()).toContainText('8x8');
@@ -82,7 +84,8 @@ test.describe('Filtros do histórico (API mockada)', () => {
   test('filtro 16x16 exibe apenas corridas 16x16', async ({ page }) => {
     await mockHistorico(page, CORRIDAS_MOCK);
     await abrirHistorico(page);
-    await page.getByTestId('filtro-labirinto').selectOption('16x16');
+    await page.getByTestId('filtro-labirinto').click();
+    await page.getByText('Pista 16x16', { exact: true }).click();
     const itens = page.getByTestId('corrida-item');
     await expect(itens).toHaveCount(1);
     await expect(itens.first()).toContainText('16x16');
@@ -92,7 +95,8 @@ test.describe('Filtros do histórico (API mockada)', () => {
   test('filtro Todos exibe todas as corridas', async ({ page }) => {
     await mockHistorico(page, CORRIDAS_MOCK);
     await abrirHistorico(page);
-    await page.getByTestId('filtro-labirinto').selectOption('Todos');
+    await page.getByTestId('filtro-labirinto').click();
+    await page.getByText('Todos os Labirintos', { exact: true }).last().click();
     await expect(page.getByTestId('corrida-item')).toHaveCount(3);
   });
 
@@ -100,7 +104,7 @@ test.describe('Filtros do histórico (API mockada)', () => {
   test('Todos é o filtro padrão ao abrir a aba', async ({ page }) => {
     await mockHistorico(page, CORRIDAS_MOCK);
     await abrirHistorico(page);
-    await expect(page.getByTestId('filtro-labirinto')).toHaveValue('Todos');
+    await expect(page.getByTestId('filtro-labirinto')).toContainText('Todos os Labirintos');
     await expect(page.getByTestId('corrida-item')).toHaveCount(3);
   });
 });
@@ -118,7 +122,8 @@ test.describe('Estado vazio', () => {
   test('filtro sem resultados mostra o estado vazio', async ({ page }) => {
     await mockHistorico(page, CORRIDAS_MOCK.filter(c => c.maze_type !== '4x4'));
     await abrirHistorico(page);
-    await page.getByTestId('filtro-labirinto').selectOption('4x4');
+    await page.getByTestId('filtro-labirinto').click();
+    await page.getByText('Pista 4x4', { exact: true }).click();
     await expect(page.getByTestId('estado-vazio')).toBeVisible();
     await expect(page.getByTestId('corrida-item')).toHaveCount(0);
   });
@@ -131,7 +136,7 @@ test.describe('Coluna Tipo — Simulada × Real', () => {
     await abrirHistorico(page);
     const itens = page.getByTestId('corrida-item');
     await expect(itens).toHaveCount(3);
-    await expect(page.locator('[data-testid="corrida-item"]').filter({ hasText: /Real/i })).toHaveCount(2);
+    await expect(page.locator('[data-testid="corrida-item"]').filter({ hasText: /Corrida/i })).toHaveCount(2);
     await expect(page.locator('[data-testid="corrida-item"]').filter({ hasText: /Simulada/i })).toHaveCount(1);
   });
 });
