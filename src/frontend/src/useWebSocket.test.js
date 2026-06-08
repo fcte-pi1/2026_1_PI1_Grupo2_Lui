@@ -84,3 +84,17 @@ test('cleanup no unmount fecha socket e não reconecta', () => {
   act(() => { ws.onclose && ws.onclose(); jest.advanceTimersByTime(3000); });
   expect(instances).toHaveLength(1);
 });
+
+// Callbacks ignorados se componente foi desmontado
+test('callbacks ignorados se componente foi desmontado', () => {
+  const { unmount } = renderHook(() => useWebSocket());
+  const ws = instances[0];
+  act(() => { unmount(); });
+  
+  // status deve ser ignorado
+  act(() => { ws.onopen(); });
+  act(() => { ws.onmessage({ data: 'ping' }); });
+  act(() => { ws.onclose(); });
+  
+  expect(instances).toHaveLength(1);
+});

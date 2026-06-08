@@ -88,6 +88,31 @@ test('status vira "Preso!" quando todas as direções estão bloqueadas', () => 
   expect(result.current.isRunning).toBe(false);
 });
 
+// checkDeadEnd fecha o corredor se houver 3 paredes
+test('checkDeadEnd fecha o corredor se houver 3 paredes no vizinho', () => {
+  jest.useFakeTimers();
+  const { result } = renderHook(() => useMazeSimulator(4));
+  const mem = result.current.memory;
+  
+  // O robô está em (0, 3). Vamos fazer ele detectar uma parede na direção 0 (Norte).
+  // A célula vizinha é (0, 2).
+  mem.truthWalls[0][3][0] = true;
+  mem.knownWalls[0][3][0] = false;
+  
+  // Na célula vizinha (0, 2), definimos 2 paredes já conhecidas (Oeste e Norte).
+  // Quando o robô detectar a parede Sul de (0, 2) (que é a Norte de 0, 3), 
+  // (0, 2) terá 3 paredes e o checkDeadEnd vai fechar a parede Leste de (0, 2).
+  mem.knownWalls[0][2] = { 0: true, 1: false, 2: false, 3: true };
+  mem.wallInspected[0][2] = { 0: true, 1: false, 2: false, 3: true };
+  
+  act(() => { result.current.setIsRunning(true); });
+  act(() => { jest.advanceTimersByTime(60); });
+  act(() => { result.current.setIsRunning(false); });
+  
+  // A parede Leste (1) de (0, 2) deve ter sido fechada pelo checkDeadEnd
+  expect(mem.knownWalls[0][2][1]).toBe(true);
+});
+
 // Rodando a simulação, o robô avança, acumula trajeto e chega ao centro.
 test('rodando a simulação o robô avança e chega ao centro', () => {
   jest.useFakeTimers();

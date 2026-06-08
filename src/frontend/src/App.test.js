@@ -266,3 +266,51 @@ describe('histórico: ranking e detalhe/replay', () => {
     await waitFor(() => expect(global.fetch.mock.calls.length).toBeGreaterThan(before));
   });
 });
+
+describe('configurações', () => {
+  test('aba Configurações renderiza e permite interações', async () => {
+    render(<App />);
+    fireEvent.click(screen.getByRole('button', { name: /Configurações/i }));
+    
+    // Salvar Conexão
+    const urlInput = screen.getByPlaceholderText('ws://localhost:8000/ws/dashboard');
+    fireEvent.change(urlInput, { target: { value: 'ws://teste' } });
+    fireEvent.click(screen.getByRole('button', { name: /Salvar Conexão/i }));
+    expect(await screen.findByText(/URL do WebSocket salva com sucesso!/i)).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: /Entendi/i }));
+    
+    // Salvar Calibração
+    const minInput = screen.getByPlaceholderText('6.0');
+    fireEvent.change(minInput, { target: { value: '5.5' } });
+    fireEvent.click(screen.getByRole('button', { name: /Salvar Calibração/i }));
+    expect(await screen.findByText(/Calibração de bateria salva/i)).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: /Entendi/i }));
+
+    // Salvar Alerta
+    fireEvent.click(screen.getByRole('button', { name: /Salvar Alerta/i }));
+    expect(await screen.findByText(/Sensibilidade de conexão atualizada/i)).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: /Entendi/i }));
+
+    // Exportar CSV pela tela de config
+    const exportBtn = screen.getByRole('button', { name: /Exportar Histórico/i });
+    global.fetch = jest.fn(() => Promise.resolve({ ok: true, json: () => Promise.resolve({ data: [] }) }));
+    fireEvent.click(exportBtn); // Sem dados, deve dar aviso
+    expect(await screen.findByText(/Não há dados para exportar/i)).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: /Entendi/i }));
+
+    // Limpar Banco
+    fireEvent.click(screen.getByRole('button', { name: /Limpar Banco de Dados/i }));
+    expect(screen.getByText(/Você está prestes a apagar permanentemente/i)).toBeInTheDocument();
+    const deleteBtn = screen.getByRole('button', { name: /Sim, Apagar Histórico/i });
+    expect(deleteBtn).toBeDisabled();
+    
+    const delInput = screen.getByPlaceholderText('deletar');
+    fireEvent.change(delInput, { target: { value: 'deletar' } });
+    expect(deleteBtn).not.toBeDisabled();
+    
+    global.fetch = jest.fn(() => Promise.resolve({ ok: true, json: () => Promise.resolve({ status: 'ok' }) }));
+    fireEvent.click(deleteBtn);
+    expect(await screen.findByText(/Banco de dados apagado com sucesso!/i)).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: /Entendi/i }));
+  });
+});

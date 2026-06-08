@@ -10,6 +10,7 @@ import {
   getHealth,
   getCorrida,
   parseTimeToSeconds,
+  deleteHistorico,
 } from './api';
 
 afterEach(() => {
@@ -48,6 +49,12 @@ describe('formatadores puros', () => {
     expect(typeof out).toBe('string');
     expect(out).toMatch(/\d{2}\/\d{2}\/\d{4}/);
   });
+
+  test('formatTimestamp cai no catch em erro de formatação', () => {
+    // Passando um objeto que falha no `new Date(iso)` ou `toLocaleString`
+    const badDate = { toString: () => { throw new Error('ops'); } };
+    expect(formatTimestamp(badDate)).toBe(badDate);
+  });
 });
 
 describe('batteryVoltsToPercent', () => {
@@ -77,6 +84,15 @@ describe('batteryVoltsToPercent', () => {
   // É possível passar uma faixa de tensão diferente.
   test('aceita faixa de tensão customizada', () => {
     expect(batteryVoltsToPercent(3.7, 3.0, 4.2)).toBe(58);
+  });
+
+  test('lê valores do localStorage', () => {
+    localStorage.setItem('BATT_VMIN', '5.5');
+    localStorage.setItem('BATT_VMAX', '8.0');
+    expect(batteryVoltsToPercent(8.0)).toBe(100);
+    expect(batteryVoltsToPercent(5.5)).toBe(0);
+    localStorage.removeItem('BATT_VMIN');
+    localStorage.removeItem('BATT_VMAX');
   });
 });
 
@@ -250,9 +266,29 @@ describe('getHealth e getCorrida', () => {
     expect(global.fetch.mock.calls[0][0]).toContain('/historico/5');
   });
 
-  // Busca de corrida inexistente deve lançar exceção.
+// Busca de corrida inexistente deve lançar exceção.
   test('getCorrida lança erro em falha', async () => {
     global.fetch = jest.fn(() => Promise.resolve({ ok: false, status: 404 }));
     await expect(getCorrida(99)).rejects.toThrow(/404/);
+  });
+});
+
+describe('deleteHistorico', () => {
+  test('envia DELETE e retorna json em sucesso', async () => {
+    global.fetch = jest.fn(() =>
+      Promise.resolve({ ok: true, json: () => Promise.resolve({ status: 'ok' }) })
+    );
+    const res = await deleteHistorico();
+    expect(res).toEqual({ status: 'ok' });
+    const [url, opts] = global.fetch.mock.calls[0];
+    expect(url).toContain('/historico');
+    expect(opts.method).toBe('DELETE');
+  });
+
+  test('lança erro quando a resposta não é ok', async () => {
+    global.fetch = jest.fn(() =>
+      Promise.resolve({ ok: false, status: 500, text: () => Promise.resolve('erro') })
+    );
+    await expect(deleteHistorico()).rejects.toThrow(/500/);
   });
 });
