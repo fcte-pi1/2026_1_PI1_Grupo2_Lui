@@ -278,7 +278,10 @@ const SettingsView = ({ wsUrl, setWsUrl, wsStatus, refreshHistory }) => {
       setShowDeleteModal(false);
       setDeleteInput('');
     } catch (e) {
-      setFeedbackMessage({ title: 'Erro', text: 'Erro ao apagar banco: ' + e.message, type: 'error' });
+      const text = e.message?.includes('403')
+        ? 'Ação restrita: o histórico só pode ser apagado no computador que executa o backend (RNF-10).'
+        : 'Erro ao apagar banco: ' + e.message;
+      setFeedbackMessage({ title: 'Erro', text, type: 'error' });
       setShowDeleteModal(false);
       setDeleteInput('');
     }

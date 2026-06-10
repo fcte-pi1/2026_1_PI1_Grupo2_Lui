@@ -1,7 +1,7 @@
 import logging
 import math
 from typing import Optional
-from fastapi import FastAPI, Query, HTTPException, WebSocket, WebSocketDisconnect
+from fastapi import FastAPI, Query, HTTPException, Request, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
 
 from database.database import init_db, salvar_corrida, listar_corridas, buscar_corrida, limpar_banco
@@ -132,8 +132,30 @@ def obter_corrida(corrida_id: int):
     return {"status": "sucesso", "data": corrida}
 
 
+# Hosts considerados locais para operações administrativas (RNF-10):
+# loopback IPv4/IPv6 e o placeholder usado pelo TestClient do Starlette.
+# Premissa: backend roda sem proxy reverso (execução local, RE-04/RE-05).
+LOCAL_ADMIN_HOSTS = {"127.0.0.1", "::1", "localhost", "testclient"}
+
+
+def require_local_request(request: Request) -> None:
+    """Restringe a operação à máquina que executa o backend (RNF-10/CT-40).
+
+    Dashboards abertos em outras máquinas da LAN recebem 403; a limpeza do
+    histórico só é possível a partir do próprio host do servidor.
+    """
+    host = request.client.host if request.client else None
+    if host not in LOCAL_ADMIN_HOSTS:
+        logger.warning(f"DELETE /historico negado para origem remota: {host}")
+        raise HTTPException(
+            status_code=403,
+            detail="Operação administrativa: permitida apenas a partir da máquina do servidor",
+        )
+
+
 @app.delete("/historico", status_code=200)
-def apagar_historico():
+def apagar_historico(request: Request):
+    require_local_request(request)
     try:
         limpar_banco()
         return {"status": "sucesso", "mensagem": "Histórico apagado com sucesso"}

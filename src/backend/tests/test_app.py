@@ -190,6 +190,32 @@ def test_ct40_endpoints_de_mutacao_nao_existem():
     assert client.put("/historico/1", json={}).status_code in (404, 405)
     assert client.patch("/historico/1", json={}).status_code in (404, 405)
     assert client.delete("/historico/1").status_code in (404, 405)
+    assert client.put("/historico", json={}).status_code in (404, 405)
+    assert client.patch("/historico", json={}).status_code in (404, 405)
+
+
+def test_ct40_delete_historico_negado_para_origem_remota():
+    # RNF-10: DELETE /historico é administrativo — só a máquina do servidor.
+    # Simula uma requisição vinda de outro host da LAN.
+    from starlette.requests import Request as StarletteRequest
+    from fastapi import HTTPException
+    from app import require_local_request
+
+    scope = {"type": "http", "client": ("192.168.0.50", 51234), "headers": []}
+    with pytest.raises(HTTPException) as exc:
+        require_local_request(StarletteRequest(scope))
+    assert exc.value.status_code == 403
+
+
+def test_ct40_delete_historico_local_apaga_tudo():
+    # Origem local (TestClient roda in-process): limpeza administrativa permitida.
+    _seed_corridas()
+    assert len(client.get("/historico").json()["data"]) == 3
+
+    response = client.delete("/historico")
+    assert response.status_code == 200
+    assert response.json()["status"] == "sucesso"
+    assert client.get("/historico").json()["data"] == []
 
 
 def test_health_endpoint():

@@ -124,6 +124,8 @@ Microcontroladores tipicamente utilizados em projetos Micromouse (como STM32 ou 
 
 Como os dados são utilizados na avaliação acadêmica, é fundamental garantir que não haja possibilidade de alteração posterior dos resultados, seja acidental, seja intencional. A forma mais simples de assegurar essa propriedade é não implementar endpoints de atualização ou deleção no sistema web, restringindo qualquer eventual correção a uma operação administrativa direta no banco de dados, com acesso controlado.
 
+> **Decisão registrada (10/06/2026):** existe uma única operação administrativa de limpeza, `DELETE /historico` (item 7.25 do cronograma), **restrita à máquina que executa o backend** — requisições originadas de outros hosts da rede recebem `403 Forbidden` (`require_local_request` em `src/backend/app.py`). Nenhum endpoint de edição ou exclusão é acessível publicamente pela rede; a restrição é verificada pelos testes do CT-40 em `src/backend/tests/test_app.py`.
+
 ## 5. Usabilidade
 
 ### RNF-11 — Visibilidade dos Dados de Telemetria
