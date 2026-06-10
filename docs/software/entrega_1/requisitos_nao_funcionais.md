@@ -219,10 +219,10 @@ A fixação de versões assegura comportamento idêntico do sistema em qualquer 
 
 | Atributo | Valor |
 |---|---|
-| **Tecnologias** | HTML5, CSS3, JavaScript (ES6+) |
-| **Restrição** | A interface não deve depender de frameworks externos que exijam processo de build (por exemplo, React ou Vue com Vite) |
+| **Tecnologias** | React 19, Tailwind CSS |
+| **Restrição** | A interface utiliza o ecossistema React (via Create React App) e Tailwind para componentes visuais, exigindo processo de build com Node.js |
 
-O uso de HTML, CSS e JavaScript puros elimina a necessidade de configurar ambientes de build (Node.js, npm, Webpack, entre outros), reduzindo a complexidade de instalação e execução. Para o escopo do projeto, frameworks pesados não oferecem benefícios que justifiquem o custo de configuração. A atualização em tempo real é implementada com WebSocket nativo do navegador, enquanto a Fetch API atende às consultas REST ao histórico.
+O uso de React 19 e Tailwind CSS foi adotado para facilitar a criação de uma interface rica, componentizada e responsiva. Embora adicione a necessidade de um ambiente de build (Node.js, npm, Webpack via CRA), o ganho em produtividade e manutenibilidade para o desenvolvimento do dashboard, histórico e simulador compensa a complexidade adicional. A atualização em tempo real é implementada com WebSocket nativo do navegador, enquanto a Fetch API atende às consultas REST ao histórico.
 
 ### RE-08 — Navegadores Suportados
 
@@ -274,7 +274,7 @@ A síntese a seguir consolida as restrições tecnológicas por camada, registra
 | RE-04 | Backend | Python + FastAPI | Python 3.10 |
 | RE-05 | Backend | Windows / Ubuntu / macOS | Win 10, Ubuntu 22.04, macOS 12 |
 | RE-06 | Backend | pip + requirements.txt | Dependências com versões fixadas |
-| RE-07 | Frontend | HTML5 + CSS3 + JS | ES6+ |
+| RE-07 | Frontend | React 19 + Tailwind | CRA (Node.js) |
 | RE-08 | Frontend | Chrome / Firefox / Edge | versão 110 |
 | RE-09 | Frontend | Layout responsivo | largura ≥ 1024px |
 | RE-10 | Banco de dados | SQLite 3 | versão 3.35+ |
