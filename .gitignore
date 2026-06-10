@@ -367,7 +367,6 @@ TSWLatexianTemp*
 .pio/
 include/
 lib/
-test/
 
 # Banco SQLite
 db/*.db
