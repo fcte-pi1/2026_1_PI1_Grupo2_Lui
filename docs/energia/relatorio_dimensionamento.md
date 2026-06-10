@@ -1,47 +1,57 @@
-# Relatório de Dimensionamento Energético - Projeto Micromouse PI1
+# Estudo de Dimensionamento e Eficiência Energética - Micromouse
 
-Este documento formaliza a análise técnica para a escolha do subsistema de alimentação do robô Micromouse, atendendo aos requisitos de autonomia do nosso projeto.
+Este documento formaliza a análise técnica do subsistema de alimentação do robô Micromouse, detalhando o consumo individual de componentes, o cálculo de autonomia energética e as estratégias de regulação e proteção do circuito.
 
 ## 1. Identificação dos Subsistemas Elétricos
-Com base na lista de componentes provisória, o sistema é composto pelos seguintes itens principais:
-* **Microcontrolador:** ESP32 (3.3V / 240mA médio com Wi-Fi ativo para telemetria).
-* **Motores:** 2x N20 6V com Encoder (100mA nominal cada / 500mA stall cada).
-* **Sensores:** 4x Sensores IR (TCRT5000/VL53L0X) e 1x Giroscópio MPU6500.
-* **Driver de Motor:** Ponte H TB6612FNG.
 
-## 2. Cálculo de Autonomia e Consumo 
-O cálculo de autonomia segue as diretrizes de dimensionamento, considerando um tempo de operação de 30 minutos (1800 segundos), suficiente para cobrir as 3 tentativas em cada um dos 3 labirintos da competição.
+Os componentes foram mapeados conforme a tensão de operação e corrente média em regime de funcionamento nominal para um tempo estimado de operação contínua de 1800 segundos (30 minutos).
 
-| Componente | Corrente Nominal (mA) | Corrente de Pico (mA) |
-| :--- | :---: | :---: |
-| **ESP32** | 240 | 300 |
-| **Motores (2x)** | 200 | 1000 |
-| **Sensores e Lógica**| 65 | 170 |
-| **Total do Sistema** | **505 mA** | **1470 mA** |
-*(Tabela de consumo)*
+| Componente | Tensão (V) | Corrente Média (mA) | Tempo (s) |
+| :--- | :---: | :---: | :---: |
+| Microcontrolador ESP32 | 5.0V | 240 mA | 1800 s |
+| Motores N20 (Par) | 7.4V | 200 mA | 1800 s |
+| Sensor ToF (VL53L0X 3x) | 5.0V | 45 mA | 1800 s |
+| Giroscópio MPU6500 | 5.0V | 5 mA | 1800 s |
 
-**Capacidade Mínima Necessária:** O consumo total é de aproximadamente 252,5 mAh para o percurso. Aplicando uma margem de segurança para evitar quedas bruscas de tensão que possam reiniciar o ESP32, a capacidade recomendada é de 500mAh ou superior.
+## 2. Cálculo da Energia Consumida por Componente
 
-## 3. Tabela Comparativa de Baterias 
-A análise técnica prioriza o equilíbrio entre C-Rating (taxa de descarga) e o peso final do chassi, fator crítico para a inércia em curvas de 90 graus.
+A energia (E) consumida por cada componente é calculada pela fórmula **E = V · I · t**, onde a corrente (I) é expressa em Ampères.
 
-| Modelo | Voltagem | Capacidade | Peso Estimado | Preço (Bateria+Carregador) |
-| :--- | :--- | :--- | :--- | :--- |
-| LiPo 2S High-C (Tattu/Gens Ace) | 7.4V | 450mAh | ~28g | R$ 150 - R$ 200 |
-| Li-ion 14500 (Pack Azul) | 7.4V | 1000mAh| ~40g | R$ 65 - R$ 85 |
-| **Li-ion 18650 (ESCOLHIDA)** | **7.4V** | **2000mAh**| **~100g** | **R$ 40 - R$ 60** |
-*(Tabela comparativa ajustada)*
+* **ESP32:** 5V × 0.24A × 1800s = 2160 J
+* **Motores N20:** 7.4V × 0.20A × 1800s = 2664 J
+* **Sensor ToF (3x):** 5V × 0.045A × 1800s = 405 J
+* **Giroscópio:** 5V × 0.005A × 1800s = 45 J
 
-## 4. Justificativa da Decisão Técnica
-A opção homologada pelo grupo é a **Bateria Li-ion 18650 7.4V de 2000mAh**. Esta decisão fundamenta-se nos seguintes pontos:
-* **Autonomia e Estabilidade:** A capacidade de 2000mAh oferece uma folga de segurança massiva para testes prolongados de bancada, eliminando a necessidade de recargas frequentes. Além disso, garante tolerância ao pico de 1440mA, não causando afundamento crítico de tensão (*voltage sag*).
-* **Custo-Benefício:** O conjunto é altamente acessível, não exigindo carregador balanceador caro.
-* **Peso como Trade-off:** Embora o peso seja maior (~100g), o grupo optou por priorizar a segurança elétrica e a margem energética em detrimento da extrema leveza mecânica.
+## 3. Estimativa do Consumo Total de Energia
 
-## 5. Planejamento do Circuito e Proteções
-Para gerenciar as oscilações de tensão e proteger o microcontrolador, o planejamento inclui:
-* **Regulação:** Buck Converter MP1584 para estabilizar a tensão de 5V.
-* **Filtragem:** Uso de capacitores de desacoplamento de 100nF e 10µF próximos ao driver de motor e sensores para mitigar ruídos das escovas dos motores DC.
-* **Proteção:** Chave Geral física e monitoramento de tensão via software para evitar a descarga profunda das células de Lítio.
+Considerando a eficiência do regulador de tensão (Buck Converter) estimada em 90% para os componentes de 5V e o consumo direto dos motores em 7.4V, o consumo total de energia do sistema por sessão é de aproximadamente **5564 Joules**.
 
-*Link para a Bateria adotada:* https://www.mercadolivre.com.br/up/MLBU601726856?pdp_filters=item_id:MLB2202054107&matt_tool=38524122#origin=share&sid=share&wid=MLB2202054107&action=copy
+## 4. Escolha da Fonte de Alimentação
+
+**Conversão para Watt-hora:** 5564 J ÷ 3600 ≈ 1.55 Wh.
+
+**Margem de Segurança:** Para sistemas robóticos móveis, é usual adotar uma margem de segurança de 20% a 50% para compensar perdas internas das baterias, variações de temperatura e resistência interna. No entanto, para garantir estabilidade absoluta contra picos de corrente superiores a 1000mA nas curvas, o grupo adotou uma margem severa de segurança.
+
+**Seleção da Bateria:** Foi selecionada a bateria **Li-ion 18650 7.4V de 2000mAh**. Esta bateria oferece aproximadamente 14.8 Wh, suprindo a demanda teórica com uma folga de cerca de 850%, o que elimina riscos de brownouts durante a operação dos motores.
+
+## 5. Planejamento do Circuito de Alimentação
+
+O planejamento do circuito foca na estabilidade da tensão para a lógica e proteção dos componentes.
+
+* **Regulação:** Uso do conversor buck MP1584 para reduzir a tensão da bateria de 7.4V para 5V estáveis, garantindo alta eficiência energética e baixa dissipação térmica.
+* **Controle de Oscilações:** Inclusão de capacitores de filtragem (100nF e 10µF) na entrada e saída do conversor, além de capacitores de desacoplamento próximos ao driver de motor e sensores para mitigar ruídos de back-EMF.
+* **Proteções:** Implementação de chave geral física e isolamento para os motores via driver TB6612FNG. Recomenda-se a inserção de fusível ou PTC na linha principal para proteção contra sobrecorrente.
+
+## 6. Monitoramento via Software
+
+No firmware do ESP32, será implementada uma rotina de monitoramento através de um divisor resistivo conectado a um pino ADC para medir a tensão da bateria em tempo real. Os dados de tempo de operação e níveis de tensão serão registrados e transmitidos via telemetria para análise posterior da curva de descarga.
+
+## 7. Validação com Testes Reais
+
+Testes de campo serão realizados para validar os cálculos teóricos. Espera-se que o consumo real apresente variações devido a:
+
+* Atrito mecânico irregular no labirinto.
+* Perdas por efeito Joule nos condutores e conectores.
+* Eficiência real dos motores em diferentes níveis de carga (PWM).
+
+A literatura sugere que diferenças de até 15% entre o teórico e o real são comuns em sistemas embarcados de pequeno porte devido a variáveis ambientais e tolerâncias de componentes. Os dados coletados pelo software de monitoramento servirão para refinar o modelo de consumo e ajustar, se necessário, as estratégias de gerenciamento de energia.
