@@ -1,24 +1,17 @@
-# Energia 
-
 # Memorial de Cálculo: Autonomia e Consumo Energético - Micromouse
 
-Este documento detalha o cálculo da demanda energética do protótipo Micromouse para a Issue #22, visando garantir a autonomia necessária para a realização de três tentativas em cada um dos três labirintos da competição.
-
 ## 1. Identificação dos Subsistemas Elétricos
-
 Os componentes do sistema foram identificados com base na lista de materiais provisória, registrando-se as tensões e correntes médias de operação:
-
 * **ESP32:** Microcontrolador principal operando com Wi-Fi ativo para telemetria.
-* **Motores N20 (x2):** Atuadores de locomoção com encoder.
+* **Motores N20 (x2):** Atuadores de locomocão com encoder.
 * **Sensores ToF e IR:** Sensores VL53L0X e TCRT5000 para mapeamento e detecção de paredes.
 * **Giroscópio MPU6500:** Responsável pela precisão angular nas curvas.
 
 ## 2. Tabela de Consumo Nominal e de Pico
-
-Abaixo, detalha-se a corrente média (regime constante) e a corrente de pico (cenário de torque máximo/stall) de cada componente:
+Abaixo, foram detalhados a corrente média (regime constante) e a corrente de pico (cenário de torque máximo/stall) de cada componente:
 
 | Componente | Qtd | Corrente Média (mA) | Corrente de Pico (mA) |
-| :--- | :---: | :--- | :--- |
+| :--- | :---: | :---: | :---: |
 | **ESP32** | 1 | 240 | 300 |
 | **Motores N20** | 2 | 200 (Total) | 1000 (Stall) |
 | **Sensores IR** | 4 | 40 (Total) | 80 (Total) |
@@ -29,7 +22,7 @@ Abaixo, detalha-se a corrente média (regime constante) e a corrente de pico (ce
 
 ## 3. Cálculo de Autonomia
 
-Considerando o tempo total de operação (**t**) de **1800 segundos** (**30 minutos**) e a tensão nominal da bateria de **7.4V**:
+Considerando o tempo total de operação (t) de 1800 segundos (30 minutos) e a tensão nominal da bateria de 7.4V:
 
 * **Energia Consumida (E):**
 
@@ -42,9 +35,9 @@ Considerando o tempo total de operação (**t**) de **1800 segundos** (**30 minu
 
 ## 4. Escolha da Fonte e Margem de Segurança
 
-Para compensar perdas térmicas e garantir que a tensão não caia abaixo do limite crítico do ESP32 durante picos de corrente, aplica-se uma margem de segurança de **100%**:
+Para compensar perdas térmicas e garantir que a tensão não caia abaixo do limite crítico do ESP32 durante picos de corrente, aplica-se uma margem de segurança.
 
-* **Capacidade Mínima Recomendada:** **505 mAh**.
-* **Fonte Escolhida:** Bateria Li-ion 14500 **7.4V** de **1000mAh**.
+* **Capacidade Mínima Recomendada:** 505 mAh.
+* **Fonte Escolhida:** Bateria Li-ion 18650 7.4V de 2000mAh. (Atualizado conforme decisão do grupo para maior margem de tolerância)
 
-A bateria selecionada supre a demanda teórica com uma folga de aproximadamente **300%**, sendo adequada para as condições de competição e testes de longa duração.
+A bateria selecionada supre a demanda teórica com uma folga de aproximadamente 790%, garantindo autonomia extrema para testes prolongados e prevenindo quedas de tensão no pico de exigência das curvas.
