@@ -3,6 +3,8 @@ import math
 from typing import Optional
 from fastapi import FastAPI, Query, HTTPException, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
+from typing import Literal
+from schemas.comandos import ComandoSchema
 
 from database.database import init_db, salvar_corrida, listar_corridas, buscar_corrida, limpar_banco
 from memory.session_buffer import (
@@ -140,6 +142,13 @@ def apagar_historico():
     except Exception as e:
         logger.error(f"Erro ao limpar banco: {e}")
         raise HTTPException(status_code=500, detail="Erro ao limpar histórico")
+    
+@app.post("/comandos")
+async def receber_comando(payload: ComandoSchema):
+    return {
+        "status": "comando_recebido", 
+        "comando": payload.comando
+    }
 
 
 if __name__ == "__main__":
