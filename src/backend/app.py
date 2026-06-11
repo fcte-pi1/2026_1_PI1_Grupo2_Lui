@@ -149,8 +149,8 @@ async def encaminhar_para_esp32(comando: str) -> bool:
  
 @app.post("/comandos")
 async def receber_comando(payload: ComandoSchema):
-    # Recebe um comando validado do Frontend e tenta enviá-lo ao ESP32.
-    # Chama a função que tenta enviar a mensagem
+    #Recebe um comando validado do Frontend e tenta enviá-lo ao ESP32.
+    # Chama a função que tenta enviar a mensagem ao robô
     sucesso = await encaminhar_para_esp32(payload.comando)
     
     if sucesso:
@@ -158,11 +158,12 @@ async def receber_comando(payload: ComandoSchema):
             "status": "comando_enviado", 
             "comando": payload.comando
         }
-    else:
-        return {
-            "status": "erro_encaminhamento", 
-            "comando": payload.comando
-        }
+    
+    # Se o robô não responder ou falhar, lança o erro 503 correto
+    raise HTTPException(
+        status_code=503, 
+        detail="Falha de comunicação com o ESP32 (Timeout/Offline)"
+    )
 
 
 if __name__ == "__main__":

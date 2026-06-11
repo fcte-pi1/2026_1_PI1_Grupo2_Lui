@@ -36,3 +36,15 @@ def test_encaminhamento_ao_esp32(mock_encaminhar):
     
     # Verifica se a rota chamou a função de encaminhar passando a string "iniciar"
     mock_encaminhar.assert_called_once_with("iniciar")
+
+@patch("app.encaminhar_para_esp32")
+def test_encaminhamento_falha_esp32_offline(mock_encaminhar):
+    # Simula que o ESP32 está desligado ou deu timeout
+    mock_encaminhar.return_value = False
+    
+    payload = {"comando": "iniciar"}
+    response = client.post("/comandos", json=payload)
+    
+    # Espera que a API retorne o erro 503 (Serviço Indisponível)
+    assert response.status_code == 503
+    assert response.json()["detail"] == "Falha de comunicação com o ESP32 (Timeout/Offline)"
