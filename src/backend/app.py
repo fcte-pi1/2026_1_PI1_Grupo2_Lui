@@ -142,13 +142,27 @@ def apagar_historico():
     except Exception as e:
         logger.error(f"Erro ao limpar banco: {e}")
         raise HTTPException(status_code=500, detail="Erro ao limpar histórico")
-    
+
+async def encaminhar_para_esp32(comando: str) -> bool:
+    # TODO: Implementar lógica real de rede para o ESP32
+    return True
+ 
 @app.post("/comandos")
 async def receber_comando(payload: ComandoSchema):
-    return {
-        "status": "comando_recebido", 
-        "comando": payload.comando
-    }
+    # Recebe um comando validado do Frontend e tenta enviá-lo ao ESP32.
+    # Chama a função que tenta enviar a mensagem
+    sucesso = await encaminhar_para_esp32(payload.comando)
+    
+    if sucesso:
+        return {
+            "status": "comando_enviado", 
+            "comando": payload.comando
+        }
+    else:
+        return {
+            "status": "erro_encaminhamento", 
+            "comando": payload.comando
+        }
 
 
 if __name__ == "__main__":
