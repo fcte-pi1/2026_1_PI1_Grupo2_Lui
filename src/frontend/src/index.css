@@ -131,6 +131,7 @@
   --bg-unexplored: rgba(10,8,21,0.95);
   --bg-explored: rgba(16,12,39,0.7);
   --bg-center: #1e9d74;
+  --known-wall-color: #E6E0D4;
 }
 
 /* ============================================================
@@ -315,7 +316,7 @@ body {
   height: 100cqmin;
   margin: 0 auto;
   background-color: transparent;
-  border: 2.5px solid var(--primary-2);
+  border: 2.5px solid var(--known-wall-color);
   border-radius: var(--radius-sm);
   box-sizing: border-box;
   overflow: hidden;
@@ -355,10 +356,10 @@ body {
 .show-truth .cell.truth-wall-w { border-left: 2px solid var(--truth-wall-color); }
 
 /* Paredes conhecidas — forte */
-.cell.known-wall-n { border-top: 2.5px solid var(--primary-2) !important; }
-.cell.known-wall-e { border-right: 2.5px solid var(--primary-2) !important; }
-.cell.known-wall-s { border-bottom: 2.5px solid var(--primary-2) !important; }
-.cell.known-wall-w { border-left: 2.5px solid var(--primary-2) !important; }
+.cell.known-wall-n { border-top: 2.5px solid var(--known-wall-color) !important; }
+.cell.known-wall-e { border-right: 2.5px solid var(--known-wall-color) !important; }
+.cell.known-wall-s { border-bottom: 2.5px solid var(--known-wall-color) !important; }
+.cell.known-wall-w { border-left: 2.5px solid var(--known-wall-color) !important; }
 
 /* Distance heatmap */
 .cell[data-color="g"] { background-color: rgba(58, 128, 96, 0.45); }

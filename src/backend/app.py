@@ -132,6 +132,74 @@ def obter_corrida(corrida_id: int):
     return {"status": "sucesso", "data": corrida}
 
 
+# ---- Comandos que vao pro robô ----
+# a ponte serial conecta no websocket /ws/robo e fica la escutando.
+# ai qnd a gnt clica em iniciar no front, empurra o comando por la direto
+# detalhe: se a ponte n tiver conectada na hr, o comando fica na fila e vai dps.
+import re as _re
+
+COMANDO_RE = _re.compile(r"^(start( (4|8|16))?|reset)$")
+_comando_pendente: Optional[str] = None
+_pontes_conectadas: set = set()
+
+
+from pydantic import BaseModel
+
+
+class ComandoSchema(BaseModel):
+    command: str
+
+
+async def _entregar_comando(cmd: str) -> int:
+    """dispara o comando pra tds os websockets abertos e conta qnts deram certo"""
+    entregues = 0
+    for ws in list(_pontes_conectadas):
+        try:
+            await ws.send_json({"command": cmd})
+            entregues += 1
+        except Exception:
+            _pontes_conectadas.discard(ws)
+    return entregues
+
+
+@app.post("/comando", status_code=200)
+async def enviar_comando(comando: ComandoSchema):
+    global _comando_pendente
+    cmd = comando.command.strip().lower()
+    if not COMANDO_RE.match(cmd):
+        raise HTTPException(status_code=422, detail=f"Comando inválido: {cmd}")
+    entregues = await _entregar_comando(cmd)
+    if entregues == 0:
+        _comando_pendente = cmd  # entrega quando a ponte conectar
+        logger.info(f"Comando '{cmd}' pendente (nenhuma ponte conectada)")
+        return {"status": "sucesso", "mensagem": f"Comando '{cmd}' aguardando a ponte conectar"}
+    logger.info(f"Comando '{cmd}' entregue a {entregues} ponte(s)")
+    return {"status": "sucesso", "mensagem": f"Comando '{cmd}' enviado ao robô"}
+
+
+@app.websocket("/ws/robo")
+async def websocket_robo(websocket: WebSocket):
+    """endpoint pra ponte do bluetooth plugar. os comandos q vem do front caem aqui."""
+    global _comando_pendente
+    await websocket.accept()
+    _pontes_conectadas.add(websocket)
+    logger.info(f"Ponte serial conectada ({len(_pontes_conectadas)} ativa(s))")
+    if _comando_pendente:
+        try:
+            await websocket.send_json({"command": _comando_pendente})
+            _comando_pendente = None
+        except Exception:
+            pass
+    try:
+        while True:
+            await websocket.receive_text()  # keepalive; conteúdo ignorado
+    except WebSocketDisconnect:
+        pass
+    finally:
+        _pontes_conectadas.discard(websocket)
+        logger.info("Ponte serial desconectada")
+
+
 # Hosts considerados locais para operações administrativas (RNF-10):
 # loopback IPv4/IPv6 e o placeholder usado pelo TestClient do Starlette.
 # Premissa: backend roda sem proxy reverso (execução local, RE-04/RE-05).

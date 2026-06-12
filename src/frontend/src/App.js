@@ -3,7 +3,7 @@ import { Cpu, Wifi, Play, Pause, Bot, RotateCw, ChevronDown, Battery, Clock, Foo
 import { useMazeSimulator } from './useMazeSimulator';
 import { CELL_MM, DX as DXR, DY as DYR, mmToCell } from './utils/maze';
 import { useWebSocket } from './useWebSocket';
-import { getHistorico, postTelemetria, batteryVoltsToPercent, getCorrida, parseTimeToSeconds, deleteHistorico } from './services/api';
+import { getHistorico, postTelemetria, postComando, batteryVoltsToPercent, getCorrida, parseTimeToSeconds, deleteHistorico } from './services/api';
 
 const ReplayCanvas = ({ pathMm, mazeSize, knownWalls }) => {
   const total = pathMm?.length ?? 0;
@@ -103,7 +103,7 @@ const ReplayCanvas = ({ pathMm, mazeSize, knownWalls }) => {
           if (isVisited) bg = 'var(--bg-explored)';
           if (isGoal) bg = 'var(--bg-center)';
           const faint = '1px solid rgba(255,255,255,0.06)';
-          const wall  = '2.5px solid var(--primary-2)';
+          const wall  = '2.5px solid var(--known-wall-color)';
           return (
             <div key={i} style={{
               backgroundColor: bg,
@@ -179,10 +179,10 @@ const MiniMap = ({ snapshot }) => {
               const x = i % gridSize;
 
               let style = {
-                borderTop: knownWalls[x][y][0] ? '2px solid var(--primary-2)' : '1px solid rgba(255,255,255,0.06)',
-                borderRight: knownWalls[x][y][1] ? '2px solid var(--primary-2)' : '1px solid rgba(255,255,255,0.06)',
-                borderBottom: knownWalls[x][y][2] ? '2px solid var(--primary-2)' : '1px solid rgba(255,255,255,0.06)',
-                borderLeft: knownWalls[x][y][3] ? '2px solid var(--primary-2)' : '1px solid rgba(255,255,255,0.06)',
+                borderTop: knownWalls[x][y][0] ? '2px solid var(--known-wall-color)' : '1px solid rgba(255,255,255,0.06)',
+                borderRight: knownWalls[x][y][1] ? '2px solid var(--known-wall-color)' : '1px solid rgba(255,255,255,0.06)',
+                borderBottom: knownWalls[x][y][2] ? '2px solid var(--known-wall-color)' : '1px solid rgba(255,255,255,0.06)',
+                borderLeft: knownWalls[x][y][3] ? '2px solid var(--known-wall-color)' : '1px solid rgba(255,255,255,0.06)',
                 backgroundColor: 'var(--bg-unexplored)',
                 boxSizing: 'border-box'
               };
@@ -492,10 +492,29 @@ const App = () => {
   const [latencyMs, setLatencyMs] = useState(null);
   const [packetsRx, setPacketsRx] = useState(0);
 
+  // Paredes descobertas pelo robô real (chegam em pacotes esparsos; persiste a última)
+  const [liveWalls, setLiveWalls] = useState(null);
+
+  // Reiniciar no modo Corrida: ESP32 volta a aguardar 'start'; limpa a vista ao vivo
+  const handleResetReal = async () => {
+    try {
+      await postComando('reset');
+    } catch (err) {
+      console.error('Falha ao enviar reset ao robô:', err);
+    }
+    setLiveTelemetry(null);
+    setLiveWalls(null);
+  };
+
   useEffect(() => {
     if (!lastMessage || typeof lastMessage !== 'object') return;
     setLiveTelemetry(lastMessage);
     setPacketsRx(prev => prev + 1);
+    if (lastMessage.event === 'start_race') {
+      setLiveWalls(lastMessage.known_walls ?? null);  // nova corrida: zera o mapa
+    } else if (lastMessage.known_walls) {
+      setLiveWalls(lastMessage.known_walls);
+    }
     if (lastMessage.timestamp) {
       const t = Date.parse(lastMessage.timestamp);
       if (!Number.isNaN(t)) {
@@ -699,7 +718,7 @@ const App = () => {
           ) : (
             <>
               <section className="flex-grow bg-app-surface border-r border-border-rule p-5 flex flex-col relative overflow-hidden min-h-0">
-                <MazeCanvas sim={sim} liveRobot={liveRobot} liveExplored={liveExplored} dataMode={dataMode} mockMode={mockMode} setMockMode={setMockMode} />
+                <MazeCanvas sim={sim} liveRobot={liveRobot} liveExplored={liveExplored} liveWalls={liveWalls} dataMode={dataMode} mockMode={mockMode} setMockMode={setMockMode} liveRaceStatus={liveTelemetry?.race_status} onResetReal={handleResetReal} />
               </section>
               <aside className="w-full lg:w-[372px] flex flex-col gap-2 overflow-y-auto shrink-0 my-4 mr-4 pr-1 custom-scrollbar">
                 <TelemetrySidebar
@@ -825,12 +844,54 @@ const GlobalChip = ({ children, className = '', ...props }) => (
 /* ============================================================
    CANVAS DO LABIRINTO
    ============================================================ */
-const MazeCanvas = ({ sim, liveRobot, liveExplored, dataMode, mockMode, setMockMode }) => {
+const MazeCanvas = ({ sim, liveRobot, liveExplored, liveWalls, dataMode, mockMode, setMockMode, liveRaceStatus, onResetReal }) => {
   const { memory, isRunning, setIsRunning, speed, setSpeed, showTruth, setShowTruth, resetSimulation, gridSize, changeGridSize } = sim;
   const mem = memory;
   const robotShown = liveRobot ?? mem.robot;
   const exploredShown = liveExplored ?? mem.explored;
   const isRealMode = dataMode === 'real';
+
+  // Modo Corrida: "Iniciar" envia o comando ao robô real via backend/ponte
+  const liveRunning = isRealMode && liveRaceStatus === 'running';
+  const [startPending, setStartPending] = useState(false);
+  const handleStartReal = async () => {
+    setStartPending(true);
+    try {
+      // O seletor de matriz define o labirinto em que o robô vai operar
+      await postComando(`start ${gridSize}`);
+    } catch (err) {
+      console.error('Falha ao enviar comando de início ao robô:', err);
+    } finally {
+      // Libera o botão após alguns segundos caso a telemetria não comece
+      setTimeout(() => setStartPending(false), 5000);
+    }
+  };
+
+  // Modo Corrida: flood fill recalculado das paredes publicadas pelo robô —
+  // mesmo algoritmo do simulador, logo mesmos valores/cores nas células.
+  const liveDistances = useMemo(() => {
+    if (!isRealMode || !Array.isArray(liveWalls) || liveWalls.length === 0) return null;
+    const size = liveWalls.length;
+    const dist = Array(size).fill(null).map(() => Array(size).fill(255));
+    const mid = Math.floor(size / 2);
+    const queue = [];
+    for (const [gx, gy] of [[mid - 1, mid - 1], [mid, mid - 1], [mid - 1, mid], [mid, mid]]) {
+      if (dist[gx]?.[gy] !== undefined) { dist[gx][gy] = 0; queue.push([gx, gy]); }
+    }
+    while (queue.length > 0) {
+      const [cx, cy] = queue.shift();
+      for (let d = 0; d < 4; d++) {
+        if (liveWalls[cx][cy][d]) continue;
+        const nx = cx + DXR[d], ny = cy + DYR[d];
+        if (nx < 0 || nx >= size || ny < 0 || ny >= size) continue;
+        if (dist[nx][ny] === 255) {
+          dist[nx][ny] = dist[cx][cy] + 1;
+          queue.push([nx, ny]);
+        }
+      }
+    }
+    return dist;
+  }, [isRealMode, liveWalls]);
 
   if (!mem.truthWalls || mem.truthWalls.length === 0) {
     return (
@@ -840,10 +901,16 @@ const MazeCanvas = ({ sim, liveRobot, liveExplored, dataMode, mockMode, setMockM
     );
   }
 
+  // Fonte das distâncias: robô real (flood fill das paredes recebidas) ou simulador
+  const getDist = (x, y) => {
+    const d = isRealMode ? liveDistances?.[x]?.[y] : mem.distances[x][y];
+    return d === undefined || d === null ? 255 : d;
+  };
+
   let maxD = 0;
   for (let x = 0; x < gridSize; x++)
     for (let y = 0; y < gridSize; y++)
-      if (mem.distances[x][y] !== 255 && mem.distances[x][y] > maxD) maxD = mem.distances[x][y];
+      if (getDist(x, y) !== 255 && getDist(x, y) > maxD) maxD = getDist(x, y);
 
   const GOALS = mem.goals || [];
 
@@ -875,15 +942,17 @@ const MazeCanvas = ({ sim, liveRobot, liveExplored, dataMode, mockMode, setMockM
 
             <div className="w-px h-5 bg-border-rule" />
 
-            {/* Controle de velocidade */}
-            <div className="flex items-center gap-3 h-full">
+            {/* Controle de velocidade (só no Simulador; no modo Corrida quem dita o ritmo é o robô) */}
+            <div className={`flex items-center gap-3 h-full ${isRealMode ? 'opacity-40' : ''}`}
+                 title={isRealMode ? 'Disponível só no modo Simulador' : undefined}>
               <span className="text-label">Velocidade</span>
               <div className="flex items-center h-full">
                 <input
                   type="range" min="10" max="500"
                   value={510 - speed}
+                  disabled={isRealMode}
                   onChange={(e) => setSpeed(510 - parseInt(e.target.value))}
-                  className="w-24"
+                  className={`w-24 ${isRealMode ? 'cursor-not-allowed' : ''}`}
                   style={{ '--fill': `${((510 - speed - 10) / 490) * 100}%` }}
                 />
               </div>
@@ -912,14 +981,24 @@ const MazeCanvas = ({ sim, liveRobot, liveExplored, dataMode, mockMode, setMockM
           <div data-testid="pill-container" className="pill-container">
             <button
               data-testid="pill-item"
-              onClick={() => setIsRunning(!isRunning)}
+              onClick={() => (isRealMode ? handleStartReal() : setIsRunning(!isRunning))}
+              disabled={isRealMode && (liveRunning || startPending)}
+              title={isRealMode ? 'Dispara uma nova corrida no robô real' : undefined}
               className={`group pill-item gap-2 font-semibold text-sm transition-all w-[100px] ${
-                isRunning
+                isRealMode && (liveRunning || startPending)
+                  ? 'bg-app-raised border border-border-subtle text-brand-h3 opacity-60 cursor-not-allowed'
+                  : (!isRealMode && isRunning)
                   ? 'bg-app-raised border border-border-subtle text-brand-h2 hover:text-brand-h1 hover:border-border-accent'
                   : 'text-white border border-transparent bg-brand-purple'
               }`}
             >
-              {isRunning ? (
+              {isRealMode ? (
+                liveRunning
+                  ? <><Activity size={16} className="animate-pulse" /><span>Correndo</span></>
+                  : startPending
+                  ? <><Activity size={16} className="animate-pulse" /><span>Enviando</span></>
+                  : <><Play size={16} className="transition-transform group-hover:scale-110 group-active:scale-90" /><span>Iniciar</span></>
+              ) : isRunning ? (
                 <><Square size={16} className="transition-transform group-active:scale-90" /><span>Pausar</span></>
               ) : (
                 <><Play size={16} className="transition-transform group-hover:scale-110 group-active:scale-90" /><span>Iniciar</span></>
@@ -927,7 +1006,8 @@ const MazeCanvas = ({ sim, liveRobot, liveExplored, dataMode, mockMode, setMockM
             </button>
             <button
               data-testid="pill-item"
-              onClick={() => resetSimulation(false)}
+              onClick={() => (isRealMode ? onResetReal() : resetSimulation(false))}
+              title={isRealMode ? 'Aborta a corrida e coloca o robô em espera por um novo start' : undefined}
               className="group pill-item gap-2 font-semibold text-sm bg-app-raised border border-border-subtle text-brand-h1 transition-all hover:bg-app-hover hover:border-border-accent"
             >
               <Bot size={16} className="transition-transform group-hover:-translate-y-0.5 group-active:scale-90" /><span>Reiniciar</span>
@@ -935,7 +1015,9 @@ const MazeCanvas = ({ sim, liveRobot, liveExplored, dataMode, mockMode, setMockM
             <button
               data-testid="pill-item"
               onClick={() => resetSimulation(true)}
-              className="group pill-item gap-2 font-semibold text-sm bg-app-raised border border-border-subtle text-brand-h1 transition-all hover:bg-app-hover hover:border-border-accent"
+              disabled={isRealMode}
+              title={isRealMode ? 'Disponível só no modo Simulador' : undefined}
+              className={`group pill-item gap-2 font-semibold text-sm bg-app-raised border border-border-subtle text-brand-h1 transition-all ${isRealMode ? 'opacity-40 cursor-not-allowed' : 'hover:bg-app-hover hover:border-border-accent'}`}
             >
               <RotateCw size={16} className="transition-transform duration-300 group-hover:rotate-180 group-active:scale-90" /><span>Novo</span>
             </button>
@@ -955,27 +1037,32 @@ const MazeCanvas = ({ sim, liveRobot, liveExplored, dataMode, mockMode, setMockM
               if (mem.truthWalls[x][y][3]) classes.push("truth-wall-w");
             }
             const cellExplored = exploredShown[x]?.[y];
-            if (cellExplored) {
-              classes.push("explored");
-              if (!isRealMode) {
-                if (mem.knownWalls[x][y][0]) classes.push("known-wall-n");
-                if (mem.knownWalls[x][y][1]) classes.push("known-wall-e");
-                if (mem.knownWalls[x][y][2]) classes.push("known-wall-s");
-                if (mem.knownWalls[x][y][3]) classes.push("known-wall-w");
-              }
-            }
+            if (cellExplored) classes.push("explored");
+
+            // gambiarra pra desenhar as paredes: 
+            // pega do robo real se tiver rodando, senao pega do simulador.
+            // a gente desenha cada parede interna só 1x e sempre do mesmo lado (N ou O)
+            // se nao fica bugado os cantinhos e rola parede dupla.
+            // (a borda de fora do mapa a gnt ja faz direto na div principal)
+            const wallsSrc = isRealMode ? liveWalls : mem.knownWalls;
+            const expl = (xx, yy) => !!exploredShown[xx]?.[yy];
+            const wallAt = (xx, yy, dd) => !!wallsSrc?.[xx]?.[yy]?.[dd];
+            if (y > 0 && wallAt(x, y, 0) && (expl(x, y) || expl(x, y - 1)))
+              classes.push("known-wall-n");
+            if (x > 0 && wallAt(x, y, 3) && (expl(x, y) || expl(x - 1, y)))
+              classes.push("known-wall-w");
             const isGoal = GOALS.some(g => g.x === x && g.y === y);
             if (isGoal) classes.push("goal");
-            const d = mem.distances[x][y];
+            const d = getDist(x, y);
             let dataColor = null;
-            if (!isRealMode && cellExplored && d !== 0 && d !== 255)
+            if (cellExplored && d !== 0 && d !== 255)
               dataColor = d <= maxD / 3 ? "g" : d <= 2 * maxD / 3 ? "y" : "r";
             const hasRobot = robotShown && robotShown.x === x && robotShown.y === y;
             return (
               <div key={i} className={classes.join(" ")} data-color={dataColor}>
                 {hasRobot && <div id="robot" className={`dir-${robotShown.dir}`}></div>}
                 {isGoal && !hasRobot && "G"}
-                {!isGoal && !hasRobot && cellExplored && !isRealMode && d !== 255 ? d : ""}
+                {!isGoal && !hasRobot && cellExplored && d !== 255 ? d : ""}
               </div>
             );
           })}

@@ -119,6 +119,23 @@ export async function getHistorico(mazeType) {
 }
 
 /**
+ * POST /comando — manda o start/reset pro robo real. 
+ * o script python da ponte q pega isso e taca via bluetooth no ESP32
+ */
+export async function postComando(command) {
+  const response = await fetch(`${API_BASE}/comando`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ command }),
+  });
+  if (!response.ok) {
+    const text = await response.text().catch(() => '');
+    throw new Error(`POST /comando falhou: ${response.status} ${text}`);
+  }
+  return response.json();
+}
+
+/**
  * GET /health — usado pelo indicador de conexão antes do primeiro pacote.
  */
 export async function getHealth() {
