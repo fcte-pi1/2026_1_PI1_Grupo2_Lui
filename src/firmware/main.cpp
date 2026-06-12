@@ -43,6 +43,7 @@ void setup() {
     Serial.println(" BOOT Completo ");
     Serial.println("=======================================\n");
 
+    loop();
 }
 
 void loop() {
