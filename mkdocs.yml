@@ -86,7 +86,6 @@ nav:
       - Memorial de Cálculo: energia/energia.md
       - EAP: energia/eap_energia.md
       - Benchmark: energia/benchmark_energia.md
-      - Dimensionamento e Eficiência: energia/relatorio_dimensionamento.md
       - Verificação e Validação: energia/validacao_energia.md
   - Hardware:
       - EAP: hardware/hw_eap.md
