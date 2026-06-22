@@ -4,6 +4,8 @@ import math
 from typing import Optional
 from fastapi import FastAPI, Query, HTTPException, Request, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
+from typing import Literal
+from schemas.comandos import ComandoSchema
 
 from database.database import init_db, salvar_corrida, listar_corridas, buscar_corrida, limpar_banco
 from memory.session_buffer import (
@@ -285,6 +287,28 @@ def apagar_historico(request: Request):
     except Exception as e:
         logger.error(f"Erro ao limpar banco: {e}")
         raise HTTPException(status_code=500, detail="Erro ao limpar histórico")
+
+async def encaminhar_para_esp32(comando: str) -> bool:
+    # TODO: Implementar lógica real de rede para o ESP32
+    return True
+ 
+@app.post("/comandos")
+async def receber_comando(payload: ComandoSchema):
+    #Recebe um comando validado do Frontend e tenta enviá-lo ao ESP32.
+    # Chama a função que tenta enviar a mensagem ao robô
+    sucesso = await encaminhar_para_esp32(payload.comando)
+    
+    if sucesso:
+        return {
+            "status": "comando_enviado", 
+            "comando": payload.comando
+        }
+    
+    # Se o robô não responder ou falhar, lança o erro 503 correto
+    raise HTTPException(
+        status_code=503, 
+        detail="Falha de comunicação com o ESP32 (Timeout/Offline)"
+    )
 
 
 if __name__ == "__main__":
