@@ -3,7 +3,7 @@ import { Cpu, Wifi, Play, Pause, Bot, RotateCw, ChevronDown, Battery, Clock, Foo
 import { useMazeSimulator } from './useMazeSimulator';
 import { CELL_MM, DX as DXR, DY as DYR, mmToCell } from './utils/maze';
 import { useWebSocket } from './useWebSocket';
-import { getHistorico, postTelemetria, postComando, batteryVoltsToPercent, getCorrida, parseTimeToSeconds, deleteHistorico } from './services/api';
+import { getHistorico, postTelemetria, postComando, batteryVoltsToPercent, getCorrida, parseTimeToSeconds, deleteHistorico, getSerialPortas, postSerialConectar, postSerialDesconectar, getSerialStatus } from './services/api';
 
 const ReplayCanvas = ({ pathMm, mazeSize, knownWalls }) => {
   const total = pathMm?.length ?? 0;
@@ -99,11 +99,11 @@ const ReplayCanvas = ({ pathMm, mazeSize, knownWalls }) => {
           const isVisited = visited.has(`${cx},${cy}`);
           const isGoal = goals.some(g => g.x === cx && g.y === cy);
           const isRobot = cx === rx && cy === ry;
-          let bg = 'var(--bg-unexplored)';
-          if (isVisited) bg = 'var(--bg-explored)';
-          if (isGoal) bg = 'var(--bg-center)';
-          const faint = '1px solid rgba(255,255,255,0.06)';
-          const wall  = '2.5px solid var(--known-wall-color)';
+          let bg = 'var(--fundo-nao-explorado)';
+          if (isVisited) bg = 'var(--fundo-explorado)';
+          if (isGoal) bg = 'var(--fundo-centro)';
+          const faint = '1px solid var(--cor-parede)';
+          const wall  = '2.5px solid var(--cor-parede-conhecida)';
           return (
             <div key={i} style={{
               backgroundColor: bg,
@@ -179,17 +179,17 @@ const MiniMap = ({ snapshot }) => {
               const x = i % gridSize;
 
               let style = {
-                borderTop: knownWalls[x][y][0] ? '2px solid var(--known-wall-color)' : '1px solid rgba(255,255,255,0.06)',
-                borderRight: knownWalls[x][y][1] ? '2px solid var(--known-wall-color)' : '1px solid rgba(255,255,255,0.06)',
-                borderBottom: knownWalls[x][y][2] ? '2px solid var(--known-wall-color)' : '1px solid rgba(255,255,255,0.06)',
-                borderLeft: knownWalls[x][y][3] ? '2px solid var(--known-wall-color)' : '1px solid rgba(255,255,255,0.06)',
-                backgroundColor: 'var(--bg-unexplored)',
+                borderTop: knownWalls[x][y][0] ? '2px solid var(--cor-parede-conhecida)' : '1px solid var(--cor-parede)',
+                borderRight: knownWalls[x][y][1] ? '2px solid var(--cor-parede-conhecida)' : '1px solid var(--cor-parede)',
+                borderBottom: knownWalls[x][y][2] ? '2px solid var(--cor-parede-conhecida)' : '1px solid var(--cor-parede)',
+                borderLeft: knownWalls[x][y][3] ? '2px solid var(--cor-parede-conhecida)' : '1px solid var(--cor-parede)',
+                backgroundColor: 'var(--fundo-nao-explorado)',
                 boxSizing: 'border-box'
               };
 
-              if (explored[x][y]) style.backgroundColor = 'var(--bg-explored)';
+              if (explored[x][y]) style.backgroundColor = 'var(--fundo-explorado)';
               const isGoal = goals.some(g => g.x === x && g.y === y);
-              if (isGoal) style.backgroundColor = 'var(--bg-center)';
+              if (isGoal) style.backgroundColor = 'var(--fundo-centro)';
               const isRobot = robot && robot.x === x && robot.y === y;
 
               return (
@@ -220,6 +220,65 @@ const SettingsView = ({ wsUrl, setWsUrl, wsStatus, refreshHistory }) => {
   const [battMin, setBattMin] = useState(() => localStorage.getItem('BATT_VMIN') || '6.0');
   const [battMax, setBattMax] = useState(() => localStorage.getItem('BATT_VMAX') || '8.4');
   const [latencyLimit, setLatencyLimit] = useState(() => localStorage.getItem('LATENCY_THRESHOLD') || '500');
+
+  // ── Conexão com o robô: ponte serial gerida pelo backend ──
+  const [serialPorts, setSerialPorts] = useState([]);
+  const [serialPort, setSerialPort] = useState('');
+  const [serialBaud, setSerialBaud] = useState('921600');
+  const [serialStatus, setSerialStatus] = useState(null);
+  const [serialBusy, setSerialBusy] = useState(false);
+
+  const loadSerialPorts = async () => {
+    try {
+      const ports = await getSerialPortas();
+      setSerialPorts(ports);
+      const sugerida = ports.find(p => p.suggested) || ports.find(p => p.bluetooth);
+      setSerialPort(prev => prev || sugerida?.device || ports[0]?.device || '');
+    } catch (e) {
+      setFeedbackMessage({ title: 'Erro', text: 'Não foi possível listar as portas: ' + e.message, type: 'error' });
+    }
+  };
+
+  useEffect(() => {
+    loadSerialPorts();
+    let alive = true;
+    const tick = async () => {
+      try { const st = await getSerialStatus(); if (alive) setSerialStatus(st); } catch { /* backend offline: ignora */ }
+    };
+    tick();
+    const id = setInterval(tick, 3000);
+    return () => { alive = false; clearInterval(id); };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const handleSerialConnect = async () => {
+    if (!serialPort) {
+      setFeedbackMessage({ title: 'Aviso', text: 'Selecione uma porta primeiro.', type: 'warning' });
+      return;
+    }
+    setSerialBusy(true);
+    try {
+      const res = await postSerialConectar(serialPort, parseInt(serialBaud, 10));
+      setSerialStatus(res.data ?? await getSerialStatus());
+    } catch (e) {
+      setFeedbackMessage({ title: 'Falha ao conectar', text: e.message, type: 'error' });
+      try { setSerialStatus(await getSerialStatus()); } catch { /* ignora */ }
+    } finally {
+      setSerialBusy(false);
+    }
+  };
+
+  const handleSerialDisconnect = async () => {
+    setSerialBusy(true);
+    try {
+      const res = await postSerialDesconectar();
+      setSerialStatus(res.data ?? await getSerialStatus());
+    } catch (e) {
+      setFeedbackMessage({ title: 'Erro', text: e.message, type: 'error' });
+    } finally {
+      setSerialBusy(false);
+    }
+  };
 
   const handleSaveWs = () => {
     localStorage.setItem('WS_URL', inputUrl);
@@ -287,10 +346,78 @@ const SettingsView = ({ wsUrl, setWsUrl, wsStatus, refreshHistory }) => {
     }
   };
 
+  const serialConnected = !!serialStatus?.connected;
+  const portOptions = serialPorts.length
+    ? serialPorts.map(p => ({
+        value: p.device,
+        label: `${p.device}${p.bluetooth ? ' (BT)' : ''}${p.description ? ' \u2014 ' + p.description : ''}`,
+      }))
+    : [{ value: '', label: 'Nenhuma porta encontrada' }];
+
   return (
     <div className="flex-1 bg-app-surface w-full h-full overflow-y-auto p-6 box-border">
       <div className="max-w-3xl mx-auto space-y-6">
         
+        {/* Conexão com o robô — ponte serial gerida pelo backend */}
+        <div className="bg-app-bg rounded-xl border border-border-rule p-6 shadow-card">
+          <h2 className="text-xl font-bold text-brand-h1 mb-4">Conexão com o Robô</h2>
+          <p className="text-brand-h3 text-sm mb-4">Selecione a porta serial (COM) do Bluetooth e conecte. O backend abre a porta diretamente — não é mais necessário rodar a ponte num terminal separado.</p>
+          <div className="flex flex-col sm:flex-row gap-4 items-end">
+            <div className="flex-1 w-full">
+              <label className="block text-brand-h3 text-xs mb-1">Porta serial</label>
+              <CustomSelect
+                className="w-full bg-app-surface border border-border-rule rounded-[16px] px-3 py-2 text-brand-h1 text-sm focus:outline-none focus:border-brand-purple"
+                value={serialPort}
+                onChange={(val) => setSerialPort(val)}
+                options={portOptions}
+              />
+            </div>
+            <div className="w-full sm:w-32">
+              <label className="block text-brand-h3 text-xs mb-1">Baud</label>
+              <input
+                type="number"
+                className="w-full bg-app-surface border border-border-rule rounded-xl px-3 py-2 text-brand-h1 text-sm focus:outline-none focus:border-brand-purple"
+                value={serialBaud}
+                onChange={e => setSerialBaud(e.target.value)}
+                placeholder="921600"
+              />
+            </div>
+            <button
+              onClick={loadSerialPorts}
+              title="Atualizar lista de portas"
+              className="h-[42px] px-3 flex items-center justify-center bg-app-surface hover:bg-app-hover border border-border-rule text-brand-h1 rounded-xl transition-colors"
+            >
+              <RefreshCw size={16} />
+            </button>
+            {serialConnected ? (
+              <button
+                onClick={handleSerialDisconnect}
+                disabled={serialBusy}
+                className="w-40 h-[42px] flex items-center justify-center bg-brand-danger hover:opacity-90 text-white font-medium text-sm rounded-xl transition-colors disabled:opacity-50"
+              >
+                Desconectar
+              </button>
+            ) : (
+              <button
+                onClick={handleSerialConnect}
+                disabled={serialBusy}
+                className="w-40 h-[42px] flex items-center justify-center bg-brand-purple hover:bg-brand-purple-light text-white font-medium text-sm rounded-xl transition-colors disabled:opacity-50"
+              >
+                {serialBusy ? 'Conectando...' : 'Conectar'}
+              </button>
+            )}
+          </div>
+          <div className="mt-4 flex items-center gap-2 flex-wrap">
+            <span className="text-brand-h3 text-xs">Status:</span>
+            <span className={`text-xs font-bold ${serialConnected ? 'text-brand-green' : serialBusy ? 'text-brand-accent' : 'text-brand-danger'}`}>
+              {serialBusy ? 'Conectando...' : serialConnected ? `Conectado — ${serialStatus.port} (${serialStatus.packets_rx} pacotes)` : 'Desconectado'}
+            </span>
+            {!serialConnected && !serialBusy && serialStatus?.last_error && (
+              <span className="text-xs text-brand-danger">— última falha: {serialStatus.last_error}</span>
+            )}
+          </div>
+        </div>
+
         <div className="bg-app-bg rounded-xl border border-border-rule p-6 shadow-card">
           <h2 className="text-xl font-bold text-brand-h1 mb-4">Conexão WebSocket</h2>
           <p className="text-brand-h3 text-sm mb-4">Configure o endereço IP ou a URL do servidor de telemetria do robô.</p>
@@ -1026,48 +1153,165 @@ const MazeCanvas = ({ sim, liveRobot, liveExplored, liveWalls, dataMode, mockMod
 
       {/* Grade do labirinto */}
       <div className="flex-1 flex items-center justify-center relative p-4 bg-app-bg rounded-xl border border-border-rule overflow-hidden min-h-0" style={{ containerType: 'size' }}>
-        <div id="maze-container" className={showTruth ? "show-truth" : ""} style={{ gridTemplateColumns: `repeat(${gridSize}, minmax(0, 1fr))`, gridTemplateRows: `repeat(${gridSize}, minmax(0, 1fr))` }}>
-          {Array.from({ length: gridSize * gridSize }).map((_, i) => {
-            const y = Math.floor(i / gridSize), x = i % gridSize;
-            let classes = ["cell"];
-            if (showTruth && !isRealMode) {
-              if (mem.truthWalls[x][y][0]) classes.push("truth-wall-n");
-              if (mem.truthWalls[x][y][1]) classes.push("truth-wall-e");
-              if (mem.truthWalls[x][y][2]) classes.push("truth-wall-s");
-              if (mem.truthWalls[x][y][3]) classes.push("truth-wall-w");
-            }
-            const cellExplored = exploredShown[x]?.[y];
-            if (cellExplored) classes.push("explored");
+        {(() => {
+          // Lattice (2N+1)x(2N+1): piso, parede e quina são objetos independentes.
+          const L = 2 * gridSize + 1;
+          // Trilhas em px inteiro (ver #maze-container): parede/poste = var(--tw),
+          // piso = var(--tf). Garante espessura igual em todo item do mesmo grupo.
+          const tmpl = Array.from({ length: L }, (_, k) => (k % 2 === 0 ? 'var(--tw)' : 'var(--tf)')).join(' ');
 
-            // gambiarra pra desenhar as paredes: 
-            // pega do robo real se tiver rodando, senao pega do simulador.
-            // a gente desenha cada parede interna só 1x e sempre do mesmo lado (N ou O)
-            // se nao fica bugado os cantinhos e rola parede dupla.
-            // (a borda de fora do mapa a gnt ja faz direto na div principal)
-            const wallsSrc = isRealMode ? liveWalls : mem.knownWalls;
-            const expl = (xx, yy) => !!exploredShown[xx]?.[yy];
-            const wallAt = (xx, yy, dd) => !!wallsSrc?.[xx]?.[yy]?.[dd];
-            if (y > 0 && wallAt(x, y, 0) && (expl(x, y) || expl(x, y - 1)))
-              classes.push("known-wall-n");
-            if (x > 0 && wallAt(x, y, 3) && (expl(x, y) || expl(x - 1, y)))
-              classes.push("known-wall-w");
-            const isGoal = GOALS.some(g => g.x === x && g.y === y);
-            if (isGoal) classes.push("goal");
-            const d = getDist(x, y);
-            let dataColor = null;
-            if (cellExplored && d !== 0 && d !== 255)
-              dataColor = d <= maxD / 3 ? "g" : d <= 2 * maxD / 3 ? "y" : "r";
-            const hasRobot = robotShown && robotShown.x === x && robotShown.y === y;
-            return (
-              <div key={i} className={classes.join(" ")} data-color={dataColor}>
-                {hasRobot && <div id="robot" className={`dir-${robotShown.dir}`}></div>}
-                {isGoal && !hasRobot && "G"}
-                {!isGoal && !hasRobot && cellExplored && d !== 255 ? d : ""}
-              </div>
-            );
-          })}
-        </div>
+          const expl = (xx, yy) => !!exploredShown[xx]?.[yy];
+          const wallsSrc = isRealMode ? liveWalls : mem.knownWalls;
+          const wallAt = (xx, yy, dd) => !!wallsSrc?.[xx]?.[yy]?.[dd];
+          const truthAt = (xx, yy, dd) => !!mem.truthWalls?.[xx]?.[yy]?.[dd];
 
+          // Uma parede do lattice é "conhecida" se for borda externa ou já descoberta.
+          const hWallKnown = (rr, cc) => {
+            if (rr < 0 || rr > 2 * gridSize || cc < 1 || cc > 2 * gridSize - 1) return false;
+            const x = (cc - 1) / 2, yBelow = rr / 2;
+            if (yBelow === 0 || yBelow === gridSize) return true;
+            return wallAt(x, yBelow, 0) && (expl(x, yBelow) || expl(x, yBelow - 1));
+          };
+          const vWallKnown = (rr, cc) => {
+            if (cc < 0 || cc > 2 * gridSize || rr < 1 || rr > 2 * gridSize - 1) return false;
+            const y = (rr - 1) / 2, xRight = cc / 2;
+            if (xRight === 0 || xRight === gridSize) return true;
+            return wallAt(xRight, y, 3) && (expl(xRight, y) || expl(xRight - 1, y));
+          };
+          // Parede real (Raio-X): só conta para acender a quina no modo Simulador.
+          const hWallTruth = (rr, cc) => {
+            if (rr < 0 || rr > 2 * gridSize || cc < 1 || cc > 2 * gridSize - 1) return false;
+            const x = (cc - 1) / 2, yBelow = rr / 2;
+            if (yBelow === 0 || yBelow === gridSize) return false;
+            return truthAt(x, yBelow, 0);
+          };
+          const vWallTruth = (rr, cc) => {
+            if (cc < 0 || cc > 2 * gridSize || rr < 1 || rr > 2 * gridSize - 1) return false;
+            const y = (rr - 1) / 2, xRight = cc / 2;
+            if (xRight === 0 || xRight === gridSize) return false;
+            return truthAt(xRight, y, 3);
+          };
+          // Cor do heatmap (g/y/r) a partir de uma distância e da média das células vizinhas.
+          const bucketColor = (dd) =>
+            dd === 0 || dd === 255 ? null : dd <= maxD / 3 ? "g" : dd <= 2 * maxD / 3 ? "y" : "r";
+          const avgColor = (...cells) => {
+            const ds = cells
+              .filter(([xx, yy]) => expl(xx, yy))
+              .map(([xx, yy]) => getDist(xx, yy))
+              .filter((v) => v !== 0 && v !== 255);
+            if (!ds.length) return null;
+            return bucketColor(ds.reduce((a, b) => a + b, 0) / ds.length);
+          };
+
+          return (
+            <div id="maze-container" className={showTruth ? "show-truth" : ""} style={{ '--n': gridSize, gridTemplateColumns: tmpl, gridTemplateRows: tmpl }}>
+              {Array.from({ length: L * L }).map((_, i) => {
+                const r = Math.floor(i / L), c = i % L;
+                const evenR = r % 2 === 0, evenC = c % 2 === 0;
+
+                // QUINA (poste): acende ao encostar numa parede conhecida; no Raio-X,
+                // também quando encosta numa parede real (truth).
+                if (evenR && evenC) {
+                  const lit = hWallKnown(r, c - 1) || hWallKnown(r, c + 1)
+                    || vWallKnown(r - 1, c) || vWallKnown(r + 1, c);
+                  const litTruth = !lit && showTruth && !isRealMode
+                    && (hWallTruth(r, c - 1) || hWallTruth(r, c + 1)
+                      || vWallTruth(r - 1, c) || vWallTruth(r + 1, c));
+                  // Poste interno cercado por células exploradas → cor de explorado.
+                  const ci = c / 2, cj = r / 2;
+                  const allExpl = expl(ci - 1, cj - 1) && expl(ci, cj - 1)
+                    && expl(ci - 1, cj) && expl(ci, cj);
+                  const allGoal = GOALS.some(g => g.x === ci - 1 && g.y === cj - 1)
+                    && GOALS.some(g => g.x === ci && g.y === cj - 1)
+                    && GOALS.some(g => g.x === ci - 1 && g.y === cj)
+                    && GOALS.some(g => g.x === ci && g.y === cj);
+                  // Poste cercado pelas 4 células do centro (goal): tom suave derivado do
+                  // próprio verde do goal (is-goal-soft) pra casar com as divisórias.
+                  const goalCorner = allGoal;
+                  const cColor = !lit && !litTruth && allExpl
+                    ? avgColor([ci - 1, cj - 1], [ci, cj - 1], [ci - 1, cj], [ci, cj])
+                    : null;
+                  let cornerCls = "lattice-corner";
+                  if (goalCorner) cornerCls += " is-goal-soft";
+                  else if (lit) cornerCls += " is-known";
+                  else if (litTruth) cornerCls += " is-truth";
+                  else if (allExpl) cornerCls += " is-explored";
+                  return <div key={i} className={cornerCls} data-color={cColor} />;
+                }
+
+                // PAREDE HORIZONTAL: separa a célula de cima e a de baixo.
+                if (evenR && !evenC) {
+                  const x = (c - 1) / 2;
+                  const yBelow = r / 2;
+                  const yAbove = yBelow - 1;
+                  const outer = yBelow === 0 || yBelow === gridSize;
+                  const known = outer
+                    ? true
+                    : wallAt(x, yBelow, 0) && (expl(x, yBelow) || expl(x, yAbove));
+                  const truth = !outer && showTruth && !isRealMode && truthAt(x, yBelow, 0);
+                  // Abertura que o carro atravessou (sem parede, entre células exploradas).
+                  const openExplored = !known && !truth && expl(x, yBelow) && expl(x, yAbove);
+                  const isGoal = GOALS.some(g => g.x === x && g.y === yBelow) && GOALS.some(g => g.x === x && g.y === yAbove);
+                  // Divisória entre duas células do centro (goal): tom suave derivado do
+                  // próprio verde do goal (is-goal-soft) pra um bloco contínuo e leve.
+                  const goalDivider = isGoal;
+                  const wColor = openExplored ? avgColor([x, yAbove], [x, yBelow]) : null;
+                  let cls = "lattice-wall lattice-wall-h";
+                  if (goalDivider) cls += " is-goal-soft";
+                  else if (known) cls += " is-known";
+                  else if (truth) cls += " is-truth";
+                  else if (openExplored) cls += " is-explored";
+                  return <div key={i} className={cls} data-color={wColor} />;
+                }
+
+                // PAREDE VERTICAL: separa a célula da esquerda e a da direita.
+                if (!evenR && evenC) {
+                  const y = (r - 1) / 2;
+                  const xRight = c / 2;
+                  const xLeft = xRight - 1;
+                  const outer = xRight === 0 || xRight === gridSize;
+                  const known = outer
+                    ? true
+                    : wallAt(xRight, y, 3) && (expl(xRight, y) || expl(xLeft, y));
+                  const truth = !outer && showTruth && !isRealMode && truthAt(xRight, y, 3);
+                  // Abertura que o carro atravessou (sem parede, entre células exploradas).
+                  const openExplored = !known && !truth && expl(xRight, y) && expl(xLeft, y);
+                  const isGoal = GOALS.some(g => g.x === xRight && g.y === y) && GOALS.some(g => g.x === xLeft && g.y === y);
+                  // Divisória entre duas células do centro (goal): tom suave derivado do
+                  // próprio verde do goal (is-goal-soft) pra um bloco contínuo e leve.
+                  const goalDivider = isGoal;
+                  const wColor = openExplored ? avgColor([xLeft, y], [xRight, y]) : null;
+                  let cls = "lattice-wall lattice-wall-v";
+                  if (goalDivider) cls += " is-goal-soft";
+                  else if (known) cls += " is-known";
+                  else if (truth) cls += " is-truth";
+                  else if (openExplored) cls += " is-explored";
+                  return <div key={i} className={cls} data-color={wColor} />;
+                }
+
+                // PISO: a célula real do labirinto (mantém toda a lógica e cores).
+                const x = (c - 1) / 2, y = (r - 1) / 2;
+                let classes = ["cell"];
+                const cellExplored = expl(x, y);
+                if (cellExplored) classes.push("explored");
+                const isGoal = GOALS.some(g => g.x === x && g.y === y);
+                if (isGoal) classes.push("goal");
+                const d = getDist(x, y);
+                let dataColor = null;
+                if (cellExplored && d !== 0 && d !== 255)
+                  dataColor = d <= maxD / 3 ? "g" : d <= 2 * maxD / 3 ? "y" : "r";
+                const hasRobot = robotShown && robotShown.x === x && robotShown.y === y;
+                return (
+                  <div key={i} className={classes.join(" ")} data-color={dataColor}>
+                    {hasRobot && <div id="robot" className={`dir-${robotShown.dir}`}></div>}
+                    {isGoal && !hasRobot && "G"}
+                    {!isGoal && !hasRobot && cellExplored && d !== 255 ? d : ""}
+                  </div>
+                );
+              })}
+            </div>
+          );
+        })()}
       </div>
     </>
   );

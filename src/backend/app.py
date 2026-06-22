@@ -1,3 +1,4 @@
+import asyncio
 import logging
 import math
 from typing import Optional
@@ -11,6 +12,7 @@ from memory.session_buffer import (
 )
 from schemas.telemetria import TelemetriaSchema, MazeTypeEnum, RaceStatusEnum
 from websocket.manager import manager
+from serial_bridge import bridge
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
@@ -56,6 +58,13 @@ async def websocket_dashboard(websocket: WebSocket):
 
 @app.post("/telemetria", status_code=200)
 async def receber_telemetria(dados: TelemetriaSchema):
+    """POST externo (simulador, fake_robot.py, firmware via HTTP). Contrato inalterado."""
+    return await processar_telemetria(dados)
+
+
+async def processar_telemetria(dados: TelemetriaSchema):
+    """Núcleo compartilhado de processamento de telemetria: usado pelo POST acima e
+    injetado diretamente pela ponte serial (sem HTTP interno)."""
     logger.info(f"Recebido: {dados.robot_id} | {dados.race_status} | {dados.event}")
 
     if dados.race_status == RaceStatusEnum.running:
@@ -168,6 +177,11 @@ async def enviar_comando(comando: ComandoSchema):
     cmd = comando.command.strip().lower()
     if not COMANDO_RE.match(cmd):
         raise HTTPException(status_code=422, detail=f"Comando inválido: {cmd}")
+    # Caminho principal: serial gerida pelo backend.
+    if bridge.write_command(cmd):
+        logger.info(f"Comando '{cmd}' escrito na serial")
+        return {"status": "sucesso", "mensagem": f"Comando '{cmd}' enviado ao robô (serial)"}
+    # Compatibilidade: ponte legada via WebSocket /ws/robo.
     entregues = await _entregar_comando(cmd)
     if entregues == 0:
         _comando_pendente = cmd  # entrega quando a ponte conectar
@@ -198,6 +212,47 @@ async def websocket_robo(websocket: WebSocket):
     finally:
         _pontes_conectadas.discard(websocket)
         logger.info("Ponte serial desconectada")
+
+
+# ---- Ponte serial gerida pelo backend ----
+# Absorve o antigo scripts/bt_bridge.py: o backend abre a COM direto e injeta
+# a telemetria no mesmo pipeline. O /ws/robo acima fica como legado/compat.
+
+
+@app.on_event("startup")
+async def _configurar_ponte_serial():
+    bridge.configure(asyncio.get_running_loop(), processar_telemetria)
+
+
+class SerialConectarSchema(BaseModel):
+    port: str
+    baud: int = 921600
+
+
+@app.get("/serial/portas", status_code=200)
+def serial_portas():
+    """Lista as COMs disponíveis (marca Bluetooth e a porta de saída sugerida)."""
+    return {"status": "sucesso", "portas": bridge.listar_portas()}
+
+
+@app.post("/serial/conectar", status_code=200)
+def serial_conectar(body: SerialConectarSchema):
+    try:
+        bridge.connect(body.port, body.baud)
+    except Exception as exc:
+        raise HTTPException(status_code=400, detail=f"Não foi possível abrir {body.port}: {exc}")
+    return {"status": "sucesso", "mensagem": f"Conectado a {body.port}", "data": bridge.status()}
+
+
+@app.post("/serial/desconectar", status_code=200)
+def serial_desconectar():
+    bridge.disconnect()
+    return {"status": "sucesso", "mensagem": "Serial desconectada", "data": bridge.status()}
+
+
+@app.get("/serial/status", status_code=200)
+def serial_status():
+    return bridge.status()
 
 
 # Hosts considerados locais para operações administrativas (RNF-10):

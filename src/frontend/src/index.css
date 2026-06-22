@@ -126,12 +126,12 @@
   --fs-data:          12px;   /* dados técnicos / coordenadas */
 
   /* ---- Variáveis do labirinto ---- */
-  --wall-color: rgba(255,255,255,0.06);
-  --truth-wall-color: rgba(140,98,230,0.25);
-  --bg-unexplored: rgba(10,8,21,0.95);
-  --bg-explored: rgba(16,12,39,0.7);
-  --bg-center: #1e9d74;
-  --known-wall-color: #E6E0D4;
+  --cor-parede: rgba(255,255,255,0.06);
+  --cor-parede-real: rgba(140,98,230,0.25);
+  --fundo-nao-explorado: rgba(10,8,21,0.95);
+  --fundo-explorado: rgba(16,12,39,0.7);
+  --fundo-centro: rgba(58, 128, 200, 0.45);
+  --cor-parede-conhecida: rgba(238, 236, 243, 0.55);
 }
 
 /* ============================================================
@@ -312,11 +312,20 @@ body {
 #maze-container {
   display: grid;
   gap: 0px;
-  width: 100cqmin;
-  height: 100cqmin;
+  /* Base size com leve recuo para respirar no parent. 
+     Inner size subtrai borda (2px) e padding (16px) para as trilhas encaixarem. */
+  --base-size: calc(100cqmin - 8px);
+  --inner-size: calc(var(--base-size) - 18px); 
+  --tw: calc(var(--inner-size) / (10 * var(--n, 16) + 1));
+  --tf: calc(var(--tw) * 9);
+  
+  width: var(--base-size);
+  height: var(--base-size);
   margin: 0 auto;
+  padding: 8px; /* Impede que as paredes colem na borda arredondada */
+  
   background-color: transparent;
-  border: 2.5px solid var(--known-wall-color);
+  border: none;
   border-radius: var(--radius-sm);
   box-sizing: border-box;
   overflow: hidden;
@@ -324,8 +333,11 @@ body {
 
 .cell {
   position: relative;
-  background-color: var(--bg-unexplored);
-  border: 1px solid var(--wall-color);
+  background-color: rgba(10, 8, 21, 0.35); /* Base mais translúcida */
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.04);
+  box-shadow: inset 0 0 12px rgba(255, 255, 255, 0.01), 0 4px 8px rgba(0, 0, 0, 0.2);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -334,37 +346,100 @@ body {
   font-weight: 600;
   color: rgba(170, 158, 200, 0.85);
   user-select: none;
-  transition: background-color 0.2s;
+  transition: all 0.3s ease;
 }
 
 .cell.explored {
-  background-color: var(--bg-explored);
+  background-color: rgba(16, 12, 39, 0.45);
+  border-color: rgba(255, 255, 255, 0.08);
+  box-shadow: inset 0 0 15px rgba(140, 98, 230, 0.05), 0 4px 10px rgba(0, 0, 0, 0.25);
 }
 
 .cell.goal {
-  background-color: var(--bg-center);
-  color: #07150e;
+  background-color: rgba(58, 128, 200, 0.35);
+  border: 1px solid rgba(176, 212, 255, 0.2);
+  box-shadow: inset 0 0 20px rgba(58, 128, 200, 0.3), 0 4px 12px rgba(0, 0, 0, 0.3);
+  color: #b0d4ff;
   font-weight: 700;
   font-family: var(--font-ui);
   font-size: 0.65rem;
 }
 
 /* Paredes reais (Raio-X) */
-.show-truth .cell.truth-wall-n { border-top: 2px solid var(--truth-wall-color); }
-.show-truth .cell.truth-wall-e { border-right: 2px solid var(--truth-wall-color); }
-.show-truth .cell.truth-wall-s { border-bottom: 2px solid var(--truth-wall-color); }
-.show-truth .cell.truth-wall-w { border-left: 2px solid var(--truth-wall-color); }
+.show-truth .cell.truth-wall-n { border-top: 2px solid var(--cor-parede-real); }
+.show-truth .cell.truth-wall-e { border-right: 2px solid var(--cor-parede-real); }
+.show-truth .cell.truth-wall-s { border-bottom: 2px solid var(--cor-parede-real); }
+.show-truth .cell.truth-wall-w { border-left: 2px solid var(--cor-parede-real); }
 
 /* Paredes conhecidas — forte */
-.cell.known-wall-n { border-top: 2.5px solid var(--known-wall-color) !important; }
-.cell.known-wall-e { border-right: 2.5px solid var(--known-wall-color) !important; }
-.cell.known-wall-s { border-bottom: 2.5px solid var(--known-wall-color) !important; }
-.cell.known-wall-w { border-left: 2.5px solid var(--known-wall-color) !important; }
+.cell.known-wall-n { border-top: 2.5px solid var(--cor-parede-conhecida) !important; }
+.cell.known-wall-e { border-right: 2.5px solid var(--cor-parede-conhecida) !important; }
+.cell.known-wall-s { border-bottom: 2.5px solid var(--cor-parede-conhecida) !important; }
+.cell.known-wall-w { border-left: 2.5px solid var(--cor-parede-conhecida) !important; }
 
-/* Distance heatmap */
-.cell[data-color="g"] { background-color: rgba(58, 128, 96, 0.45); }
-.cell[data-color="y"] { background-color: rgba(140, 116, 40, 0.35); }
-.cell[data-color="r"] { background-color: rgba(160, 60, 50, 0.35); }
+/* Heatmap nas células com glass effect */
+.cell[data-color="g"] { background-color: rgba(58, 128, 96, 0.35); border-color: rgba(58, 128, 96, 0.3); box-shadow: inset 0 0 12px rgba(58, 128, 96, 0.2); }
+.cell[data-color="y"] { background-color: rgba(140, 116, 40, 0.3); border-color: rgba(140, 116, 40, 0.3); box-shadow: inset 0 0 12px rgba(140, 116, 40, 0.2); }
+.cell[data-color="r"] { background-color: rgba(160, 60, 50, 0.3); border-color: rgba(160, 60, 50, 0.3); box-shadow: inset 0 0 12px rgba(160, 60, 50, 0.2); }
+
+/* ============================================================
+   LATTICE: piso / parede / quina como objetos independentes
+   ============================================================ */
+/* Quinas (postes): por padrão somem no fundo; só acendem ao encostar numa parede conhecida */
+.lattice-corner {
+  background-color: transparent;
+}
+
+.lattice-corner.is-known {
+  background-color: var(--cor-parede-conhecida);
+}
+
+.show-truth .lattice-corner.is-truth {
+  background-color: var(--cor-parede-real);
+}
+
+/* Paredes: por padrão são aberturas (transparentes) */
+.lattice-wall {
+  background-color: transparent;
+}
+
+/* Parede conhecida (descoberta pelo robô / borda externa) */
+.lattice-wall.is-known {
+  background-color: var(--cor-parede-conhecida);
+}
+
+/* Parede real revelada pelo Raio-X */
+.show-truth .lattice-wall.is-truth {
+  background-color: var(--cor-parede-real);
+}
+
+/* Aberturas/postes internos já explorados: uniformizam com as células exploradas */
+.lattice-wall.is-explored,
+.lattice-corner.is-explored {
+  background-color: var(--fundo-explorado);
+}
+
+/* Aberturas/postes internos explorados no centro do labirinto (objetivo) */
+.lattice-wall.is-goal,
+.lattice-corner.is-goal {
+  background-color: var(--fundo-centro);
+}
+
+/* Divisórias/poste entre células do centro: tom suave derivado do próprio
+   verde do goal (--fundo-centro), com transparência pra transição leve. */
+.lattice-wall.is-goal-soft,
+.lattice-corner.is-goal-soft {
+  background-color: color-mix(in srgb, var(--fundo-centro) 30%, transparent);
+}
+
+/* Heatmap nas aberturas/postes: herda o verde/amarelo/vermelho das células vizinhas,
+   com alpha menor — leve transparência para diferenciar de uma célula de piso. */
+.lattice-wall[data-color="g"],
+.lattice-corner[data-color="g"] { background-color: rgba(58, 128, 96, 0.26); }
+.lattice-wall[data-color="y"],
+.lattice-corner[data-color="y"] { background-color: rgba(140, 116, 40, 0.20); }
+.lattice-wall[data-color="r"],
+.lattice-corner[data-color="r"] { background-color: rgba(160, 60, 50, 0.20); }
 
 /* ============================================================
    ROBÔ
@@ -375,34 +450,13 @@ body {
   margin: auto;
   width: 100%;
   height: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  /* Cursor de navegação bicolor em roxos vibrantes (magenta / violeta elétrico), com borda. */
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'%3E%3Cpath d='M256 16 L40 496 L256 392 Z' fill='%23FF8F7A'/%3E%3Cpath d='M256 16 L472 496 L256 392 Z' fill='%23E04E54'/%3E%3Cpath d='M256 16 L40 496 L256 392 L472 496 Z' fill='none' stroke='%23FFF1EE' stroke-width='28' stroke-linejoin='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: 66% auto;
+  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.55));
   z-index: 10;
-}
-
-#robot::after {
-  content: '';
-  position: absolute;
-  width: 0;
-  height: 0;
-  border-left: 6px solid transparent;
-  border-right: 6px solid transparent;
-  border-bottom: 12px solid var(--primary-2);
-  transform: translateY(-2px);
-  z-index: 2;
-}
-
-#robot::before {
-  content: '';
-  position: absolute;
-  width: 0;
-  height: 0;
-  border-left: 7px solid transparent;
-  border-right: 7px solid transparent;
-  border-bottom: 14px solid white;
-  transform: translateY(-2px);
-  z-index: 1;
 }
 
 .dir-0 { transform: rotate(0deg); }
