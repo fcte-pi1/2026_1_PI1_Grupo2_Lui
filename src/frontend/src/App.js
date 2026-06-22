@@ -4,6 +4,7 @@ import { useMazeSimulator } from './useMazeSimulator';
 import { CELL_MM, DX as DXR, DY as DYR, mmToCell } from './utils/maze';
 import { useWebSocket } from './useWebSocket';
 import { getHistorico, postTelemetria, batteryVoltsToPercent, getCorrida, parseTimeToSeconds, deleteHistorico } from './services/api';
+import { sendConnectCommand } from './services/espService';
 
 const ReplayCanvas = ({ pathMm, mazeSize, knownWalls }) => {
   const total = pathMm?.length ?? 0;
@@ -483,6 +484,20 @@ const App = () => {
   
   const [wsUrl, setWsUrl] = useState(() => localStorage.getItem('WS_URL') || 'ws://localhost:8000/ws/dashboard');
   const { status: wsStatus, lastMessage } = useWebSocket(wsUrl);
+  const [espStatus, setEspStatus] = useState('idle');
+  const handleConnectEsp = async () => {
+  if (espStatus === 'connecting' || espStatus === 'success') return;
+  setEspStatus('connecting');
+  try {
+    await sendConnectCommand();
+    setEspStatus('success');
+    setTimeout(() => setEspStatus('idle'), 3000);
+  } catch (err) {
+    console.error('Falha ao conectar no ESP:', err);
+    setEspStatus('error');
+    setTimeout(() => setEspStatus('idle'), 4000);
+  }
+};
 
   // ── Telemetria viva derivada do WebSocket ─────────────────────────────
   const [liveTelemetry, setLiveTelemetry] = useState(null);
@@ -672,7 +687,7 @@ const App = () => {
 
   return (
     <div className="font-sans h-screen flex flex-col overflow-hidden">
-      <Header activeTab={activeTab} setActiveTab={setActiveTab} wsStatus={wsStatus} sim={sim} />
+      <Header activeTab={activeTab} setActiveTab={setActiveTab} wsStatus={wsStatus} sim={sim} espStatus={espStatus} onConnectEsp={handleConnectEsp} />
       <div className="w-full flex-grow flex flex-col overflow-hidden relative">
         <main className="flex-grow flex flex-col lg:flex-row gap-4 h-full min-h-0 overflow-hidden">
           {activeTab === 'Histórico' ? (
@@ -721,9 +736,18 @@ const App = () => {
 /* ============================================================
    CABEÇALHO
    ============================================================ */
-const Header = ({ activeTab, setActiveTab, wsStatus, sim }) => {
+const Header = ({ activeTab, setActiveTab, wsStatus, sim, espStatus = 'idle', onConnectEsp }) => {
   const tabs = ['Mapa', 'Telemetria', 'Histórico', 'Configurações'];
-  const isConnected = wsStatus === 'Conectado';
+
+  // Configuração visual por estado do botão
+  const btnConfig = {
+    idle:       { label: 'Conectar no ESP', icon: <Wifi size={14}/>,                              cls: 'bg-brand-purple hover:bg-brand-purple-light text-white border-transparent' },
+    connecting: { label: 'Conectando...',   icon: <RefreshCw size={14} className="animate-spin"/>, cls: 'bg-app-raised border-border-dim text-brand-h3 cursor-not-allowed opacity-70' },
+    success:    { label: 'Conectado!',      icon: <CheckCircle2 size={14}/>,                       cls: 'bg-brand-green/20 border-brand-green/30 text-brand-green cursor-default' },
+    error:      { label: 'Falhou — Tentar novamente', icon: <XCircle size={14}/>,                 cls: 'bg-red-500/20 border-red-500/30 text-red-400 hover:bg-red-500/30' },
+  };
+
+  const btn = btnConfig[espStatus] ?? btnConfig.idle;
 
   return (
     <header className="relative flex items-center justify-center h-16 px-5 shrink-0 w-full border-b border-border-subtle bg-[#080614]" data-screen-label="Header">
@@ -738,7 +762,6 @@ const Header = ({ activeTab, setActiveTab, wsStatus, sim }) => {
         </div>
         <div className="font-bold text-lg tracking-tight text-brand-h1 leading-none flex items-center">
           micro<span className="text-brand-purple-light">mouse</span><span className="text-brand-h3">.</span>
-          <span className="sr-only">micromouse</span>
         </div>
       </div>
 
@@ -760,6 +783,19 @@ const Header = ({ activeTab, setActiveTab, wsStatus, sim }) => {
           </button>
         ))}
       </nav>
+
+      {/* Botão Conectar no ESP */}
+      <div className="absolute right-5 flex items-center gap-3">
+        <button
+          data-testid="btn-conectar-esp"
+          onClick={onConnectEsp}
+          disabled={espStatus === 'connecting' || espStatus === 'success'}
+          className={`flex items-center gap-2 h-9 px-4 rounded-xl border text-sm font-medium transition-all ${btn.cls}`}
+        >
+          {btn.icon}
+          <span>{btn.label}</span>
+        </button>
+      </div>
     </header>
   );
 };
