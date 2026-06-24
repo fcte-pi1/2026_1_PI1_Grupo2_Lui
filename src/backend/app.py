@@ -1,6 +1,7 @@
 import asyncio
 import logging
 import math
+import time 
 from typing import Optional
 from fastapi import FastAPI, Query, HTTPException, Request, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
@@ -20,6 +21,9 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(
 logger = logging.getLogger(__name__)
 
 init_db()
+
+_last_telemetry: dict[str, float] = {}  
+ESP32_TIMEOUT_S = 5
 
 app = FastAPI(title="Telemetria do Robô", version="1.4.0")
 
@@ -68,6 +72,8 @@ async def processar_telemetria(dados: TelemetriaSchema):
     """Núcleo compartilhado de processamento de telemetria: usado pelo POST acima e
     injetado diretamente pela ponte serial (sem HTTP interno)."""
     logger.info(f"Recebido: {dados.robot_id} | {dados.race_status} | {dados.event}")
+    
+    _last_telemetry[dados.robot_id] = time.time()
 
     if dados.race_status == RaceStatusEnum.running:
         if not get_session(dados.robot_id):
@@ -79,7 +85,7 @@ async def processar_telemetria(dados: TelemetriaSchema):
     session = get_session(dados.robot_id)
     passos_atual = len(session.path_points) if session else len(dados.path_traversed)
     try:
-        await manager.broadcast({**dados.model_dump(), "step_count": passos_atual})
+        await manager.broadcast({**dados.model_dump(), "step_count": passos_atual, "esp32_online": True,})
     except Exception as exc:
         logger.error(f"Broadcast falhou: {exc}")
     logger.info(f"-> {manager.active_count} dashboard(s)")
@@ -310,6 +316,12 @@ async def receber_comando(payload: ComandoSchema):
         detail="Falha de comunicação com o ESP32 (Timeout/Offline)"
     )
 
+@app.get("/esp32/status", status_code=200)
+def esp32_status():
+    """Retorna se algum ESP32 enviou telemetria nos últimos ESP32_TIMEOUT_S s."""
+    now = time.time()
+    online = any((now - t) <= ESP32_TIMEOUT_S for t in _last_telemetry.values())
+    return {"esp32_online": online}
 
 if __name__ == "__main__":
     import uvicorn
