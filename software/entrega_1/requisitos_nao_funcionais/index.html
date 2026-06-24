@@ -520,6 +520,8 @@
       
         
       
+        
+      
     
     
     
@@ -627,6 +629,34 @@
   
   
   
+    <li class="md-nav__item">
+      <a href="../../adr-001-comunicacao-comandos-esp32.md" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-001 Comunicação de Comandos (ESP32)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
     
     
       
@@ -645,10 +675,10 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4_3" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4_4" >
         
           
-          <label class="md-nav__link" for="__nav_4_3" id="__nav_4_3_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_4_4" id="__nav_4_4_label" tabindex="0">
             
   
   
@@ -666,8 +696,8 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_4_3_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_4_3">
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_4_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4_4">
             <span class="md-nav__icon md-icon"></span>
             
   
@@ -741,10 +771,10 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4_4" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4_5" >
         
           
-          <label class="md-nav__link" for="__nav_4_4" id="__nav_4_4_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_4_5" id="__nav_4_5_label" tabindex="0">
             
   
   
@@ -762,8 +792,8 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_4_4_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_4_4">
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_4_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4_5">
             <span class="md-nav__icon md-icon"></span>
             
   
@@ -891,10 +921,10 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4_5" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4_6" >
         
           
-          <label class="md-nav__link" for="__nav_4_5" id="__nav_4_5_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_4_6" id="__nav_4_6_label" tabindex="0">
             
   
   
@@ -912,8 +942,8 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_4_5_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_4_5">
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_4_6_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4_6">
             <span class="md-nav__icon md-icon"></span>
             
   
@@ -1011,10 +1041,10 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4_6" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4_7" >
         
           
-          <label class="md-nav__link" for="__nav_4_6" id="__nav_4_6_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_4_7" id="__nav_4_7_label" tabindex="0">
             
   
   
@@ -1032,8 +1062,8 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_4_6_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_4_6">
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_4_7_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4_7">
             <span class="md-nav__icon md-icon"></span>
             
   
@@ -1916,6 +1946,9 @@
 </tbody>
 </table>
 <p>Como os dados são utilizados na avaliação acadêmica, é fundamental garantir que não haja possibilidade de alteração posterior dos resultados, seja acidental, seja intencional. A forma mais simples de assegurar essa propriedade é não implementar endpoints de atualização ou deleção no sistema web, restringindo qualquer eventual correção a uma operação administrativa direta no banco de dados, com acesso controlado.</p>
+<blockquote>
+<p><strong>Decisão registrada (10/06/2026):</strong> existe uma única operação administrativa de limpeza, <code>DELETE /historico</code> (item 7.25 do cronograma), <strong>restrita à máquina que executa o backend</strong> — requisições originadas de outros hosts da rede recebem <code>403 Forbidden</code> (<code>require_local_request</code> em <code>src/backend/app.py</code>). Nenhum endpoint de edição ou exclusão é acessível publicamente pela rede; a restrição é verificada pelos testes do CT-40 em <code>src/backend/tests/test_app.py</code>.</p>
+</blockquote>
 <h2 id="5-usabilidade">5. Usabilidade</h2>
 <h3 id="rnf-11-visibilidade-dos-dados-de-telemetria">RNF-11 — Visibilidade dos Dados de Telemetria</h3>
 <table>
@@ -2121,15 +2154,15 @@
 <tbody>
 <tr>
 <td><strong>Tecnologias</strong></td>
-<td>HTML5, CSS3, JavaScript (ES6+)</td>
+<td>React 19, Tailwind CSS</td>
 </tr>
 <tr>
 <td><strong>Restrição</strong></td>
-<td>A interface não deve depender de frameworks externos que exijam processo de build (por exemplo, React ou Vue com Vite)</td>
+<td>A interface utiliza o ecossistema React (via Create React App) e Tailwind para componentes visuais, exigindo processo de build com Node.js</td>
 </tr>
 </tbody>
 </table>
-<p>O uso de HTML, CSS e JavaScript puros elimina a necessidade de configurar ambientes de build (Node.js, npm, Webpack, entre outros), reduzindo a complexidade de instalação e execução. Para o escopo do projeto, frameworks pesados não oferecem benefícios que justifiquem o custo de configuração. A atualização em tempo real é implementada com WebSocket nativo do navegador, enquanto a Fetch API atende às consultas REST ao histórico.</p>
+<p>O uso de React 19 e Tailwind CSS foi adotado para facilitar a criação de uma interface rica, componentizada e responsiva. Embora adicione a necessidade de um ambiente de build (Node.js, npm, Webpack via CRA), o ganho em produtividade e manutenibilidade para o desenvolvimento do dashboard, histórico e simulador compensa a complexidade adicional. A atualização em tempo real é implementada com WebSocket nativo do navegador, enquanto a Fetch API atende às consultas REST ao histórico.</p>
 <h3 id="re-08-navegadores-suportados">RE-08 — Navegadores Suportados</h3>
 <table>
 <thead>
@@ -2262,8 +2295,8 @@
 <tr>
 <td>RE-07</td>
 <td>Frontend</td>
-<td>HTML5 + CSS3 + JS</td>
-<td>ES6+</td>
+<td>React 19 + Tailwind</td>
+<td>CRA (Node.js)</td>
 </tr>
 <tr>
 <td>RE-08</td>
