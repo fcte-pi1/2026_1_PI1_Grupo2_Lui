@@ -1,8 +1,9 @@
+import asyncio
 import logging
 import math
 import time 
 from typing import Optional
-from fastapi import FastAPI, Query, HTTPException, WebSocket, WebSocketDisconnect
+from fastapi import FastAPI, Query, HTTPException, Request, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
 from typing import Literal
 from schemas.comandos import ComandoSchema
@@ -14,6 +15,7 @@ from memory.session_buffer import (
 )
 from schemas.telemetria import TelemetriaSchema, MazeTypeEnum, RaceStatusEnum
 from websocket.manager import manager
+from serial_bridge import bridge
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
@@ -62,6 +64,13 @@ async def websocket_dashboard(websocket: WebSocket):
 
 @app.post("/telemetria", status_code=200)
 async def receber_telemetria(dados: TelemetriaSchema):
+    """POST externo (simulador, fake_robot.py, firmware via HTTP). Contrato inalterado."""
+    return await processar_telemetria(dados)
+
+
+async def processar_telemetria(dados: TelemetriaSchema):
+    """Núcleo compartilhado de processamento de telemetria: usado pelo POST acima e
+    injetado diretamente pela ponte serial (sem HTTP interno)."""
     logger.info(f"Recebido: {dados.robot_id} | {dados.race_status} | {dados.event}")
     
     _last_telemetry[dados.robot_id] = time.time()
@@ -140,8 +149,144 @@ def obter_corrida(corrida_id: int):
     return {"status": "sucesso", "data": corrida}
 
 
+# ---- Comandos que vao pro robô ----
+# a ponte serial conecta no websocket /ws/robo e fica la escutando.
+# ai qnd a gnt clica em iniciar no front, empurra o comando por la direto
+# detalhe: se a ponte n tiver conectada na hr, o comando fica na fila e vai dps.
+import re as _re
+
+COMANDO_RE = _re.compile(r"^(start( (4|8|16))?|reset)$")
+_comando_pendente: Optional[str] = None
+_pontes_conectadas: set = set()
+
+
+from pydantic import BaseModel
+
+
+class ComandoSchema(BaseModel):
+    command: str
+
+
+async def _entregar_comando(cmd: str) -> int:
+    """dispara o comando pra tds os websockets abertos e conta qnts deram certo"""
+    entregues = 0
+    for ws in list(_pontes_conectadas):
+        try:
+            await ws.send_json({"command": cmd})
+            entregues += 1
+        except Exception:
+            _pontes_conectadas.discard(ws)
+    return entregues
+
+
+@app.post("/comando", status_code=200)
+async def enviar_comando(comando: ComandoSchema):
+    global _comando_pendente
+    cmd = comando.command.strip().lower()
+    if not COMANDO_RE.match(cmd):
+        raise HTTPException(status_code=422, detail=f"Comando inválido: {cmd}")
+    # Caminho principal: serial gerida pelo backend.
+    if bridge.write_command(cmd):
+        logger.info(f"Comando '{cmd}' escrito na serial")
+        return {"status": "sucesso", "mensagem": f"Comando '{cmd}' enviado ao robô (serial)"}
+    # Compatibilidade: ponte legada via WebSocket /ws/robo.
+    entregues = await _entregar_comando(cmd)
+    if entregues == 0:
+        _comando_pendente = cmd  # entrega quando a ponte conectar
+        logger.info(f"Comando '{cmd}' pendente (nenhuma ponte conectada)")
+        return {"status": "sucesso", "mensagem": f"Comando '{cmd}' aguardando a ponte conectar"}
+    logger.info(f"Comando '{cmd}' entregue a {entregues} ponte(s)")
+    return {"status": "sucesso", "mensagem": f"Comando '{cmd}' enviado ao robô"}
+
+
+@app.websocket("/ws/robo")
+async def websocket_robo(websocket: WebSocket):
+    """endpoint pra ponte do bluetooth plugar. os comandos q vem do front caem aqui."""
+    global _comando_pendente
+    await websocket.accept()
+    _pontes_conectadas.add(websocket)
+    logger.info(f"Ponte serial conectada ({len(_pontes_conectadas)} ativa(s))")
+    if _comando_pendente:
+        try:
+            await websocket.send_json({"command": _comando_pendente})
+            _comando_pendente = None
+        except Exception:
+            pass
+    try:
+        while True:
+            await websocket.receive_text()  # keepalive; conteúdo ignorado
+    except WebSocketDisconnect:
+        pass
+    finally:
+        _pontes_conectadas.discard(websocket)
+        logger.info("Ponte serial desconectada")
+
+
+# ---- Ponte serial gerida pelo backend ----
+# Absorve o antigo scripts/bt_bridge.py: o backend abre a COM direto e injeta
+# a telemetria no mesmo pipeline. O /ws/robo acima fica como legado/compat.
+
+
+@app.on_event("startup")
+async def _configurar_ponte_serial():
+    bridge.configure(asyncio.get_running_loop(), processar_telemetria)
+
+
+class SerialConectarSchema(BaseModel):
+    port: str
+    baud: int = 921600
+
+
+@app.get("/serial/portas", status_code=200)
+def serial_portas():
+    """Lista as COMs disponíveis (marca Bluetooth e a porta de saída sugerida)."""
+    return {"status": "sucesso", "portas": bridge.listar_portas()}
+
+
+@app.post("/serial/conectar", status_code=200)
+def serial_conectar(body: SerialConectarSchema):
+    try:
+        bridge.connect(body.port, body.baud)
+    except Exception as exc:
+        raise HTTPException(status_code=400, detail=f"Não foi possível abrir {body.port}: {exc}")
+    return {"status": "sucesso", "mensagem": f"Conectado a {body.port}", "data": bridge.status()}
+
+
+@app.post("/serial/desconectar", status_code=200)
+def serial_desconectar():
+    bridge.disconnect()
+    return {"status": "sucesso", "mensagem": "Serial desconectada", "data": bridge.status()}
+
+
+@app.get("/serial/status", status_code=200)
+def serial_status():
+    return bridge.status()
+
+
+# Hosts considerados locais para operações administrativas (RNF-10):
+# loopback IPv4/IPv6 e o placeholder usado pelo TestClient do Starlette.
+# Premissa: backend roda sem proxy reverso (execução local, RE-04/RE-05).
+LOCAL_ADMIN_HOSTS = {"127.0.0.1", "::1", "localhost", "testclient"}
+
+
+def require_local_request(request: Request) -> None:
+    """Restringe a operação à máquina que executa o backend (RNF-10/CT-40).
+
+    Dashboards abertos em outras máquinas da LAN recebem 403; a limpeza do
+    histórico só é possível a partir do próprio host do servidor.
+    """
+    host = request.client.host if request.client else None
+    if host not in LOCAL_ADMIN_HOSTS:
+        logger.warning(f"DELETE /historico negado para origem remota: {host}")
+        raise HTTPException(
+            status_code=403,
+            detail="Operação administrativa: permitida apenas a partir da máquina do servidor",
+        )
+
+
 @app.delete("/historico", status_code=200)
-def apagar_historico():
+def apagar_historico(request: Request):
+    require_local_request(request)
     try:
         limpar_banco()
         return {"status": "sucesso", "mensagem": "Histórico apagado com sucesso"}

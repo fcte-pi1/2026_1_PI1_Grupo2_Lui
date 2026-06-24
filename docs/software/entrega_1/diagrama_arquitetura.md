@@ -40,7 +40,7 @@ A escolha desse estilo é motivada pelos seguintes fatores:
 | Backend | Python 3.10 + FastAPI | Python 3.10 | Suporte nativo a WebSocket, modelo assíncrono e familiaridade da equipe |
 | ORM / DB driver | SQLAlchemy ou sqlite3 | — | Abstração do banco; facilita migração futura |
 | Banco de dados | SQLite 3 | 3.35+ | Arquivo local, sem servidor dedicado, suficiente para até 100 corridas |
-| Frontend | HTML5 + CSS3 + JavaScript ES6+ | — | Sem build step; WebSocket e Fetch API nativos do navegador |
+| Frontend | React 19 + Tailwind CSS | — | Componentização, produtividade com React Scripts (CRA) e responsividade |
 | Navegadores suportados | Chrome ≥ 110, Firefox ≥ 110, Edge ≥ 110 | — | Cobertura dos equipamentos de laboratório |
 
 ## 4. Diagrama de Alto Nível
@@ -82,7 +82,7 @@ Os estados finais possíveis — Sucesso, Falha por Comunicação, Falha Física
 | `db_writer` | Persistência do resumo no SQLite via SQLAlchemy, somente após conclusão (CT-20) |
 | `history_api` | Endpoints REST de consulta ao histórico, com suporte a filtro por tipo de labirinto (CT-22, CT-23) |
 
-#### 5.1.3 Frontend (HTML5 / JavaScript ES6+)
+#### 5.1.3 Frontend (React 19 / Tailwind CSS)
 
 | Módulo | Responsabilidade |
 |---|---|
@@ -141,7 +141,7 @@ src/
     models/
     db/
 
-  frontend/                     ← HTML5 + CSS3 + JS ES6+
+  frontend/                     ← React 19 + Tailwind (CRA)
     index.html
     style.css
     app.js
@@ -165,7 +165,7 @@ As dependências do backend são gerenciadas via `requirements.txt` com versões
 │  │  WS client       │          │  SQLite (arquivo .db)│ │
 │  └──────────────────┘          │                      │ │
 │                                │  Navegador (browser) │ │
-│                                │  Frontend HTML/JS    │ │
+│                                │  Frontend React/JS   │ │
 │                                └──────────────────────┘ │
 └─────────────────────────────────────────────────────────┘
 ```
@@ -206,4 +206,4 @@ As principais restrições que influenciam as decisões arquiteturais estão con
 | RNF-04: ciclo de controle ≤ 10 ms | Loop principal do firmware em bare-metal ou FreeRTOS; telemetria em tarefa paralela |
 | RNF-08: ≥ 10 conexões simultâneas | FastAPI assíncrono com suporte nativo a múltiplas conexões WebSocket |
 | RNF-10: dados imutáveis | Sem endpoints de UPDATE/DELETE; escrita somente via backend após flag de conclusão |
-| RE-07: sem framework de build | Frontend em HTML/CSS/JS puro, sem Node.js, npm ou bundlers |
+| RE-07: framework de build | Frontend em React 19 + Tailwind, requer Node.js/npm |

@@ -1,9 +1,9 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
-import { Cpu, Wifi, Play, Pause, Bot, RotateCw, ChevronDown, Battery, Clock, Footprints, Gauge, RefreshCw, Zap, Timer, Download, CheckCircle2, XCircle, Calendar, Square, Trophy, Table, ChevronRight, Activity } from 'lucide-react';
+import { Cpu, Wifi, Play, Pause, Bot, RotateCw, ChevronDown, Battery, Clock, Footprints, Gauge, RefreshCw, Zap, Timer, Download, CheckCircle2, XCircle, Calendar, Square, ChevronRight, Activity} from 'lucide-react';
 import { useMazeSimulator } from './useMazeSimulator';
 import { CELL_MM, DX as DXR, DY as DYR, mmToCell } from './utils/maze';
 import { useWebSocket } from './useWebSocket';
-import { getHistorico, postTelemetria, batteryVoltsToPercent, getCorrida, parseTimeToSeconds, deleteHistorico } from './services/api';
+import { getHistorico, postTelemetria, postComando, batteryVoltsToPercent, getCorrida, parseTimeToSeconds, deleteHistorico, getSerialPortas, postSerialConectar, postSerialDesconectar, getSerialStatus } from './services/api';
 import { sendConnectCommand } from './services/espService';
 
 const ReplayCanvas = ({ pathMm, mazeSize, knownWalls }) => {
@@ -59,18 +59,18 @@ const ReplayCanvas = ({ pathMm, mazeSize, knownWalls }) => {
     const dxCell = mmToCell(curP.x) - mmToCell(prev.x);
     const dyCell = mmToCell(curP.y) - mmToCell(prev.y);
     if (dxCell !== 0 || dyCell !== 0) {
-      if (dyCell < 0)      robotDir = 0;
+      if (dyCell < 0) robotDir = 0;
       else if (dxCell > 0) robotDir = 1;
       else if (dyCell > 0) robotDir = 2;
-      else                 robotDir = 3;
+      else robotDir = 3;
       break;
     }
   }
 
   const mid = Math.floor(mazeSize / 2);
   const goals = [
-    {x: mid - 1, y: mid - 1}, {x: mid, y: mid - 1},
-    {x: mid - 1, y: mid}, {x: mid, y: mid},
+    { x: mid - 1, y: mid - 1 }, { x: mid, y: mid - 1 },
+    { x: mid - 1, y: mid }, { x: mid, y: mid },
   ];
 
   return (
@@ -93,18 +93,18 @@ const ReplayCanvas = ({ pathMm, mazeSize, knownWalls }) => {
           const isVisited = visited.has(`${cx},${cy}`);
           const isGoal = goals.some(g => g.x === cx && g.y === cy);
           const isRobot = cx === rx && cy === ry;
-          let bg = 'var(--bg-unexplored)';
-          if (isVisited) bg = 'var(--bg-explored)';
-          if (isGoal) bg = 'var(--bg-center)';
-          const faint = '1px solid rgba(255,255,255,0.06)';
-          const wall  = '2.5px solid var(--primary-2)';
+          let bg = 'var(--fundo-nao-explorado)';
+          if (isVisited) bg = 'var(--fundo-explorado)';
+          if (isGoal) bg = 'var(--fundo-centro)';
+          const faint = '1px solid var(--cor-parede)';
+          const wall = '2.5px solid var(--cor-parede-conhecida)';
           return (
             <div key={i} style={{
               backgroundColor: bg,
-              borderTop:    hasWallReplay(cx, cy, 0) ? wall : faint,
-              borderRight:  hasWallReplay(cx, cy, 1) ? wall : faint,
+              borderTop: hasWallReplay(cx, cy, 0) ? wall : faint,
+              borderRight: hasWallReplay(cx, cy, 1) ? wall : faint,
               borderBottom: hasWallReplay(cx, cy, 2) ? wall : faint,
-              borderLeft:   hasWallReplay(cx, cy, 3) ? wall : faint,
+              borderLeft: hasWallReplay(cx, cy, 3) ? wall : faint,
               boxSizing: 'border-box',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
             }}>
@@ -130,10 +130,10 @@ const ReplayCanvas = ({ pathMm, mazeSize, knownWalls }) => {
         <div className="flex items-center justify-between">
           <div className="flex gap-1.5">
             <button onClick={() => setPlaying(p => !p)} className="bg-app-raised border border-border-rule text-brand-h1 px-3 py-1 rounded-lg text-xs font-semibold flex items-center gap-1 transition-all hover:bg-app-hover hover:border-border-accent">
-              {playing ? <><Pause size={11}/><span>Pausar</span></> : <><Play size={11}/><span>Reproduzir</span></>}
+              {playing ? <><Pause size={11} /><span>Pausar</span></> : <><Play size={11} /><span>Reproduzir</span></>}
             </button>
             <button onClick={() => { setIdx(0); setPlaying(true); }} className="bg-app-raised border border-border-rule text-brand-h1 px-3 py-1 rounded-lg text-xs font-semibold flex items-center gap-1 transition-all hover:bg-app-hover hover:border-border-accent">
-              <RotateCw size={11}/><span>Reiniciar</span>
+              <RotateCw size={11} /><span>Reiniciar</span>
             </button>
           </div>
           <CustomSelect
@@ -159,48 +159,48 @@ const MiniMap = ({ snapshot }) => {
 
   return (
     <div className="w-full h-full flex flex-col items-center justify-center p-2 bg-app-bg relative rounded-xl border border-border-rule shadow-card">
-        <h4 className="absolute top-3 left-0 right-0 text-center text-label z-10 pointer-events-none drop-shadow-md">Trajeto Mapeado</h4>
-        <div
-          className="aspect-square w-full max-w-[200px] border-2 border-brand-purple-light rounded-md overflow-hidden box-border bg-app-bg mt-6"
-          style={{
-            display: 'grid',
-            gridTemplateColumns: `repeat(${gridSize}, minmax(0, 1fr))`,
-            gridTemplateRows: `repeat(${gridSize}, minmax(0, 1fr))`
-          }}
-        >
-          {Array.from({ length: gridSize * gridSize }).map((_, i) => {
-              const y = Math.floor(i / gridSize);
-              const x = i % gridSize;
+      <h4 className="absolute top-3 left-0 right-0 text-center text-label z-10 pointer-events-none drop-shadow-md">Trajeto Mapeado</h4>
+      <div
+        className="aspect-square w-full max-w-[200px] border-2 border-brand-purple-light rounded-md overflow-hidden box-border bg-app-bg mt-6"
+        style={{
+          display: 'grid',
+          gridTemplateColumns: `repeat(${gridSize}, minmax(0, 1fr))`,
+          gridTemplateRows: `repeat(${gridSize}, minmax(0, 1fr))`
+        }}
+      >
+        {Array.from({ length: gridSize * gridSize }).map((_, i) => {
+          const y = Math.floor(i / gridSize);
+          const x = i % gridSize;
 
-              let style = {
-                borderTop: knownWalls[x][y][0] ? '2px solid var(--primary-2)' : '1px solid rgba(255,255,255,0.06)',
-                borderRight: knownWalls[x][y][1] ? '2px solid var(--primary-2)' : '1px solid rgba(255,255,255,0.06)',
-                borderBottom: knownWalls[x][y][2] ? '2px solid var(--primary-2)' : '1px solid rgba(255,255,255,0.06)',
-                borderLeft: knownWalls[x][y][3] ? '2px solid var(--primary-2)' : '1px solid rgba(255,255,255,0.06)',
-                backgroundColor: 'var(--bg-unexplored)',
-                boxSizing: 'border-box'
-              };
+          let style = {
+            borderTop: knownWalls[x][y][0] ? '2px solid var(--cor-parede-conhecida)' : '1px solid var(--cor-parede)',
+            borderRight: knownWalls[x][y][1] ? '2px solid var(--cor-parede-conhecida)' : '1px solid var(--cor-parede)',
+            borderBottom: knownWalls[x][y][2] ? '2px solid var(--cor-parede-conhecida)' : '1px solid var(--cor-parede)',
+            borderLeft: knownWalls[x][y][3] ? '2px solid var(--cor-parede-conhecida)' : '1px solid var(--cor-parede)',
+            backgroundColor: 'var(--fundo-nao-explorado)',
+            boxSizing: 'border-box'
+          };
 
-              if (explored[x][y]) style.backgroundColor = 'var(--bg-explored)';
-              const isGoal = goals.some(g => g.x === x && g.y === y);
-              if (isGoal) style.backgroundColor = 'var(--bg-center)';
-              const isRobot = robot && robot.x === x && robot.y === y;
+          if (explored[x][y]) style.backgroundColor = 'var(--fundo-explorado)';
+          const isGoal = goals.some(g => g.x === x && g.y === y);
+          if (isGoal) style.backgroundColor = 'var(--fundo-centro)';
+          const isRobot = robot && robot.x === x && robot.y === y;
 
-              return (
-                 <div key={i} style={style} className="relative flex items-center justify-center">
-                    {isRobot && (
-                        <div style={{
-                           width: 0, height: 0,
-                           borderLeft: '3px solid transparent',
-                           borderRight: '3px solid transparent',
-                           borderBottom: '6px solid var(--primary-2)',
-                           transform: `rotate(${robot.direction * 90}deg)`,
-                        }} />
-                    )}
-                 </div>
-              );
-          })}
-        </div>
+          return (
+            <div key={i} style={style} className="relative flex items-center justify-center">
+              {isRobot && (
+                <div style={{
+                  width: 0, height: 0,
+                  borderLeft: '3px solid transparent',
+                  borderRight: '3px solid transparent',
+                  borderBottom: '6px solid var(--primary-2)',
+                  transform: `rotate(${robot.direction * 90}deg)`,
+                }} />
+              )}
+            </div>
+          );
+        })}
+      </div>
     </div>
   );
 };
@@ -214,6 +214,65 @@ const SettingsView = ({ wsUrl, setWsUrl, wsStatus, refreshHistory }) => {
   const [battMin, setBattMin] = useState(() => localStorage.getItem('BATT_VMIN') || '6.0');
   const [battMax, setBattMax] = useState(() => localStorage.getItem('BATT_VMAX') || '8.4');
   const [latencyLimit, setLatencyLimit] = useState(() => localStorage.getItem('LATENCY_THRESHOLD') || '500');
+
+  // ── Conexão com o robô: ponte serial gerida pelo backend ──
+  const [serialPorts, setSerialPorts] = useState([]);
+  const [serialPort, setSerialPort] = useState('');
+  const [serialBaud, setSerialBaud] = useState('921600');
+  const [serialStatus, setSerialStatus] = useState(null);
+  const [serialBusy, setSerialBusy] = useState(false);
+
+  const loadSerialPorts = async () => {
+    try {
+      const ports = await getSerialPortas();
+      setSerialPorts(ports);
+      const sugerida = ports.find(p => p.suggested) || ports.find(p => p.bluetooth);
+      setSerialPort(prev => prev || sugerida?.device || ports[0]?.device || '');
+    } catch (e) {
+      setFeedbackMessage({ title: 'Erro', text: 'Não foi possível listar as portas: ' + e.message, type: 'error' });
+    }
+  };
+
+  useEffect(() => {
+    loadSerialPorts();
+    let alive = true;
+    const tick = async () => {
+      try { const st = await getSerialStatus(); if (alive) setSerialStatus(st); } catch { /* backend offline: ignora */ }
+    };
+    tick();
+    const id = setInterval(tick, 3000);
+    return () => { alive = false; clearInterval(id); };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const handleSerialConnect = async () => {
+    if (!serialPort) {
+      setFeedbackMessage({ title: 'Aviso', text: 'Selecione uma porta primeiro.', type: 'warning' });
+      return;
+    }
+    setSerialBusy(true);
+    try {
+      const res = await postSerialConectar(serialPort, parseInt(serialBaud, 10));
+      setSerialStatus(res.data ?? await getSerialStatus());
+    } catch (e) {
+      setFeedbackMessage({ title: 'Falha ao conectar', text: e.message, type: 'error' });
+      try { setSerialStatus(await getSerialStatus()); } catch { /* ignora */ }
+    } finally {
+      setSerialBusy(false);
+    }
+  };
+
+  const handleSerialDisconnect = async () => {
+    setSerialBusy(true);
+    try {
+      const res = await postSerialDesconectar();
+      setSerialStatus(res.data ?? await getSerialStatus());
+    } catch (e) {
+      setFeedbackMessage({ title: 'Erro', text: e.message, type: 'error' });
+    } finally {
+      setSerialBusy(false);
+    }
+  };
 
   const handleSaveWs = () => {
     localStorage.setItem('WS_URL', inputUrl);
@@ -264,15 +323,87 @@ const SettingsView = ({ wsUrl, setWsUrl, wsStatus, refreshHistory }) => {
       setShowDeleteModal(false);
       setDeleteInput('');
     } catch (e) {
-      setFeedbackMessage({ title: 'Erro', text: 'Erro ao apagar banco: ' + e.message, type: 'error' });
+      const text = e.message?.includes('403')
+        ? 'Ação restrita: o histórico só pode ser apagado no computador que executa o backend (RNF-10).'
+        : 'Erro ao apagar banco: ' + e.message;
+      setFeedbackMessage({ title: 'Erro', text, type: 'error' });
       setShowDeleteModal(false);
       setDeleteInput('');
     }
   };
 
+  const serialConnected = !!serialStatus?.connected;
+  const portOptions = serialPorts.length
+    ? serialPorts.map(p => ({
+      value: p.device,
+      label: `${p.device}${p.bluetooth ? ' (BT)' : ''}${p.description ? ' \u2014 ' + p.description : ''}`,
+    }))
+    : [{ value: '', label: 'Nenhuma porta encontrada' }];
+
   return (
     <div className="flex-1 bg-app-surface w-full h-full overflow-y-auto p-6 box-border">
       <div className="max-w-3xl mx-auto space-y-6">
+
+        {/* Conexão com o robô — ponte serial gerida pelo backend */}
+        <div className="bg-app-bg rounded-xl border border-border-rule p-6 shadow-card">
+          <h2 className="text-xl font-bold text-brand-h1 mb-4">Conexão com o Robô</h2>
+          <p className="text-brand-h3 text-sm mb-4">Selecione a porta serial (COM) do Bluetooth e conecte. O backend abre a porta diretamente — não é mais necessário rodar a ponte num terminal separado.</p>
+          <div className="flex flex-col sm:flex-row gap-4 items-end">
+            <div className="flex-1 w-full">
+              <label className="block text-brand-h3 text-xs mb-1">Porta serial</label>
+              <CustomSelect
+                className="w-full bg-app-surface border border-border-rule rounded-[16px] px-3 py-2 text-brand-h1 text-sm focus:outline-none focus:border-brand-purple"
+                value={serialPort}
+                onChange={(val) => setSerialPort(val)}
+                options={portOptions}
+              />
+            </div>
+            <div className="w-full sm:w-32">
+              <label className="block text-brand-h3 text-xs mb-1">Baud</label>
+              <input
+                type="number"
+                className="w-full bg-app-surface border border-border-rule rounded-xl px-3 py-2 text-brand-h1 text-sm focus:outline-none focus:border-brand-purple"
+                value={serialBaud}
+                onChange={e => setSerialBaud(e.target.value)}
+                placeholder="921600"
+              />
+            </div>
+            <button
+              onClick={loadSerialPorts}
+              title="Atualizar lista de portas"
+              className="h-[42px] px-3 flex items-center justify-center bg-app-surface hover:bg-app-hover border border-border-rule text-brand-h1 rounded-xl transition-colors"
+            >
+              <RefreshCw size={16} />
+            </button>
+            {serialConnected ? (
+              <button
+                onClick={handleSerialDisconnect}
+                disabled={serialBusy}
+                className="w-40 h-[42px] flex items-center justify-center bg-brand-danger hover:opacity-90 text-white font-medium text-sm rounded-xl transition-colors disabled:opacity-50"
+              >
+                Desconectar
+              </button>
+            ) : (
+              <button
+                onClick={handleSerialConnect}
+                disabled={serialBusy}
+                className="w-40 h-[42px] flex items-center justify-center bg-brand-purple hover:bg-brand-purple-light text-white font-medium text-sm rounded-xl transition-colors disabled:opacity-50"
+              >
+                {serialBusy ? 'Conectando...' : 'Conectar'}
+              </button>
+            )}
+          </div>
+          <div className="mt-4 flex items-center gap-2 flex-wrap">
+            <span className="text-brand-h3 text-xs">Status:</span>
+            <span className={`text-xs font-bold ${serialConnected ? 'text-brand-green' : serialBusy ? 'text-brand-accent' : 'text-brand-danger'}`}>
+              {serialBusy ? 'Conectando...' : serialConnected ? `Conectado — ${serialStatus.port} (${serialStatus.packets_rx} pacotes)` : 'Desconectado'}
+            </span>
+            {!serialConnected && !serialBusy && serialStatus?.last_error && (
+              <span className="text-xs text-brand-danger">— última falha: {serialStatus.last_error}</span>
+            )}
+          </div>
+        </div>
+
         <div className="bg-app-bg rounded-xl border border-border-rule p-6 shadow-card">
           <h2 className="text-xl font-bold text-brand-h1 mb-4">Conexão WebSocket</h2>
           <p className="text-brand-h3 text-sm mb-4">Configure o endereço IP ou a URL do servidor de telemetria do robô.</p>
@@ -363,11 +494,11 @@ const SettingsView = ({ wsUrl, setWsUrl, wsStatus, refreshHistory }) => {
           <div className="bg-panel w-full max-w-sm shadow-pop flex flex-col p-6 rounded-xl border border-border-rule text-center" onClick={e => e.stopPropagation()}>
             <div className="mb-4 flex justify-center">
               {feedbackMessage.type === 'success' ? (
-                <div className="w-12 h-12 bg-brand-green/20 rounded-full flex items-center justify-center text-brand-green"><CheckCircle2 size={24}/></div>
+                <div className="w-12 h-12 bg-brand-green/20 rounded-full flex items-center justify-center text-brand-green"><CheckCircle2 size={24} /></div>
               ) : feedbackMessage.type === 'error' ? (
-                <div className="w-12 h-12 bg-brand-danger/20 rounded-full flex items-center justify-center text-brand-danger"><XCircle size={24}/></div>
+                <div className="w-12 h-12 bg-brand-danger/20 rounded-full flex items-center justify-center text-brand-danger"><XCircle size={24} /></div>
               ) : (
-                <div className="w-12 h-12 bg-brand-accent/20 rounded-full flex items-center justify-center text-brand-accent"><CheckCircle2 size={24}/></div>
+                <div className="w-12 h-12 bg-brand-accent/20 rounded-full flex items-center justify-center text-brand-accent"><CheckCircle2 size={24} /></div>
               )}
             </div>
             <h3 className="text-xl font-bold text-brand-h1 mb-2">{feedbackMessage.title}</h3>
@@ -429,10 +560,29 @@ const App = () => {
   const [latencyMs, setLatencyMs] = useState(null);
   const [packetsRx, setPacketsRx] = useState(0);
 
+  // Paredes descobertas pelo robô real (chegam em pacotes esparsos; persiste a última)
+  const [liveWalls, setLiveWalls] = useState(null);
+
+  // Reiniciar no modo Corrida: ESP32 volta a aguardar 'start'; limpa a vista ao vivo
+  const handleResetReal = async () => {
+    try {
+      await postComando('reset');
+    } catch (err) {
+      console.error('Falha ao enviar reset ao robô:', err);
+    }
+    setLiveTelemetry(null);
+    setLiveWalls(null);
+  };
+
   useEffect(() => {
     if (!lastMessage || typeof lastMessage !== 'object') return;
     setLiveTelemetry(lastMessage);
     setPacketsRx(prev => prev + 1);
+    if (lastMessage.event === 'start_race') {
+      setLiveWalls(lastMessage.known_walls ?? null);  // nova corrida: zera o mapa
+    } else if (lastMessage.known_walls) {
+      setLiveWalls(lastMessage.known_walls);
+    }
     if (lastMessage.timestamp) {
       const t = Date.parse(lastMessage.timestamp);
       if (!Number.isNaN(t)) {
@@ -497,11 +647,11 @@ const App = () => {
     const size = sim.gridSize;
     const walls = (mem.truthWalls && mem.truthWalls.length === size)
       ? Array.from({ length: size }, (_, x) =>
-          Array.from({ length: size }, (_, y) => {
-            const w = mem.truthWalls[x][y];
-            return [Boolean(w[0]), Boolean(w[1]), Boolean(w[2]), Boolean(w[3])];
-          })
-        )
+        Array.from({ length: size }, (_, y) => {
+          const w = mem.truthWalls[x][y];
+          return [Boolean(w[0]), Boolean(w[1]), Boolean(w[2]), Boolean(w[3])];
+        })
+      )
       : null;
 
     const payload = {
@@ -609,7 +759,7 @@ const App = () => {
           ) : (
             <>
               <section className="flex-grow bg-app-surface border-r border-border-rule p-5 flex flex-col relative overflow-hidden min-h-0">
-                <MazeCanvas sim={sim} liveRobot={liveRobot} liveExplored={liveExplored} dataMode={dataMode} mockMode={mockMode} setMockMode={setMockMode} />
+                <MazeCanvas sim={sim} liveRobot={liveRobot} liveExplored={liveExplored} liveWalls={liveWalls} dataMode={dataMode} mockMode={mockMode} setMockMode={setMockMode} liveRaceStatus={liveTelemetry?.race_status} onResetReal={handleResetReal} />
               </section>
               <aside className="w-full lg:w-[372px] flex flex-col gap-2 overflow-y-auto shrink-0 my-4 mr-4 pr-1 custom-scrollbar">
                 <TelemetrySidebar
@@ -639,10 +789,10 @@ const Header = ({ activeTab, setActiveTab, wsStatus, sim, espStatus = 'idle', on
   const tabs = ['Mapa', 'Telemetria', 'Histórico', 'Configurações'];
 
   const btnConfig = {
-    idle:       { label: 'Conectar no ESP', icon: <Wifi size={14}/>,                              cls: 'bg-brand-purple hover:bg-brand-purple-light text-white border-transparent' },
-    connecting: { label: 'Conectando...',   icon: <RefreshCw size={14} className="animate-spin"/>, cls: 'bg-app-raised border-border-dim text-brand-h3 cursor-not-allowed opacity-70' },
-    success:    { label: 'Conectado!',      icon: <CheckCircle2 size={14}/>,                       cls: 'bg-brand-green/20 border-brand-green/30 text-brand-green cursor-default' },
-    error:      { label: 'Falhou — Tentar novamente', icon: <XCircle size={14}/>,                 cls: 'bg-red-500/20 border-red-500/30 text-red-400 hover:bg-red-500/30' },
+    idle: { label: 'Conectar no ESP', icon: <Wifi size={14} />, cls: 'bg-brand-purple hover:bg-brand-purple-light text-white border-transparent' },
+    connecting: { label: 'Conectando...', icon: <RefreshCw size={14} className="animate-spin" />, cls: 'bg-app-raised border-border-dim text-brand-h3 cursor-not-allowed opacity-70' },
+    success: { label: 'Conectado!', icon: <CheckCircle2 size={14} />, cls: 'bg-brand-green/20 border-brand-green/30 text-brand-green cursor-default' },
+    error: { label: 'Falhou — Tentar novamente', icon: <XCircle size={14} />, cls: 'bg-red-500/20 border-red-500/30 text-red-400 hover:bg-red-500/30' },
   };
 
   const btn = btnConfig[espStatus] ?? btnConfig.idle;
@@ -716,21 +866,57 @@ const CustomSelect = ({ value, onChange, options, className = "", dropdownWidth 
   );
 };
 
-const GlobalChip = ({ children, className = '', ...props }) => (
-  <div className={`flex items-center justify-center gap-2 h-10 px-4 rounded-xl bg-app-raised border border-border-rule text-sm text-brand-h2 font-medium box-border ${className}`} {...props}>
-    {children}
-  </div>
-);
-
 /* ============================================================
    CANVAS DO LABIRINTO
    ============================================================ */
-const MazeCanvas = ({ sim, liveRobot, liveExplored, dataMode, mockMode, setMockMode }) => {
+const MazeCanvas = ({ sim, liveRobot, liveExplored, liveWalls, dataMode, mockMode, setMockMode, liveRaceStatus, onResetReal }) => {
   const { memory, isRunning, setIsRunning, speed, setSpeed, showTruth, setShowTruth, resetSimulation, gridSize, changeGridSize } = sim;
   const mem = memory;
   const robotShown = liveRobot ?? mem.robot;
   const exploredShown = liveExplored ?? mem.explored;
   const isRealMode = dataMode === 'real';
+
+  // Modo Corrida: "Iniciar" envia o comando ao robô real via backend/ponte
+  const liveRunning = isRealMode && liveRaceStatus === 'running';
+  const [startPending, setStartPending] = useState(false);
+  const handleStartReal = async () => {
+    setStartPending(true);
+    try {
+      // O seletor de matriz define o labirinto em que o robô vai operar
+      await postComando(`start ${gridSize}`);
+    } catch (err) {
+      console.error('Falha ao enviar comando de início ao robô:', err);
+    } finally {
+      // Libera o botão após alguns segundos caso a telemetria não comece
+      setTimeout(() => setStartPending(false), 5000);
+    }
+  };
+
+  // Modo Corrida: flood fill recalculado das paredes publicadas pelo robô —
+  // mesmo algoritmo do simulador, logo mesmos valores/cores nas células.
+  const liveDistances = useMemo(() => {
+    if (!isRealMode || !Array.isArray(liveWalls) || liveWalls.length === 0) return null;
+    const size = liveWalls.length;
+    const dist = Array(size).fill(null).map(() => Array(size).fill(255));
+    const mid = Math.floor(size / 2);
+    const queue = [];
+    for (const [gx, gy] of [[mid - 1, mid - 1], [mid, mid - 1], [mid - 1, mid], [mid, mid]]) {
+      if (dist[gx]?.[gy] !== undefined) { dist[gx][gy] = 0; queue.push([gx, gy]); }
+    }
+    while (queue.length > 0) {
+      const [cx, cy] = queue.shift();
+      for (let d = 0; d < 4; d++) {
+        if (liveWalls[cx][cy][d]) continue;
+        const nx = cx + DXR[d], ny = cy + DYR[d];
+        if (nx < 0 || nx >= size || ny < 0 || ny >= size) continue;
+        if (dist[nx][ny] === 255) {
+          dist[nx][ny] = dist[cx][cy] + 1;
+          queue.push([nx, ny]);
+        }
+      }
+    }
+    return dist;
+  }, [isRealMode, liveWalls]);
 
   if (!mem.truthWalls || mem.truthWalls.length === 0) {
     return (
@@ -740,10 +926,16 @@ const MazeCanvas = ({ sim, liveRobot, liveExplored, dataMode, mockMode, setMockM
     );
   }
 
+  // Fonte das distâncias: robô real (flood fill das paredes recebidas) ou simulador
+  const getDist = (x, y) => {
+    const d = isRealMode ? liveDistances?.[x]?.[y] : mem.distances[x][y];
+    return d === undefined || d === null ? 255 : d;
+  };
+
   let maxD = 0;
   for (let x = 0; x < gridSize; x++)
     for (let y = 0; y < gridSize; y++)
-      if (mem.distances[x][y] !== 255 && mem.distances[x][y] > maxD) maxD = mem.distances[x][y];
+      if (getDist(x, y) !== 255 && getDist(x, y) > maxD) maxD = getDist(x, y);
 
   const GOALS = mem.goals || [];
 
@@ -751,6 +943,7 @@ const MazeCanvas = ({ sim, liveRobot, liveExplored, dataMode, mockMode, setMockM
     <>
       <div className="flex flex-col xl:flex-row justify-between items-center mb-4 z-10 gap-4 shrink-0 w-full">
         <div className="flex items-center gap-4 h-10 px-4 rounded-xl bg-app-inset border border-border-rule box-border">
+          {/* Matrix selector */}
           <div className="flex items-center gap-2">
             <span className="text-label">Matriz</span>
             <CustomSelect
@@ -759,23 +952,44 @@ const MazeCanvas = ({ sim, liveRobot, liveExplored, dataMode, mockMode, setMockM
               value={gridSize}
               onChange={(val) => changeGridSize(parseInt(val))}
               dropdownWidth="w-auto"
-              options={[{ value: 4, label: '4x4' }, { value: 8, label: '8x8' }, { value: 16, label: '16x16' }]}
+              options={[
+                { value: 4, label: '4x4' },
+                { value: 8, label: '8x8' },
+                { value: 16, label: '16x16' }
+              ]}
             />
           </div>
+
           <div className="w-px h-5 bg-border-rule" />
-          <div className="flex items-center gap-3 h-full">
+
+          {/* Controle de velocidade (só no Simulador; no modo Corrida quem dita o ritmo é o robô) */}
+          <div className={`flex items-center gap-3 h-full ${isRealMode ? 'opacity-40' : ''}`}
+            title={isRealMode ? 'Disponível só no modo Simulador' : undefined}>
             <span className="text-label">Velocidade</span>
             <div className="flex items-center h-full">
-              <input type="range" min="10" max="500" value={510 - speed} onChange={(e) => setSpeed(510 - parseInt(e.target.value))} className="w-24" style={{ '--fill': `${((510 - speed - 10) / 490) * 100}%` }} />
+              <input
+                type="range" min="10" max="500"
+                value={510 - speed}
+                disabled={isRealMode}
+                onChange={(e) => setSpeed(510 - parseInt(e.target.value))}
+                className={`w-24 ${isRealMode ? 'cursor-not-allowed' : ''}`}
+                style={{ '--fill': `${((510 - speed - 10) / 490) * 100}%` }}
+              />
             </div>
           </div>
+
           <div className="w-px h-5 bg-border-rule" />
+
+          {/* Alternador Modo */}
           <label className="flex items-center gap-2 h-full cursor-pointer group" title="Mock de Modo (Simulador vs Corrida)">
             <input type="checkbox" className="sr-only" checked={mockMode === 'real'} onChange={(e) => setMockMode(e.target.checked ? 'real' : 'simulator')} aria-label="Alternar Modo de Operação" />
             <div className={`toggle-switch ${mockMode === 'real' ? 'active' : ''}`} />
             <span className="text-label w-[75px] text-left">{mockMode === 'real' ? 'Corrida' : 'Simulador'}</span>
           </label>
+
           <div className="w-px h-5 bg-border-rule" />
+
+          {/* Alternador Raio-X */}
           <label className={`flex items-center gap-2 h-full ${isRealMode ? 'opacity-40 cursor-not-allowed' : 'cursor-pointer'}`} title={isRealMode ? 'Raio-X só disponível no modo Simulador' : ''}>
             <input type="checkbox" className="sr-only" checked={showTruth && !isRealMode} disabled={isRealMode} onChange={(e) => setShowTruth(e.target.checked)} />
             <div className={`toggle-switch ${showTruth && !isRealMode ? 'active' : ''}`} />
@@ -783,57 +997,225 @@ const MazeCanvas = ({ sim, liveRobot, liveExplored, dataMode, mockMode, setMockM
           </label>
         </div>
 
+        {/* Botões de ação */}
         <div data-testid="pill-container" className="pill-container">
-          <button data-testid="pill-item" onClick={() => setIsRunning(!isRunning)}
-            className={`group pill-item gap-2 font-semibold text-sm transition-all w-[100px] ${isRunning ? 'bg-app-raised border border-border-subtle text-brand-h2 hover:text-brand-h1 hover:border-border-accent' : 'text-white border border-transparent bg-brand-purple'}`}>
-            {isRunning ? <><Square size={16} className="transition-transform group-active:scale-90" /><span>Pausar</span></> : <><Play size={16} className="transition-transform group-hover:scale-110 group-active:scale-90" /><span>Iniciar</span></>}
+          <button
+            data-testid="pill-item"
+            onClick={() => (isRealMode ? handleStartReal() : setIsRunning(!isRunning))}
+            disabled={isRealMode && (liveRunning || startPending)}
+            title={isRealMode ? 'Dispara uma nova corrida no robô real' : undefined}
+            className={`group pill-item gap-2 font-semibold text-sm transition-all w-[100px] ${isRealMode && (liveRunning || startPending)
+              ? 'bg-app-raised border border-border-subtle text-brand-h3 opacity-60 cursor-not-allowed'
+              : (!isRealMode && isRunning)
+                ? 'bg-app-raised border border-border-subtle text-brand-h2 hover:text-brand-h1 hover:border-border-accent'
+                : 'text-white border border-transparent bg-brand-purple'
+              }`}
+          >
+            {isRealMode ? (
+              liveRunning
+                ? <><Activity size={16} className="animate-pulse" /><span>Correndo</span></>
+                : startPending
+                  ? <><Activity size={16} className="animate-pulse" /><span>Enviando</span></>
+                  : <><Play size={16} className="transition-transform group-hover:scale-110 group-active:scale-90" /><span>Iniciar</span></>
+            ) : isRunning ? (
+              <><Square size={16} className="transition-transform group-active:scale-90" /><span>Pausar</span></>
+            ) : (
+              <><Play size={16} className="transition-transform group-hover:scale-110 group-active:scale-90" /><span>Iniciar</span></>
+            )}
           </button>
-          <button data-testid="pill-item" onClick={() => resetSimulation(false)} className="group pill-item gap-2 font-semibold text-sm bg-app-raised border border-border-subtle text-brand-h1 transition-all hover:bg-app-hover hover:border-border-accent">
+          <button
+            data-testid="pill-item"
+            onClick={() => (isRealMode ? onResetReal() : resetSimulation(false))}
+            title={isRealMode ? 'Aborta a corrida e coloca o robô em espera por um novo start' : undefined}
+            className="group pill-item gap-2 font-semibold text-sm bg-app-raised border border-border-subtle text-brand-h1 transition-all hover:bg-app-hover hover:border-border-accent"
+          >
             <Bot size={16} className="transition-transform group-hover:-translate-y-0.5 group-active:scale-90" /><span>Reiniciar</span>
           </button>
-          <button data-testid="pill-item" onClick={() => resetSimulation(true)} className="group pill-item gap-2 font-semibold text-sm bg-app-raised border border-border-subtle text-brand-h1 transition-all hover:bg-app-hover hover:border-border-accent">
+          <button
+            data-testid="pill-item"
+            onClick={() => resetSimulation(true)}
+            disabled={isRealMode}
+            title={isRealMode ? 'Disponível só no modo Simulador' : undefined}
+            className={`group pill-item gap-2 font-semibold text-sm bg-app-raised border border-border-subtle text-brand-h1 transition-all ${isRealMode ? 'opacity-40 cursor-not-allowed' : 'hover:bg-app-hover hover:border-border-accent'}`}
+          >
             <RotateCw size={16} className="transition-transform duration-300 group-hover:rotate-180 group-active:scale-90" /><span>Novo</span>
           </button>
         </div>
+        <div className="w-px h-5 bg-border-rule" />
+        <label className="flex items-center gap-2 h-full cursor-pointer group" title="Mock de Modo (Simulador vs Corrida)">
+          <input type="checkbox" className="sr-only" checked={mockMode === 'real'} onChange={(e) => setMockMode(e.target.checked ? 'real' : 'simulator')} aria-label="Alternar Modo de Operação" />
+          <div className={`toggle-switch ${mockMode === 'real' ? 'active' : ''}`} />
+          <span className="text-label w-[75px] text-left">{mockMode === 'real' ? 'Corrida' : 'Simulador'}</span>
+        </label>
+        <div className="w-px h-5 bg-border-rule" />
+        <label className={`flex items-center gap-2 h-full ${isRealMode ? 'opacity-40 cursor-not-allowed' : 'cursor-pointer'}`} title={isRealMode ? 'Raio-X só disponível no modo Simulador' : ''}>
+          <input type="checkbox" className="sr-only" checked={showTruth && !isRealMode} disabled={isRealMode} onChange={(e) => setShowTruth(e.target.checked)} />
+          <div className={`toggle-switch ${showTruth && !isRealMode ? 'active' : ''}`} />
+          <span className="text-label">Raio-X</span>
+        </label>
       </div>
 
+
       <div className="flex-1 flex items-center justify-center relative p-4 bg-app-bg rounded-xl border border-border-rule overflow-hidden min-h-0" style={{ containerType: 'size' }}>
-        <div id="maze-container" className={showTruth ? "show-truth" : ""} style={{ gridTemplateColumns: `repeat(${gridSize}, minmax(0, 1fr))`, gridTemplateRows: `repeat(${gridSize}, minmax(0, 1fr))` }}>
-          {Array.from({ length: gridSize * gridSize }).map((_, i) => {
-            const y = Math.floor(i / gridSize), x = i % gridSize;
-            let classes = ["cell"];
-            if (showTruth && !isRealMode) {
-              if (mem.truthWalls[x][y][0]) classes.push("truth-wall-n");
-              if (mem.truthWalls[x][y][1]) classes.push("truth-wall-e");
-              if (mem.truthWalls[x][y][2]) classes.push("truth-wall-s");
-              if (mem.truthWalls[x][y][3]) classes.push("truth-wall-w");
-            }
-            const cellExplored = exploredShown[x]?.[y];
-            if (cellExplored) {
-              classes.push("explored");
-              if (!isRealMode) {
-                if (mem.knownWalls[x][y][0]) classes.push("known-wall-n");
-                if (mem.knownWalls[x][y][1]) classes.push("known-wall-e");
-                if (mem.knownWalls[x][y][2]) classes.push("known-wall-s");
-                if (mem.knownWalls[x][y][3]) classes.push("known-wall-w");
-              }
-            }
-            const isGoal = GOALS.some(g => g.x === x && g.y === y);
-            if (isGoal) classes.push("goal");
-            const d = mem.distances[x][y];
-            let dataColor = null;
-            if (!isRealMode && cellExplored && d !== 0 && d !== 255)
-              dataColor = d <= maxD / 3 ? "g" : d <= 2 * maxD / 3 ? "y" : "r";
-            const hasRobot = robotShown && robotShown.x === x && robotShown.y === y;
-            return (
-              <div key={i} className={classes.join(" ")} data-color={dataColor}>
-                {hasRobot && <div id="robot" className={`dir-${robotShown.dir}`}></div>}
-                {isGoal && !hasRobot && "G"}
-                {!isGoal && !hasRobot && cellExplored && !isRealMode && d !== 255 ? d : ""}
-              </div>
-            );
-          })}
-        </div>
+        {(() => {
+          // Lattice (2N+1)x(2N+1): piso, parede e quina são objetos independentes.
+          const L = 2 * gridSize + 1;
+          // Trilhas em px inteiro (ver #maze-container): parede/poste = var(--tw),
+          // piso = var(--tf). Garante espessura igual em todo item do mesmo grupo.
+          const tmpl = Array.from({ length: L }, (_, k) => (k % 2 === 0 ? 'var(--tw)' : 'var(--tf)')).join(' ');
+
+          const expl = (xx, yy) => !!exploredShown[xx]?.[yy];
+          const wallsSrc = isRealMode ? liveWalls : mem.knownWalls;
+          const wallAt = (xx, yy, dd) => !!wallsSrc?.[xx]?.[yy]?.[dd];
+          const truthAt = (xx, yy, dd) => !!mem.truthWalls?.[xx]?.[yy]?.[dd];
+
+          // Uma parede do lattice é "conhecida" se for borda externa ou já descoberta.
+          const hWallKnown = (rr, cc) => {
+            if (rr < 0 || rr > 2 * gridSize || cc < 1 || cc > 2 * gridSize - 1) return false;
+            const x = (cc - 1) / 2, yBelow = rr / 2;
+            if (yBelow === 0 || yBelow === gridSize) return true;
+            return wallAt(x, yBelow, 0) && (expl(x, yBelow) || expl(x, yBelow - 1));
+          };
+          const vWallKnown = (rr, cc) => {
+            if (cc < 0 || cc > 2 * gridSize || rr < 1 || rr > 2 * gridSize - 1) return false;
+            const y = (rr - 1) / 2, xRight = cc / 2;
+            if (xRight === 0 || xRight === gridSize) return true;
+            return wallAt(xRight, y, 3) && (expl(xRight, y) || expl(xRight - 1, y));
+          };
+          // Parede real (Raio-X): só conta para acender a quina no modo Simulador.
+          const hWallTruth = (rr, cc) => {
+            if (rr < 0 || rr > 2 * gridSize || cc < 1 || cc > 2 * gridSize - 1) return false;
+            const x = (cc - 1) / 2, yBelow = rr / 2;
+            if (yBelow === 0 || yBelow === gridSize) return false;
+            return truthAt(x, yBelow, 0);
+          };
+          const vWallTruth = (rr, cc) => {
+            if (cc < 0 || cc > 2 * gridSize || rr < 1 || rr > 2 * gridSize - 1) return false;
+            const y = (rr - 1) / 2, xRight = cc / 2;
+            if (xRight === 0 || xRight === gridSize) return false;
+            return truthAt(xRight, y, 3);
+          };
+          // Cor do heatmap (g/y/r) a partir de uma distância e da média das células vizinhas.
+          const bucketColor = (dd) =>
+            dd === 0 || dd === 255 ? null : dd <= maxD / 3 ? "g" : dd <= 2 * maxD / 3 ? "y" : "r";
+          const avgColor = (...cells) => {
+            const ds = cells
+              .filter(([xx, yy]) => expl(xx, yy))
+              .map(([xx, yy]) => getDist(xx, yy))
+              .filter((v) => v !== 0 && v !== 255);
+            if (!ds.length) return null;
+            return bucketColor(ds.reduce((a, b) => a + b, 0) / ds.length);
+          };
+
+          return (
+            <div id="maze-container" className={showTruth ? "show-truth" : ""} style={{ '--n': gridSize, gridTemplateColumns: tmpl, gridTemplateRows: tmpl }}>
+              {Array.from({ length: L * L }).map((_, i) => {
+                const r = Math.floor(i / L), c = i % L;
+                const evenR = r % 2 === 0, evenC = c % 2 === 0;
+
+                // QUINA (poste): acende ao encostar numa parede conhecida; no Raio-X,
+                // também quando encosta numa parede real (truth).
+                if (evenR && evenC) {
+                  const lit = hWallKnown(r, c - 1) || hWallKnown(r, c + 1)
+                    || vWallKnown(r - 1, c) || vWallKnown(r + 1, c);
+                  const litTruth = !lit && showTruth && !isRealMode
+                    && (hWallTruth(r, c - 1) || hWallTruth(r, c + 1)
+                      || vWallTruth(r - 1, c) || vWallTruth(r + 1, c));
+                  // Poste interno cercado por células exploradas → cor de explorado.
+                  const ci = c / 2, cj = r / 2;
+                  const allExpl = expl(ci - 1, cj - 1) && expl(ci, cj - 1)
+                    && expl(ci - 1, cj) && expl(ci, cj);
+                  const allGoal = GOALS.some(g => g.x === ci - 1 && g.y === cj - 1)
+                    && GOALS.some(g => g.x === ci && g.y === cj - 1)
+                    && GOALS.some(g => g.x === ci - 1 && g.y === cj)
+                    && GOALS.some(g => g.x === ci && g.y === cj);
+                  // Poste cercado pelas 4 células do centro (goal): tom suave derivado do
+                  // próprio verde do goal (is-goal-soft) pra casar com as divisórias.
+                  const goalCorner = allGoal;
+                  const cColor = !lit && !litTruth && allExpl
+                    ? avgColor([ci - 1, cj - 1], [ci, cj - 1], [ci - 1, cj], [ci, cj])
+                    : null;
+                  let cornerCls = "lattice-corner";
+                  if (goalCorner) cornerCls += " is-goal-soft";
+                  else if (lit) cornerCls += " is-known";
+                  else if (litTruth) cornerCls += " is-truth";
+                  else if (allExpl) cornerCls += " is-explored";
+                  return <div key={i} className={cornerCls} data-color={cColor} />;
+                }
+
+                // PAREDE HORIZONTAL: separa a célula de cima e a de baixo.
+                if (evenR && !evenC) {
+                  const x = (c - 1) / 2;
+                  const yBelow = r / 2;
+                  const yAbove = yBelow - 1;
+                  const outer = yBelow === 0 || yBelow === gridSize;
+                  const known = outer
+                    ? true
+                    : wallAt(x, yBelow, 0) && (expl(x, yBelow) || expl(x, yAbove));
+                  const truth = !outer && showTruth && !isRealMode && truthAt(x, yBelow, 0);
+                  // Abertura que o carro atravessou (sem parede, entre células exploradas).
+                  const openExplored = !known && !truth && expl(x, yBelow) && expl(x, yAbove);
+                  const isGoal = GOALS.some(g => g.x === x && g.y === yBelow) && GOALS.some(g => g.x === x && g.y === yAbove);
+                  // Divisória entre duas células do centro (goal): tom suave derivado do
+                  // próprio verde do goal (is-goal-soft) pra um bloco contínuo e leve.
+                  const goalDivider = isGoal;
+                  const wColor = openExplored ? avgColor([x, yAbove], [x, yBelow]) : null;
+                  let cls = "lattice-wall lattice-wall-h";
+                  if (goalDivider) cls += " is-goal-soft";
+                  else if (known) cls += " is-known";
+                  else if (truth) cls += " is-truth";
+                  else if (openExplored) cls += " is-explored";
+                  return <div key={i} className={cls} data-color={wColor} />;
+                }
+
+                // PAREDE VERTICAL: separa a célula da esquerda e a da direita.
+                if (!evenR && evenC) {
+                  const y = (r - 1) / 2;
+                  const xRight = c / 2;
+                  const xLeft = xRight - 1;
+                  const outer = xRight === 0 || xRight === gridSize;
+                  const known = outer
+                    ? true
+                    : wallAt(xRight, y, 3) && (expl(xRight, y) || expl(xLeft, y));
+                  const truth = !outer && showTruth && !isRealMode && truthAt(xRight, y, 3);
+                  // Abertura que o carro atravessou (sem parede, entre células exploradas).
+                  const openExplored = !known && !truth && expl(xRight, y) && expl(xLeft, y);
+                  const isGoal = GOALS.some(g => g.x === xRight && g.y === y) && GOALS.some(g => g.x === xLeft && g.y === y);
+                  // Divisória entre duas células do centro (goal): tom suave derivado do
+                  // próprio verde do goal (is-goal-soft) pra um bloco contínuo e leve.
+                  const goalDivider = isGoal;
+                  const wColor = openExplored ? avgColor([xLeft, y], [xRight, y]) : null;
+                  let cls = "lattice-wall lattice-wall-v";
+                  if (goalDivider) cls += " is-goal-soft";
+                  else if (known) cls += " is-known";
+                  else if (truth) cls += " is-truth";
+                  else if (openExplored) cls += " is-explored";
+                  return <div key={i} className={cls} data-color={wColor} />;
+                }
+
+                // PISO: a célula real do labirinto (mantém toda a lógica e cores).
+                const x = (c - 1) / 2, y = (r - 1) / 2;
+                let classes = ["cell"];
+                const cellExplored = expl(x, y);
+                if (cellExplored) classes.push("explored");
+                const isGoal = GOALS.some(g => g.x === x && g.y === y);
+                if (isGoal) classes.push("goal");
+                const d = getDist(x, y);
+                let dataColor = null;
+                if (cellExplored && d !== 0 && d !== 255)
+                  dataColor = d <= maxD / 3 ? "g" : d <= 2 * maxD / 3 ? "y" : "r";
+                const hasRobot = robotShown && robotShown.x === x && robotShown.y === y;
+                return (
+                  <div key={i} className={classes.join(" ")} data-color={dataColor}>
+                    {hasRobot && <div id="robot" className={`dir-${robotShown.dir}`}></div>}
+                    {isGoal && !hasRobot && "G"}
+                    {!isGoal && !hasRobot && cellExplored && d !== 255 ? d : ""}
+                  </div>
+                );
+              })}
+            </div>
+          );
+        })()}
       </div>
     </>
   );
@@ -1101,11 +1483,11 @@ const RankingPanel = ({ runs, onSelectRun }) => {
                   <div className="flex items-center gap-2 h-full"><span>{run.time}</span></div>
                 </td>
                 <td className="p-4 text-brand-h2 text-sm">{run.speed}</td>
-                <td className="p-4"><div className="flex items-center gap-2"><Battery size={16} className="text-brand-green"/><span className="text-brand-h1 text-sm">{run.battery}</span></div></td>
-                <td className="p-4"><div className="flex items-center gap-2"><Footprints size={16} className="text-brand-purple-light"/><span className="text-brand-h1 text-sm">{run.steps}</span></div></td>
+                <td className="p-4"><div className="flex items-center gap-2"><Battery size={16} className="text-brand-green" /><span className="text-brand-h1 text-sm">{run.battery}</span></div></td>
+                <td className="p-4"><div className="flex items-center gap-2"><Footprints size={16} className="text-brand-purple-light" /><span className="text-brand-h1 text-sm">{run.steps}</span></div></td>
                 <td className="p-4">
                   <div className="inline-flex items-center justify-center h-6 px-3 rounded-md border text-[11px] font-semibold leading-none gap-1.5 w-max text-white bg-brand-green border-transparent">
-                    <CheckCircle2 size={14}/><span>{run.status}</span>
+                    <CheckCircle2 size={14} /><span>{run.status}</span>
                   </div>
                 </td>
                 <td className="p-4 text-right">
@@ -1155,10 +1537,10 @@ const HistoryView = ({ historyData, filter, setFilter, loading, error, onRefresh
     return parseTime(curr.time) < parseTime(prev.time) ? curr : prev;
   }) : null;
 
-  const totalRuns   = filteredHistory.length;
+  const totalRuns = filteredHistory.length;
   const successRate = totalRuns > 0 ? Math.round((successfulRuns.length / totalRuns) * 100) : 0;
   const bestTimeStr = bestRun ? bestRun.time : '--';
-  const avgSpeed    = totalRuns > 0 ? (filteredHistory.reduce((acc, curr) => acc + parseFloat(curr.speed), 0) / totalRuns).toFixed(1) + ' cm/s' : '--';
+  const avgSpeed = totalRuns > 0 ? (filteredHistory.reduce((acc, curr) => acc + parseFloat(curr.speed), 0) / totalRuns).toFixed(1) + ' cm/s' : '--';
 
   const exportCSV = () => {
     const headers = ['Data/Hora', 'Tipo', 'Labirinto', 'Status', 'Tempo', 'Velocidade', 'Bateria', 'Movimentos'];
@@ -1243,7 +1625,7 @@ const HistoryView = ({ historyData, filter, setFilter, loading, error, onRefresh
             <tbody className="divide-y divide-border-rule">
               {filteredHistory.length > 0 ? filteredHistory.map((run) => (
                 <tr key={run.id} data-testid="corrida-item" onClick={() => setSelectedRun(run)} className="hover:bg-app-hover transition-colors cursor-pointer group">
-                  <td className="p-4"><div className="flex items-center gap-2"><Calendar size={16} className="text-brand-h3 group-hover:text-brand-h2 transition-colors"/><span className="text-brand-h1 font-medium text-sm">{run.date}</span></div></td>
+                  <td className="p-4"><div className="flex items-center gap-2"><Calendar size={16} className="text-brand-h3 group-hover:text-brand-h2 transition-colors" /><span className="text-brand-h1 font-medium text-sm">{run.date}</span></div></td>
                   <td className="p-4">
                     {run.source === 'simulator' ? (
                       <span className="badge w-[100px] bg-brand-purple text-white" title="Corrida gerada no simulador local"><Cpu size={14} /><span>Simulada</span></span>
@@ -1254,11 +1636,11 @@ const HistoryView = ({ historyData, filter, setFilter, loading, error, onRefresh
                   <td className="p-4 text-brand-h2 font-medium text-sm"><div className="bg-app-raised inline-block px-3 py-1 rounded-lg border border-border-rule font-mono">{run.maze}</div></td>
                   <td className="p-4 text-brand-h1 font-mono text-sm h-14"><div className="flex items-center gap-2 h-full"><span>{run.time}</span></div></td>
                   <td className="p-4 text-brand-h2 text-sm">{run.speed}</td>
-                  <td className="p-4"><div className="flex items-center gap-2"><Battery size={16} className="text-brand-green"/><span className="text-brand-h1 text-sm">{run.battery}</span></div></td>
-                  <td className="p-4"><div className="flex items-center gap-2"><Footprints size={16} className="text-brand-purple-light"/><span className="text-brand-h1 text-sm">{run.steps}</span></div></td>
+                  <td className="p-4"><div className="flex items-center gap-2"><Battery size={16} className="text-brand-green" /><span className="text-brand-h1 text-sm">{run.battery}</span></div></td>
+                  <td className="p-4"><div className="flex items-center gap-2"><Footprints size={16} className="text-brand-purple-light" /><span className="text-brand-h1 text-sm">{run.steps}</span></div></td>
                   <td className="p-4">
                     <div className={`inline-flex items-center justify-center h-6 px-3 rounded-md border text-[11px] font-semibold leading-none gap-1.5 w-max ${run.status === 'Centro Alcançado!' ? 'text-white bg-brand-green border-transparent' : 'text-white bg-brand-danger border-transparent'}`}>
-                      {run.status === 'Centro Alcançado!' ? <CheckCircle2 size={14}/> : <XCircle size={14}/>}
+                      {run.status === 'Centro Alcançado!' ? <CheckCircle2 size={14} /> : <XCircle size={14} />}
                       <span>{run.status}</span>
                     </div>
                   </td>
@@ -1285,7 +1667,7 @@ const HistoryView = ({ historyData, filter, setFilter, loading, error, onRefresh
                 <h3 className="text-2xl font-bold text-brand-h1 mb-1">Detalhes da Corrida</h3>
                 <p className="text-brand-h3 text-sm">{selectedRun.date}</p>
               </div>
-              <button onClick={() => setSelectedRun(null)} className="text-brand-h3 hover:text-white transition-colors"><XCircle size={24}/></button>
+              <button onClick={() => setSelectedRun(null)} className="text-brand-h3 hover:text-white transition-colors"><XCircle size={24} /></button>
             </div>
             <div className="grid grid-cols-2 gap-6">
               <div className="space-y-4">
@@ -1315,7 +1697,7 @@ const HistoryView = ({ historyData, filter, setFilter, loading, error, onRefresh
                 </div>
               </div>
               {selectedRun.mapSnapshot ? (
-                <MiniMap snapshot={selectedRun.mapSnapshot}/>
+                <MiniMap snapshot={selectedRun.mapSnapshot} />
               ) : replayLoading ? (
                 <div className="bg-app-bg rounded-xl border border-border-rule flex items-center justify-center p-4 h-full text-brand-h3 text-sm">Carregando replay…</div>
               ) : replayError ? (

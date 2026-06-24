@@ -119,6 +119,23 @@ export async function getHistorico(mazeType) {
 }
 
 /**
+ * POST /comando — manda o start/reset pro robo real. 
+ * o script python da ponte q pega isso e taca via bluetooth no ESP32
+ */
+export async function postComando(command) {
+  const response = await fetch(`${API_BASE}/comando`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ command }),
+  });
+  if (!response.ok) {
+    const text = await response.text().catch(() => '');
+    throw new Error(`POST /comando falhou: ${response.status} ${text}`);
+  }
+  return response.json();
+}
+
+/**
  * GET /health — usado pelo indicador de conexão antes do primeiro pacote.
  */
 export async function getHealth() {
@@ -161,5 +178,60 @@ export async function deleteHistorico() {
     const text = await response.text().catch(() => '');
     throw new Error(`DELETE /historico falhou: ${response.status} ${text}`);
   }
+  return response.json();
+}
+
+/**
+ * GET /serial/portas — lista as COMs disponíveis no servidor (backend).
+ * Cada porta: { device, description, hwid, bluetooth, suggested }.
+ */
+export async function getSerialPortas() {
+  const response = await fetch(`${API_BASE}/serial/portas`);
+  if (!response.ok) throw new Error(`GET /serial/portas falhou: ${response.status}`);
+  const body = await response.json();
+  return body.portas ?? [];
+}
+
+/**
+ * POST /serial/conectar — abre a COM escolhida no backend (a ponte serial vive lá).
+ * Em falha, propaga a mensagem do backend (ex.: "Não foi possível abrir COM4: ...").
+ */
+export async function postSerialConectar(port, baud = 921600) {
+  const response = await fetch(`${API_BASE}/serial/conectar`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ port, baud }),
+  });
+  if (!response.ok) {
+    let detail = '';
+    try {
+      const j = await response.json();
+      detail = j.detail || '';
+    } catch {
+      detail = await response.text().catch(() => '');
+    }
+    throw new Error(detail || `POST /serial/conectar falhou: ${response.status}`);
+  }
+  return response.json();
+}
+
+/**
+ * POST /serial/desconectar — fecha a serial gerida pelo backend.
+ */
+export async function postSerialDesconectar() {
+  const response = await fetch(`${API_BASE}/serial/desconectar`, { method: 'POST' });
+  if (!response.ok) {
+    const text = await response.text().catch(() => '');
+    throw new Error(`POST /serial/desconectar falhou: ${response.status} ${text}`);
+  }
+  return response.json();
+}
+
+/**
+ * GET /serial/status — { connected, port, baud, packets_rx, last_packet_at, last_error }.
+ */
+export async function getSerialStatus() {
+  const response = await fetch(`${API_BASE}/serial/status`);
+  if (!response.ok) throw new Error(`GET /serial/status falhou: ${response.status}`);
   return response.json();
 }
