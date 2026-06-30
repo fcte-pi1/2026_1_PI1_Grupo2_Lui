@@ -1,13 +1,18 @@
 #include <Arduino.h>
+#include <Wire.h>
+#include "pins.h"
 #include "motors/motors.h"
+#include "distanceSensor/distanceSensor.h"
+#include "mpu/mpu.h"
+#include "encoder/encoder.h"
 
-static constexpr int VEL_TESTE = 150; 
+static constexpr int VEL_TESTE = 150;
 
 void setup() {
 
     Serial.begin(115200);
     delay(2000);
-    
+
     Serial.println("\n=======================================");
     Serial.println(" BOOT Micromouse");
     Serial.println("=======================================\n");
@@ -48,12 +53,14 @@ void setup() {
 
 void loop() {
 
-    Serial.println("MPU-6500:\n");
-    lerExibirMPU();
-    Serial.println("--------------------------------------------------\n");
-    
-    Serial.println("Sensores:\n");
-    lerExibirSensoresToF();
-    Serial.println("--------------------------------------------------\n");
+    // Atualiza o filtro de média dos sensores de distância
+    atualizar_filtro_media();
 
+    // Verifica freio de emergência
+    verificar_emergencia();
+
+    // Imprime mock do map_manager se houve mudança no estado das paredes
+    testar_sensores_paredes();
+
+    delay(20);
 }
